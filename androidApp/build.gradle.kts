@@ -13,7 +13,9 @@ android {
     ndkVersion = "29.0.14206865"
 
     defaultConfig {
-        applicationId = "com.inspiredandroid.kai"
+        // Use an independent Android identity so Kairon can coexist with upstream Kai.
+        // Keep namespace and Kotlin packages unchanged; this is only the installed app ID.
+        applicationId = "com.dude555afk.kairon"
         minSdk =
             libs.versions.android.minSdk
                 .get()
