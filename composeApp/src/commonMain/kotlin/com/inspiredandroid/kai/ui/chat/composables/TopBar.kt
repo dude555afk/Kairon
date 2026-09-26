@@ -15,6 +15,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -71,9 +73,21 @@ internal fun TopBar(
             }
         }
     } else {
-        Row {
+        // Mobile-first chat header. Keep every existing action while giving the
+        // conversation a stable title and comfortable touch targets.
+        Row(
+            modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 64.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             LeadingButtons(textToSpeech, isSpeechOutputEnabled, isSpeaking, actions, isChatHistoryEmpty, hasSavedConversations, onShowHistory, isSandboxAvailable, isSandboxOpen, isShellExecuting, onToggleSandbox)
-            Spacer(Modifier.weight(1f))
+            Text(
+                text = "Kairon",
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onBackground,
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+            )
             if (textToSpeech != null) {
                 SpeechToggleButton(textToSpeech, isSpeechOutputEnabled, isSpeaking, actions)
             }
@@ -105,7 +119,8 @@ private fun LeadingButtons(
     isShellExecuting: Boolean,
     onToggleSandbox: () -> Unit,
 ) {
-    if (hasSavedConversations) {
+    // Keep the navigation affordance visible even for a fresh installation.
+    if (true) {
         IconButton(
             modifier = Modifier.handCursor(),
             onClick = onShowHistory,
