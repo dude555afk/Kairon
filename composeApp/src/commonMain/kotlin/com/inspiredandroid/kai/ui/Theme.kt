@@ -15,6 +15,7 @@ import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.darkColorScheme
@@ -64,39 +65,20 @@ fun ColorScheme.withBlackBackground(): ColorScheme = copy(
 
 val ColorScheme.isOledFlavor: Boolean get() = background == Color.Black
 
+// One filled, theme-derived surface language for all settings and workspace cards.
+// Even OLED keeps readable raised surfaces instead of a grid of outlined boxes.
 @Composable
 fun kaiAdaptiveCardColors(): CardColors = CardDefaults.cardColors(
-    containerColor = if (MaterialTheme.colorScheme.isOledFlavor) {
-        Color.Transparent
-    } else {
-        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-    },
+    containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
 )
 
 @Composable
-fun kaiAdaptiveCardBorder(): BorderStroke? = if (MaterialTheme.colorScheme.isOledFlavor) {
-    BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-} else {
-    null
-}
+fun kaiAdaptiveCardBorder(): BorderStroke? = null
 
 @Composable
 fun Modifier.kaiAdaptiveCardSurface(shape: Shape = CardDefaults.shape): Modifier = this
     .clip(shape)
-    .background(
-        if (MaterialTheme.colorScheme.isOledFlavor) {
-            Color.Transparent
-        } else {
-            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-        },
-    )
-    .then(
-        if (MaterialTheme.colorScheme.isOledFlavor) {
-            Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant, shape)
-        } else {
-            Modifier
-        },
-    )
+    .background(MaterialTheme.colorScheme.surfaceContainerLow)
 
 val LightColorScheme = lightColorScheme(
     primary = darkPurple,
@@ -175,6 +157,14 @@ fun KaiClearableTextField(
     )
 }
 
+private val KaironShapes = Shapes(
+    extraSmall = RoundedCornerShape(8.dp),
+    small = RoundedCornerShape(12.dp),
+    medium = RoundedCornerShape(18.dp),
+    large = RoundedCornerShape(24.dp),
+    extraLarge = RoundedCornerShape(28.dp),
+)
+
 @Composable
 @Preview
 fun Theme(
@@ -183,6 +173,7 @@ fun Theme(
 ) {
     MaterialTheme(
         colorScheme = colorScheme,
+        shapes = KaironShapes,
     ) {
         content()
     }
