@@ -25,12 +25,12 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -153,8 +153,11 @@ internal fun ChatHistorySheet(
                                             Modifier
                                                 .clip(RoundedCornerShape(12.dp))
                                                 .background(
-                                                    if (isActive) MaterialTheme.colorScheme.surfaceContainerHigh
-                                                    else MaterialTheme.colorScheme.surface,
+                                                    if (isActive) {
+                                                        MaterialTheme.colorScheme.surfaceContainerHigh
+                                                    } else {
+                                                        MaterialTheme.colorScheme.surface
+                                                    },
                                                 )
                                         }
                                         Row(
