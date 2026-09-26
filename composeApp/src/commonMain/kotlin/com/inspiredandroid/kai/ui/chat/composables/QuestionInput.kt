@@ -32,6 +32,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -196,14 +197,14 @@ fun QuestionInput(
             onValueChange = onTextStateChange,
             modifier = Modifier
                 .focusRequester(focusRequester)
-                .padding(16.dp)
+                .padding(horizontal = 12.dp, vertical = 8.dp)
                 .heightIn(max = maxComposerHeight)
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(28.dp))
-                .background(MaterialTheme.colorScheme.background)
+                .clip(RoundedCornerShape(26.dp))
                 .border(
-                    BorderStroke(width = 2.dp, brush = gradientBrush),
-                    shape = RoundedCornerShape(28.dp),
+                    width = 1.dp,
+                    color = MaterialTheme.colorScheme.outlineVariant,
+                    shape = RoundedCornerShape(26.dp),
                 )
                 .onPreviewKeyEvent { event ->
                     // Only handle hardware keyboard on desktop/web platforms
@@ -231,7 +232,13 @@ fun QuestionInput(
                     }
                     return@onPreviewKeyEvent false
                 },
-            colors = outlineTextFieldColors(),
+            shape = RoundedCornerShape(26.dp),
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent,
+            ),
             placeholder = {
                 Text(
                     stringResource(Res.string.prompt_ask_question),
