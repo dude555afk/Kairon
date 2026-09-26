@@ -259,108 +259,108 @@ fun SettingsScreenContent(
                     modifier = Modifier.widthIn(max = 720.dp).fillMaxWidth().weight(1f),
                 )
             } else {
-            if (navigationTabBar != null) {
-                TextButton(
-                    onClick = { showingOverview = true },
-                    modifier = Modifier.align(Alignment.Start).padding(start = 12.dp),
-                ) {
-                    Text(stringResource(Res.string.settings_content_description))
-                }
-            }
-            SettingsTabSelector(
-                tabs = visibleTabs,
-                currentTab = filteredUiState.currentTab,
-                onSelectTab = actions.onSelectTab,
-            )
-
-            val settingsScrollState = rememberScrollState()
-            Box(Modifier.weight(1f).fillMaxWidth()) {
-                Column(
-                    Modifier.fillMaxWidth().verticalScroll(settingsScrollState),
-                    horizontalAlignment = CenterHorizontally,
-                ) {
-                    Spacer(Modifier.height(16.dp))
-
-                    val maxContentWidth = when (filteredUiState.currentTab) {
-                        SettingsTab.Services -> 500.dp
-                        else -> 900.dp
+                if (navigationTabBar != null) {
+                    TextButton(
+                        onClick = { showingOverview = true },
+                        modifier = Modifier.align(Alignment.Start).padding(start = 12.dp),
+                    ) {
+                        Text(stringResource(Res.string.settings_content_description))
                     }
+                }
+                SettingsTabSelector(
+                    tabs = visibleTabs,
+                    currentTab = filteredUiState.currentTab,
+                    onSelectTab = actions.onSelectTab,
+                )
+
+                val settingsScrollState = rememberScrollState()
+                Box(Modifier.weight(1f).fillMaxWidth()) {
                     Column(
-                        Modifier.widthIn(max = maxContentWidth).fillMaxWidth().padding(horizontal = 16.dp),
+                        Modifier.fillMaxWidth().verticalScroll(settingsScrollState),
                         horizontalAlignment = CenterHorizontally,
                     ) {
-                        when (filteredUiState.currentTab) {
-                            SettingsTab.General -> {
-                                GeneralContent(uiState = filteredUiState, actions = actions)
+                        Spacer(Modifier.height(16.dp))
+
+                        val maxContentWidth = when (filteredUiState.currentTab) {
+                            SettingsTab.Services -> 500.dp
+                            else -> 900.dp
+                        }
+                        Column(
+                            Modifier.widthIn(max = maxContentWidth).fillMaxWidth().padding(horizontal = 16.dp),
+                            horizontalAlignment = CenterHorizontally,
+                        ) {
+                            when (filteredUiState.currentTab) {
+                                SettingsTab.General -> {
+                                    GeneralContent(uiState = filteredUiState, actions = actions)
+                                }
+
+                                SettingsTab.Agent -> {
+                                    AgentContent(uiState = filteredUiState, actions = actions)
+                                }
+
+                                SettingsTab.Services -> {
+                                    ServicesContent(uiState = filteredUiState, actions = actions)
+                                }
+
+                                SettingsTab.Integrations -> {
+                                    IntegrationsContent()
+                                }
+
+                                SettingsTab.Tools -> {
+                                    ToolsContent(
+                                        tools = filteredUiState.tools,
+                                        onToggleTool = actions.onToggleTool,
+                                        mcpServers = filteredUiState.mcpServers,
+                                        onAddMcpServer = actions.onAddMcpServer,
+                                        onRemoveMcpServer = actions.onRemoveMcpServer,
+                                        onToggleMcpServer = actions.onToggleMcpServer,
+                                        onRefreshMcpServer = actions.onRefreshMcpServer,
+                                        showAddMcpServerDialog = filteredUiState.showAddMcpServerDialog,
+                                        onShowAddMcpServerDialog = actions.onShowAddMcpServerDialog,
+                                        onAddPopularMcpServer = actions.onAddPopularMcpServer,
+                                        skills = filteredUiState.skills,
+                                        onUninstallSkill = actions.onUninstallSkill,
+                                        showAddSkillDialog = filteredUiState.showAddSkillDialog,
+                                        onShowAddSkillDialog = actions.onShowAddSkillDialog,
+                                        onInstallGitHubSkill = actions.onInstallGitHubSkill,
+                                        onInstallBrowsedSkill = actions.onInstallBrowsedSkill,
+                                        isInstallingSkill = filteredUiState.isInstallingSkill,
+                                        skillInstallError = filteredUiState.skillInstallError,
+                                        browsableSkills = filteredUiState.browsableSkills,
+                                        isBrowsingSkills = filteredUiState.isBrowsingSkills,
+                                        browseSkillsFailed = filteredUiState.browseSkillsFailed,
+                                        showSkills = sandboxState.showSandbox,
+                                        isSandboxInstalled = sandboxState.sandboxInstalled,
+                                        onNavigateToSandbox = { actions.onSelectTab(SettingsTab.Sandbox) },
+                                    )
+                                }
+
+                                SettingsTab.Sandbox -> {
+                                    SandboxSettingsCard(
+                                        sandboxState = sandboxState,
+                                        onToggleSandbox = onToggleSandbox,
+                                        onSelectDistro = onSelectDistro,
+                                        onSetupSandbox = onSetupSandbox,
+                                        onCancelSandbox = onCancelSandbox,
+                                        onResetSandbox = onResetSandbox,
+                                        onInstallPackages = onInstallPackages,
+                                        onMigrateHome = onMigrateHome,
+                                    )
+                                }
                             }
 
-                            SettingsTab.Agent -> {
-                                AgentContent(uiState = filteredUiState, actions = actions)
-                            }
-
-                            SettingsTab.Services -> {
-                                ServicesContent(uiState = filteredUiState, actions = actions)
-                            }
-
-                            SettingsTab.Integrations -> {
-                                IntegrationsContent()
-                            }
-
-                            SettingsTab.Tools -> {
-                                ToolsContent(
-                                    tools = filteredUiState.tools,
-                                    onToggleTool = actions.onToggleTool,
-                                    mcpServers = filteredUiState.mcpServers,
-                                    onAddMcpServer = actions.onAddMcpServer,
-                                    onRemoveMcpServer = actions.onRemoveMcpServer,
-                                    onToggleMcpServer = actions.onToggleMcpServer,
-                                    onRefreshMcpServer = actions.onRefreshMcpServer,
-                                    showAddMcpServerDialog = filteredUiState.showAddMcpServerDialog,
-                                    onShowAddMcpServerDialog = actions.onShowAddMcpServerDialog,
-                                    onAddPopularMcpServer = actions.onAddPopularMcpServer,
-                                    skills = filteredUiState.skills,
-                                    onUninstallSkill = actions.onUninstallSkill,
-                                    showAddSkillDialog = filteredUiState.showAddSkillDialog,
-                                    onShowAddSkillDialog = actions.onShowAddSkillDialog,
-                                    onInstallGitHubSkill = actions.onInstallGitHubSkill,
-                                    onInstallBrowsedSkill = actions.onInstallBrowsedSkill,
-                                    isInstallingSkill = filteredUiState.isInstallingSkill,
-                                    skillInstallError = filteredUiState.skillInstallError,
-                                    browsableSkills = filteredUiState.browsableSkills,
-                                    isBrowsingSkills = filteredUiState.isBrowsingSkills,
-                                    browseSkillsFailed = filteredUiState.browseSkillsFailed,
-                                    showSkills = sandboxState.showSandbox,
-                                    isSandboxInstalled = sandboxState.sandboxInstalled,
-                                    onNavigateToSandbox = { actions.onSelectTab(SettingsTab.Sandbox) },
-                                )
-                            }
-
-                            SettingsTab.Sandbox -> {
-                                SandboxSettingsCard(
-                                    sandboxState = sandboxState,
-                                    onToggleSandbox = onToggleSandbox,
-                                    onSelectDistro = onSelectDistro,
-                                    onSetupSandbox = onSetupSandbox,
-                                    onCancelSandbox = onCancelSandbox,
-                                    onResetSandbox = onResetSandbox,
-                                    onInstallPackages = onInstallPackages,
-                                    onMigrateHome = onMigrateHome,
-                                )
-                            }
+                            Spacer(Modifier.height(16.dp))
                         }
 
-                        Spacer(Modifier.height(16.dp))
+                        Spacer(Modifier.weight(1f))
+
+                        BottomInfo()
                     }
-
-                    Spacer(Modifier.weight(1f))
-
-                    BottomInfo()
+                    VerticalScrollbarForScroll(
+                        scrollState = settingsScrollState,
+                        modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
+                    )
                 }
-                VerticalScrollbarForScroll(
-                    scrollState = settingsScrollState,
-                    modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
-                )
-            }
             }
         }
         SnackbarHost(
