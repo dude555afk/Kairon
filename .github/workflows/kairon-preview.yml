@@ -1,4 +1,4 @@
-name: Kairon Android Preview
+name: Kairon Android UI Preview
 
 on:
   push:
@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   android-debug:
-    name: Build FOSS debug APK
+    name: Build limited-permission preview APK
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -33,12 +33,15 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
       - name: Make Gradle wrapper executable
         run: chmod +x gradlew
+      # UI preview uses upstream's Play Store flavor to omit FOSS-only SMS,
+      # notification-listener and APK-installer capabilities. This does not
+      # modify the FOSS flavor or remove these features from the source tree.
       - name: Assemble preview APK
-        run: ./gradlew :androidApp:assembleFossDebug --no-daemon --stacktrace
+        run: ./gradlew :androidApp:assemblePlayStoreDebug --no-daemon --stacktrace
       - name: Upload APK
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: Kairon-foss-debug-apk
-          path: androidApp/build/outputs/apk/foss/debug/*.apk
+          name: Kairon-ui-preview-apk
+          path: androidApp/build/outputs/apk/playStore/debug/*.apk
           if-no-files-found: error
