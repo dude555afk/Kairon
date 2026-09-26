@@ -46,15 +46,15 @@ internal fun UserMessage(
 ) {
     val showFullScreen = LocalShowFullScreenImage.current
     SelectionContainer {
-        Row(Modifier.padding(16.dp)) {
+        Row(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
             Spacer(Modifier.weight(1f))
             Column(
                 modifier = Modifier
                     .background(
-                        MaterialTheme.colorScheme.onBackground.copy(alpha = 0.15f),
-                        RoundedCornerShape(8.dp),
+                        MaterialTheme.colorScheme.surfaceContainerHigh,
+                        RoundedCornerShape(20.dp),
                     )
-                    .padding(16.dp),
+                    .padding(horizontal = 14.dp, vertical = 12.dp),
                 horizontalAlignment = Alignment.End,
             ) {
                 val images = attachments.filter { it.mimeType.startsWith("image/") }
