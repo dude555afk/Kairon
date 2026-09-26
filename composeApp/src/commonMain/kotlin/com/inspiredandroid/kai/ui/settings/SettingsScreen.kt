@@ -44,6 +44,7 @@ import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -51,6 +52,7 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Alignment.Companion.CenterHorizontally
@@ -78,6 +80,7 @@ import com.inspiredandroid.kai.ui.kaiAdaptiveCardColors
 import kai.composeapp.generated.resources.Res
 import kai.composeapp.generated.resources.github_mark
 import kai.composeapp.generated.resources.settings_ai_mistakes_warning
+import kai.composeapp.generated.resources.settings_content_description
 import kai.composeapp.generated.resources.settings_documentation
 import kai.composeapp.generated.resources.settings_tab_agent
 import kai.composeapp.generated.resources.settings_tab_general
@@ -217,6 +220,8 @@ fun SettingsScreenContent(
         )
     }
 
+    var showingOverview by rememberSaveable { mutableStateOf(true) }
+
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).navigationBarsPadding().statusBarsPadding().imePadding()) {
         Column(Modifier.fillMaxSize(), horizontalAlignment = CenterHorizontally) {
             if (navigationTabBar != null) {
@@ -228,13 +233,40 @@ fun SettingsScreenContent(
                     navigationTabBar()
                 }
             } else {
-                TopBar(onNavigateBack = onNavigateBack)
+                TopBar(
+                    title = if (showingOverview) {
+                        stringResource(Res.string.settings_content_description)
+                    } else {
+                        stringResource(settingsTabTitle(filteredUiState.currentTab))
+                    },
+                    onNavigateBack = {
+                        if (showingOverview) onNavigateBack() else showingOverview = true
+                    },
+                )
             }
 
             val visibleTabs = remember(sandboxState.showSandbox) {
                 SettingsTab.entries.filter { it != SettingsTab.Sandbox || sandboxState.showSandbox }.toImmutableList()
             }
 
+            if (showingOverview) {
+                SettingsOverview(
+                    tabs = visibleTabs,
+                    onOpen = { tab ->
+                        actions.onSelectTab(tab)
+                        showingOverview = false
+                    },
+                    modifier = Modifier.widthIn(max = 720.dp).fillMaxWidth().weight(1f),
+                )
+            } else {
+            if (navigationTabBar != null) {
+                TextButton(
+                    onClick = { showingOverview = true },
+                    modifier = Modifier.align(Alignment.Start).padding(start = 12.dp),
+                ) {
+                    Text(stringResource(Res.string.settings_content_description))
+                }
+            }
             SettingsTabSelector(
                 tabs = visibleTabs,
                 currentTab = filteredUiState.currentTab,
@@ -329,6 +361,7 @@ fun SettingsScreenContent(
                     modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
                 )
             }
+            }
         }
         SnackbarHost(
             hostState = snackbarHostState,
@@ -340,8 +373,11 @@ fun SettingsScreenContent(
 }
 
 @Composable
-private fun TopBar(onNavigateBack: () -> Unit) {
-    Row {
+private fun TopBar(title: String, onNavigateBack: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 64.dp),
+        verticalAlignment = CenterVertically,
+    ) {
         IconButton(
             modifier = Modifier.handCursor(),
             onClick = onNavigateBack,
@@ -352,6 +388,12 @@ private fun TopBar(onNavigateBack: () -> Unit) {
                 tint = MaterialTheme.colorScheme.onBackground,
             )
         }
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.padding(start = 8.dp),
+        )
         Spacer(Modifier.weight(1f))
     }
 }
