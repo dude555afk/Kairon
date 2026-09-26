@@ -120,17 +120,15 @@ private fun LeadingButtons(
     onToggleSandbox: () -> Unit,
 ) {
     // Keep the navigation affordance visible even for a fresh installation.
-    if (true) {
-        IconButton(
-            modifier = Modifier.handCursor(),
-            onClick = onShowHistory,
-        ) {
-            Icon(
-                imageVector = vectorResource(Res.drawable.ic_history),
-                contentDescription = stringResource(Res.string.chat_history_content_description),
-                tint = MaterialTheme.colorScheme.onBackground,
-            )
-        }
+    IconButton(
+        modifier = Modifier.handCursor(),
+        onClick = onShowHistory,
+    ) {
+        Icon(
+            imageVector = vectorResource(Res.drawable.ic_history),
+            contentDescription = stringResource(Res.string.chat_history_content_description),
+            tint = MaterialTheme.colorScheme.onBackground,
+        )
     }
     if (!isChatHistoryEmpty) {
         IconButton(
