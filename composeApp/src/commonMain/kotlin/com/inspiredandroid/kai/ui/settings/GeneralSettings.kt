@@ -22,6 +22,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.inspiredandroid.kai.data.AccentPreset
 import com.inspiredandroid.kai.data.ThemeMode
 import com.inspiredandroid.kai.ui.KaiOutlinedTextField
 import com.inspiredandroid.kai.ui.components.KaiSlider
@@ -81,6 +82,36 @@ internal fun GeneralContent(uiState: SettingsUiState, actions: SettingsActions) 
                     themeMode = uiState.themeMode,
                     onChangeThemeMode = actions.onChangeThemeMode,
                 )
+            }
+            GeneralDivider()
+            Box(Modifier.fillMaxWidth().padding(16.dp)) {
+                Column {
+                    Text("Accent", style = MaterialTheme.typography.titleMedium)
+                    Text("Lightweight colour presets. No wallpapers or extra assets.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    var expanded by remember { mutableStateOf(false) }
+                    Box {
+                        KaiOutlinedTextField(
+                            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                            value = uiState.accentPreset.label,
+                            onValueChange = {},
+                            readOnly = true,
+                        )
+                        Box(Modifier.matchParentSize().clickable { expanded = true })
+                        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                            AccentPreset.entries.forEach { preset ->
+                                DropdownMenuItem(
+                                    text = { Text(preset.label) },
+                                    onClick = {
+                                        expanded = false
+                                        actions.onChangeAccentPreset(preset)
+                                    },
+                                )
+                            }
+                        }
+                    }
+                }
             }
             if (uiState.showUiScale) {
                 GeneralDivider()
