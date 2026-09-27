@@ -582,6 +582,7 @@ private fun ChatModeScreen(
                 pendingConversationDeletion = uiState.pendingConversationDeletion,
                 actions = uiState.actions,
                 onDismiss = { drawerScope.launch { drawerState.close() } },
+                onNavigateToSettings = onNavigateToSettings,
                 onConversationSelected = { isSandboxOpen = false },
             )
         },
@@ -591,7 +592,7 @@ private fun ChatModeScreen(
             // Only non-scrolling banners and the sandbox reserve a header inset.
             Column(
                 Modifier.fillMaxSize()
-                    .padding(top = if (needsHeaderInset) 72.dp else 0.dp),
+                    .padding(top = 72.dp),
             ) {
                 HeartbeatBanner(
                     visible = uiState.hasUnreadHeartbeat,
