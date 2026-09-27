@@ -3,6 +3,8 @@ package com.inspiredandroid.kai.ui.chat.composables
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -69,6 +71,7 @@ import nl.marc_apps.tts.TextToSpeechInstance
 import nl.marc_apps.tts.errors.TextToSpeechSynthesisInterruptedError
 import org.jetbrains.compose.resources.stringResource
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun BotMessage(
     message: String,
@@ -77,6 +80,10 @@ internal fun BotMessage(
     setIsSpeaking: (Boolean) -> Unit,
     onRegenerate: (() -> Unit)? = null,
     onFork: (() -> Unit)? = null,
+    onRetry: (() -> Unit)? = null,
+    onThinking: (() -> Unit)? = null,
+    onWebSearch: (() -> Unit)? = null,
+    modelId: String? = null,
     isInteractive: Boolean = false,
     onUiCallback: ((event: String, data: Map<String, String>) -> Unit)? = null,
     frozen: FrozenSubmission? = null,
@@ -85,6 +92,7 @@ internal fun BotMessage(
     showThinkingHeader: Boolean = true,
 ) {
     val document = remember(message) { parseMarkdown(message) }
+    var actionMenuOpen by remember { mutableStateOf(false) }
     var isEditing by remember(frozen) { mutableStateOf(false) }
     val effectiveFrozen = if (isEditing && frozen != null) frozen.copy(pressedEvent = null) else frozen
     val effectiveInteractive = if (frozen != null) (onResubmit != null && isEditing) else isInteractive
@@ -97,7 +105,7 @@ internal fun BotMessage(
         onUiCallback ?: { _, _ -> }
     }
 
-    Box(modifier = Modifier.fillMaxWidth()) {
+    Box(modifier = Modifier.fillMaxWidth().combinedClickable(onClick = {}, onLongClick = { actionMenuOpen = true })) {
         Column(modifier = Modifier.fillMaxWidth()) {
             val nonBlankSegments = remember(reasoningSegments) {
                 reasoningSegments.filter { it.isNotBlank() }.toImmutableList()
@@ -198,7 +206,17 @@ internal fun BotMessage(
                 onClick = onRegenerate,
             )
         }
-        if (onFork != null) TextButton(onClick = onFork) { Text("Branch") }
+        if (onFork != null || onRetry != null || onThinking != null || onWebSearch != null) {
+            MessageActionMenu(
+                onBranch = onFork,
+                onRetry = onRetry,
+                onThinking = onThinking,
+                onWebSearch = onWebSearch,
+                modelId = modelId,
+                externalOpen = actionMenuOpen,
+                onExternalDismiss = { actionMenuOpen = false },
+            )
+        }
         Spacer(Modifier.weight(1f))
     }
 }
