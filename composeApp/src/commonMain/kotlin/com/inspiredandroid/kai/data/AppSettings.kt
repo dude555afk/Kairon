@@ -283,6 +283,19 @@ class AppSettings(internal val settings: Settings) {
         settings.putBoolean("show_thinking_header", visible)
     }
 
+    private val _accentPresetFlow = MutableStateFlow(
+        runCatching { AccentPreset.valueOf(settings.getString("accent_preset", AccentPreset.Default.name)) }
+            .getOrDefault(AccentPreset.Default),
+    )
+    val accentPresetFlow: StateFlow<AccentPreset> = _accentPresetFlow
+
+    fun getAccentPreset(): AccentPreset = _accentPresetFlow.value
+
+    fun setAccentPreset(preset: AccentPreset) {
+        settings.putString("accent_preset", preset.name)
+        _accentPresetFlow.value = preset
+    }
+
     // Dynamic UI
     fun isDynamicUiEnabled(): Boolean = settings.getBoolean(KEY_DYNAMIC_UI_ENABLED, true)
 
