@@ -74,6 +74,7 @@ data class ChatUiState(
     val isSpeechOutputEnabled: Boolean = false,
     val isLoading: Boolean = false,
     val streamingText: String = "",
+    val showThinkingHeader: Boolean = true,
     val error: UiError? = null,
     val showFreeProviderSuggestions: Boolean = false,
     val warning: StringResource? = null,
