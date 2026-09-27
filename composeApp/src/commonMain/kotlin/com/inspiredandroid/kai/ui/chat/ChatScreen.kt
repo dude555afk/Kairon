@@ -1045,6 +1045,23 @@ private fun ChatModeScreen(
                         ),
                 )
             }
+            // A soft fade protects floating header legibility when old messages
+            // scroll behind it. No opaque toolbar or extra layout inset.
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .fillMaxWidth()
+                    .height(100.dp)
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(
+                                MaterialTheme.colorScheme.background,
+                                MaterialTheme.colorScheme.background.copy(alpha = 0.96f),
+                                MaterialTheme.colorScheme.background.copy(alpha = 0f),
+                            ),
+                        ),
+                    ),
+            )
             // Three compact controls rather than the old full-width header.
             TopBar(
                 modifier = Modifier.align(Alignment.TopCenter),
