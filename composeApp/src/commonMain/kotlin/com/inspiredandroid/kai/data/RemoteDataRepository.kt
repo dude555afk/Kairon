@@ -1045,6 +1045,7 @@ class RemoteDataRepository(
                                 content = turn.content,
                                 reasoningContent = turn.reasoningContent,
                                 fallbackServiceName = fallbackServiceName,
+                                modelId = instanceCredentials(entry.instanceId, entry.service).modelId,
                             ),
                         )
                     }
@@ -1647,6 +1648,7 @@ class RemoteDataRepository(
                         toolCallId = h.toolCallId,
                         toolName = h.toolName,
                         toolCalls = h.toolCalls,
+                        modelId = h.modelId,
                         isThinking = h.isThinking,
                         reasoningContent = h.reasoningContent,
                     )
@@ -1732,6 +1734,7 @@ class RemoteDataRepository(
                 toolCallId = m.toolCallId,
                 toolName = m.toolName,
                 toolCalls = m.toolCalls?.toImmutableList(),
+                modelId = m.modelId,
                 isThinking = m.isThinking,
                 reasoningContent = m.reasoningContent,
             )
