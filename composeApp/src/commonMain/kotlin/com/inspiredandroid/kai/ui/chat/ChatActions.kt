@@ -20,6 +20,7 @@ data class ChatActions(
     val loadConversation: (String) -> Unit,
     val deleteConversation: (String) -> Unit,
     val renameConversation: (String, String) -> Unit,
+    val setConversationPinned: (String, Boolean) -> Unit,
     val clearUnreadHeartbeat: () -> Unit,
     val clearSnackbar: () -> Unit,
     val undoDeleteConversation: () -> Unit,
