@@ -67,8 +67,9 @@ fun ColorScheme.withAccent(preset: AccentPreset): ColorScheme {
         AccentPreset.Teal -> Color(0xFF69D5C4)
         AccentPreset.CatppuccinMocha -> Color(0xFFCBA6F7)
     }
-    // Tint the entire Material surface hierarchy, not only buttons. Keep the
-    // underlying light/dark/OLED neutrals readable, like ChatGPT's restrained accent.
+    // Apply the accent consistently to the app canvas, raised surfaces, controls,
+    // and outlines while preserving pure black on OLED.
+    val oled = background == Color.Black
     return copy(
         primary = accent,
         onPrimary = Color(0xFF171717),
@@ -84,12 +85,16 @@ fun ColorScheme.withAccent(preset: AccentPreset): ColorScheme {
         onTertiaryContainer = onSurface,
         surfaceTint = accent,
         inversePrimary = accent,
-        surfaceContainerLow = lerp(surfaceContainerLow, accent, 0.035f),
-        surfaceContainer = lerp(surfaceContainer, accent, 0.055f),
-        surfaceContainerHigh = lerp(surfaceContainerHigh, accent, 0.09f),
-        surfaceContainerHighest = lerp(surfaceContainerHighest, accent, 0.13f),
-        surfaceVariant = lerp(surfaceVariant, accent, 0.07f),
-        outlineVariant = lerp(outlineVariant, accent, 0.16f),
+        background = if (oled) Color.Black else lerp(background, accent, 0.025f),
+        surface = if (oled) Color.Black else lerp(surface, accent, 0.035f),
+        surfaceContainerLowest = if (oled) Color.Black else lerp(surfaceContainerLowest, accent, 0.025f),
+        surfaceContainerLow = lerp(surfaceContainerLow, accent, 0.055f),
+        surfaceContainer = lerp(surfaceContainer, accent, 0.08f),
+        surfaceContainerHigh = lerp(surfaceContainerHigh, accent, 0.12f),
+        surfaceContainerHighest = lerp(surfaceContainerHighest, accent, 0.17f),
+        surfaceVariant = lerp(surfaceVariant, accent, 0.12f),
+        outline = lerp(outline, accent, 0.22f),
+        outlineVariant = lerp(outlineVariant, accent, 0.24f),
     )
 }
 
