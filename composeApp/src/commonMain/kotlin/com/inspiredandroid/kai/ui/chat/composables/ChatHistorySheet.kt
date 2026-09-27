@@ -24,6 +24,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -108,6 +109,13 @@ internal fun ChatHistorySheet(
         val snackbarHostState = remember { SnackbarHostState() }
         var renamingId by remember { mutableStateOf<String?>(null) }
         var renameText by remember { mutableStateOf("") }
+        var searchText by remember { mutableStateOf("") }
+        val matchingConversations = remember(conversations, searchText) {
+            val query = searchText.trim()
+            if (query.isEmpty()) conversations else conversations.filter {
+                it.title.contains(query, ignoreCase = true) || it.searchContent.contains(query, ignoreCase = true)
+            }
+        }
         val deletedMessage = stringResource(Res.string.snackbar_conversation_deleted)
         val undoLabel = stringResource(Res.string.snackbar_undo)
 
@@ -149,11 +157,19 @@ internal fun ChatHistorySheet(
                         )
                     }
                 }
+                OutlinedTextField(
+                    value = searchText,
+                    onValueChange = { searchText = it },
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp),
+                    singleLine = true,
+                    placeholder = { Text("Search chats") },
+                    shape = RoundedCornerShape(14.dp),
+                )
                 Spacer(Modifier.height(8.dp))
 
-                if (conversations.isEmpty()) {
+                if (matchingConversations.isEmpty()) {
                     Text(
-                        text = stringResource(Res.string.chat_history_empty),
+                        text = if (searchText.isNotBlank()) "No matching chats" else stringResource(Res.string.chat_history_empty),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 24.dp),
@@ -167,7 +183,7 @@ internal fun ChatHistorySheet(
                             contentPadding = PaddingValues(horizontal = 8.dp),
                             verticalArrangement = Arrangement.spacedBy(2.dp),
                         ) {
-                            items(conversations, key = { it.id }) { conversation ->
+                            items(matchingConversations, key = { it.id }) { conversation ->
                                 val isActive = conversation.id == currentConversationId
                                 val animatedRowColor by animateColorAsState(
                                     if (isActive) MaterialTheme.colorScheme.surfaceContainerHigh else Color.Transparent,
@@ -225,7 +241,12 @@ internal fun ChatHistorySheet(
                                             }
                                         }
                                         if (conversation.title.isNotEmpty()) {
-                                            Text(
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                if (conversation.isPinned) {
+                                                    Icon(Icons.Default.PushPin, contentDescription = "Pinned", modifier = Modifier.size(12.dp),
+                                                        tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                }
+                                                Text(
                                                 text = conversation.title,
                                                 style = MaterialTheme.typography.bodyLarge,
                                                 color = if (isActive) {
@@ -236,6 +257,7 @@ internal fun ChatHistorySheet(
                                                 maxLines = 1,
                                                 overflow = TextOverflow.Ellipsis,
                                             )
+                                            }
                                         }
                                         Text(
                                             text = formatDate(conversation.updatedAt),
@@ -259,6 +281,16 @@ internal fun ChatHistorySheet(
                                             expanded = menuExpanded,
                                             onDismissRequest = { menuExpanded = false },
                                         ) {
+                                            if (!conversation.isHeartbeat) {
+                                                DropdownMenuItem(
+                                                    text = { Text(if (conversation.isPinned) "Unpin chat" else "Pin chat") },
+                                                    leadingIcon = { Icon(Icons.Default.PushPin, contentDescription = null) },
+                                                    onClick = {
+                                                        menuExpanded = false
+                                                        actions.setConversationPinned(conversation.id, !conversation.isPinned)
+                                                    },
+                                                )
+                                            }
                                             if (!conversation.isHeartbeat) {
                                                 DropdownMenuItem(
                                                     text = { Text("Rename chat") },
