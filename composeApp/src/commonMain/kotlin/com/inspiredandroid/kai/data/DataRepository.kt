@@ -121,6 +121,8 @@ interface DataRepository {
 
     // Theme mode
     fun getThemeMode(): ThemeMode
+    fun getAccentPreset(): AccentPreset
+    fun setAccentPreset(preset: AccentPreset)
     fun setThemeMode(mode: ThemeMode)
 
     // Interactive mode
