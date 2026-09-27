@@ -68,6 +68,15 @@ internal fun GeneralContent(uiState: SettingsUiState, actions: SettingsActions) 
             }
             GeneralDivider()
             Box(Modifier.fillMaxWidth().padding(16.dp)) {
+                ToggleableHeadline(
+                    title = "Show Thinking header",
+                    description = "Show or hide the reasoning disclosure in chat. This only changes its appearance.",
+                    checked = uiState.isThinkingHeaderVisible,
+                    onCheckedChange = actions.onToggleThinkingHeader,
+                )
+            }
+            GeneralDivider()
+            Box(Modifier.fillMaxWidth().padding(16.dp)) {
                 ThemeModePicker(
                     themeMode = uiState.themeMode,
                     onChangeThemeMode = actions.onChangeThemeMode,
