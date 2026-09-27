@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -17,10 +18,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -43,8 +49,13 @@ import kotlin.io.encoding.ExperimentalEncodingApi
 internal fun UserMessage(
     message: String,
     attachments: ImmutableList<Attachment> = persistentListOf(),
+    onBranch: (() -> Unit)? = null,
+    onEdit: ((String) -> Unit)? = null,
 ) {
     val showFullScreen = LocalShowFullScreenImage.current
+    var editing by remember(message) { mutableStateOf(false) }
+    var draft by remember(message) { mutableStateOf(message) }
+    Column(modifier = Modifier.fillMaxWidth()) {
     SelectionContainer {
         Row(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
             Spacer(Modifier.weight(1f))
@@ -114,4 +125,34 @@ internal fun UserMessage(
             }
         }
     }
+    if (onBranch != null || onEdit != null) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(end = 16.dp),
+            horizontalArrangement = Arrangement.End,
+        ) {
+            if (onEdit != null) TextButton(onClick = { draft = message; editing = !editing }) {
+                Text(if (editing) "Cancel" else "Edit")
+            }
+            if (onBranch != null && !editing) TextButton(onClick = onBranch) { Text("Branch") }
+        }
+    }
+    if (editing && onEdit != null) {
+        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
+            OutlinedTextField(
+                value = draft,
+                onValueChange = { draft = it },
+                modifier = Modifier.fillMaxWidth(),
+                minLines = 2,
+                maxLines = 10,
+            )
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                TextButton(onClick = { editing = false }) { Text("Cancel") }
+                TextButton(
+                    onClick = { editing = false; onEdit(draft.trim()) },
+                    enabled = draft.isNotBlank() && draft.trim() != message.trim(),
+                ) { Text("Save as branch") }
+            }
+        }
+    }
+}
 }
