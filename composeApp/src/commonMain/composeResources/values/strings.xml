@@ -3,6 +3,7 @@
     <string name="kairon_welcome">What can I help with?</string>
     <string name="kairon_settings_intro">Everything in one place.</string>
     <string name="kairon_conversation_options">Conversation options</string>
+    <string name="kairon_chat_more_options">More options</string>
     <string name="kairon_settings_workspace">Workspace</string>
     <string name="kairon_settings_capabilities">Capabilities</string>
     <string name="kairon_settings_general_desc">Appearance, privacy and application preferences</string>
