@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.inspiredandroid.kai.DaemonController
 import com.inspiredandroid.kai.Platform
 import com.inspiredandroid.kai.currentPlatform
+import com.inspiredandroid.kai.data.AccentPreset
 import com.inspiredandroid.kai.data.DataRepository
 import com.inspiredandroid.kai.data.ImportSection
 import com.inspiredandroid.kai.data.Service
@@ -84,6 +85,7 @@ class SettingsViewModel(
         isDynamicUiEnabled = dataRepository.isDynamicUiEnabled(),
         isThinkingHeaderVisible = dataRepository.isThinkingHeaderVisible(),
         themeMode = dataRepository.getThemeMode(),
+        accentPreset = dataRepository.getAccentPreset(),
         isMemoryEnabled = dataRepository.isMemoryEnabled(),
         memories = dataRepository.getMemories().toImmutableList(),
         isSchedulingEnabled = dataRepository.isSchedulingEnabled(),
@@ -158,6 +160,7 @@ class SettingsViewModel(
         onToggleDynamicUi = ::onToggleDynamicUi,
         onToggleThinkingHeader = ::onToggleThinkingHeader,
         onChangeThemeMode = ::onChangeThemeMode,
+        onChangeAccentPreset = ::onChangeAccentPreset,
         onToggleMemory = ::onToggleMemory,
         onDeleteMemory = ::onDeleteMemory,
         onUpdateMemory = ::onUpdateMemory,
@@ -493,6 +496,11 @@ class SettingsViewModel(
     private fun onSaveSoul(text: String) {
         dataRepository.setSoulText(text)
         _state.update { it.copy(soulText = text) }
+    }
+
+    private fun onChangeAccentPreset(preset: AccentPreset) {
+        dataRepository.setAccentPreset(preset)
+        _state.update { it.copy(accentPreset = preset) }
     }
 
     private fun onToggleThinkingHeader(visible: Boolean) {
