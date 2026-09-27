@@ -27,28 +27,28 @@ import kai.composeapp.generated.resources.kairon_reasoning_effort
 import org.jetbrains.compose.resources.stringResource
 import kotlin.math.roundToInt
 
-/** Only rendered for a service/model pair on the explicit capability allowlist. */
+/** Visible for every provider; only exposes editable effort for verified API routes. */
 @Composable
 internal fun ReasoningEffortSelector(
     levels: List<ReasoningEffort>,
     selected: ReasoningEffort,
     onSelect: (ReasoningEffort) -> Unit,
 ) {
-    if (levels.isEmpty()) return
+    val supported = levels.isNotEmpty()
     var expanded by remember { mutableStateOf(false) }
-    val safeSelected = selected.takeIf { it in levels } ?: ReasoningEffort.AUTO
+    val safeSelected = selected.takeIf { supported && it in levels } ?: ReasoningEffort.AUTO
     val currentLabel = effortLabel(safeSelected)
     androidx.compose.foundation.layout.Box {
         Surface(
             onClick = { expanded = true },
             shape = MaterialTheme.shapes.extraLarge,
-            color = MaterialTheme.colorScheme.surfaceContainerHighest,
+            color = if (supported) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest,
         ) {
             Text(
                 text = currentLabel,
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                 style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurface,
+                color = if (supported) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
         DropdownMenu(
@@ -60,15 +60,28 @@ internal fun ReasoningEffortSelector(
                     text = stringResource(Res.string.kairon_reasoning_effort),
                     style = MaterialTheme.typography.titleSmall,
                 )
-                Text(currentLabel, style = MaterialTheme.typography.bodySmall)
-                Slider(
-                    value = levels.indexOf(safeSelected).coerceAtLeast(0).toFloat(),
-                    onValueChange = { position ->
-                        onSelect(levels[position.roundToInt().coerceIn(0, levels.lastIndex)])
-                    },
-                    valueRange = 0f..levels.lastIndex.toFloat(),
-                    steps = (levels.size - 2).coerceAtLeast(0),
-                )
+                if (supported) {
+                    Text(currentLabel, style = MaterialTheme.typography.bodySmall)
+                    Slider(
+                        value = levels.indexOf(safeSelected).coerceAtLeast(0).toFloat(),
+                        onValueChange = { position ->
+                            onSelect(levels[position.roundToInt().coerceIn(0, levels.lastIndex)])
+                        },
+                        valueRange = 0f..levels.lastIndex.toFloat(),
+                        steps = (levels.size - 2).coerceAtLeast(0),
+                    )
+                    Text(
+                        text = levels.joinToString(" · ") { it.name.lowercase().replaceFirstChar(Char::uppercaseChar) },
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                } else {
+                    Text(
+                        "This model or provider does not expose a verified reasoning-effort setting. Auto uses its native default.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
         }
     }
