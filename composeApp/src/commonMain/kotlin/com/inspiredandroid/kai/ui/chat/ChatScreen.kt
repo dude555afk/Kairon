@@ -16,6 +16,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.draganddrop.dragAndDropTarget
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -565,6 +566,9 @@ private fun ChatModeScreen(
     // outside-tap/back dismissal. Keep all conversation actions in the drawer content.
     var composerHeightPx by remember { mutableIntStateOf(0) }
     val composerHeight = with(LocalDensity.current) { composerHeightPx.toDp() }
+    val hasTopBanners = uiState.hasUnreadHeartbeat ||
+        uiState.smsDrafts.isNotEmpty() || uiState.warning != null
+    val needsHeaderInset = isSandboxOpen || hasTopBanners
     LaunchedEffect(drawerState.targetValue) {
         if (drawerState.targetValue == DrawerValue.Open) keyboardController?.hide()
     }
@@ -583,10 +587,11 @@ private fun ChatModeScreen(
         },
     ) {
         Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).navigationBarsPadding().statusBarsPadding().imePadding()) {
+            // Chat scrolls edge-to-edge underneath the floating controls.
+            // Only non-scrolling banners and the sandbox reserve a header inset.
             Column(
                 Modifier.fillMaxSize()
-                    .padding(top = 80.dp)
-                    .padding(bottom = if (isSandboxOpen) 0.dp else composerHeight),
+                    .padding(top = if (needsHeaderInset) 72.dp else 0.dp),
             ) {
                 HeartbeatBanner(
                     visible = uiState.hasUnreadHeartbeat,
@@ -675,7 +680,9 @@ private fun ChatModeScreen(
                                     .firstOrNull()
                                     ?.let { Service.fromId(it.serviceId).isOnDevice } == true
                                 EmptyState(
-                                    modifier = Modifier.fillMaxWidth().weight(1f),
+                                    modifier = Modifier.fillMaxWidth().weight(1f)
+                                        .padding(top = if (needsHeaderInset) 0.dp else 72.dp)
+                                        .padding(bottom = composerHeight),
                                     isUsingSharedKey = uiState.showPrivacyInfo,
                                     onStartInteractiveMode = uiState.actions.enterInteractiveMode
                                         .takeUnless { primaryIsOnDevice },
@@ -825,6 +832,10 @@ private fun ChatModeScreen(
                                         modifier = Modifier.fillMaxSize(),
                                         state = listState,
                                         horizontalAlignment = CenterHorizontally,
+                                        contentPadding = PaddingValues(
+                                            top = if (needsHeaderInset) 8.dp else 76.dp,
+                                            bottom = composerHeight + 24.dp,
+                                        ),
                                     ) {
                                         items(uiState.history, key = { it.id }, contentType = { it.role }) { history ->
                                             when (history.role) {
@@ -932,21 +943,9 @@ private fun ChatModeScreen(
                                         modifier = Modifier.align(CenterEnd).fillMaxHeight(),
                                     )
 
-                                    // Gentle scrims fade text into the floating chrome rather than
-                                    // hiding it behind a hard rectangular clipping boundary.
-                                    val canvasColor = MaterialTheme.colorScheme.background
-                                    Box(
-                                        modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth().height(20.dp)
-                                            .background(Brush.verticalGradient(listOf(canvasColor, canvasColor.copy(alpha = 0f)))),
-                                    )
-                                    Box(
-                                        modifier = Modifier.align(BottomCenter).fillMaxWidth().height(24.dp)
-                                            .background(Brush.verticalGradient(listOf(canvasColor.copy(alpha = 0f), canvasColor))),
-                                    )
-
                                     androidx.compose.animation.AnimatedVisibility(
                                         visible = showScrollToBottom,
-                                        modifier = Modifier.align(BottomCenter).padding(bottom = 8.dp),
+                                        modifier = Modifier.align(BottomCenter).padding(bottom = composerHeight + 8.dp),
                                         enter = fadeIn() + scaleIn(),
                                         exit = fadeOut() + scaleOut(),
                                     ) {
@@ -971,8 +970,38 @@ private fun ChatModeScreen(
                     }
                 }
             }
-            // Both surfaces hover over chat; measured composer height ensures no
-            // message or generated UI is hidden when attachments/skill hints expand.
+            // Soft gradients fade the scrolling text close to the chrome, while
+            // preserving visible content beneath and around both floating surfaces.
+            val canvasColor = MaterialTheme.colorScheme.background
+            if (!needsHeaderInset) {
+                Box(
+                    modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth().height(76.dp)
+                        .background(
+                            Brush.verticalGradient(
+                                listOf(
+                                    canvasColor.copy(alpha = 0.85f),
+                                    canvasColor.copy(alpha = 0.35f),
+                                    canvasColor.copy(alpha = 0f),
+                                ),
+                            ),
+                        ),
+                )
+            }
+            if (!isSandboxOpen) {
+                Box(
+                    modifier = Modifier.align(BottomCenter).fillMaxWidth().height(composerHeight + 44.dp)
+                        .background(
+                            Brush.verticalGradient(
+                                listOf(
+                                    canvasColor.copy(alpha = 0f),
+                                    canvasColor.copy(alpha = 0.12f),
+                                    canvasColor.copy(alpha = 0.54f),
+                                ),
+                            ),
+                        ),
+                )
+            }
+            // Three compact controls rather than the old full-width header.
             TopBar(
                 modifier = Modifier.align(Alignment.TopCenter),
                 textToSpeech = textToSpeech,
