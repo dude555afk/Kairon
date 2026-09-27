@@ -229,6 +229,7 @@ class RemoteDataRepository(
     )
 
     override val chatHistory: MutableStateFlow<List<History>> = MutableStateFlow(emptyList())
+    override val streamingText: MutableStateFlow<String> = MutableStateFlow("")
 
     private val _currentConversationId = MutableStateFlow<String?>(null)
     override val currentConversationId: StateFlow<String?> = _currentConversationId
@@ -689,6 +690,7 @@ class RemoteDataRepository(
         instanceId: String,
         history: MutableStateFlow<List<History>> = chatHistory,
         reasoningEffort: ReasoningEffort = ReasoningEffort.AUTO,
+        livePreview: Boolean = false,
     ): AssistantTurn {
         if (service.isOnDevice) {
             // No retry: local-inference failures are deterministic, and this path mutates
@@ -704,13 +706,13 @@ class RemoteDataRepository(
         val tools = if (supportsTools(creds.modelId)) getAvailableTools() else emptyList()
 
         if (tools.isEmpty()) {
-            return plainChat(service, creds, messages, systemPrompt, strictEmptyResponse = true, reasoningEffort = reasoningEffort)
+            return plainChat(service, creds, messages, systemPrompt, strictEmptyResponse = true, reasoningEffort = reasoningEffort, livePreview = livePreview)
         }
 
         return when (service) {
             Service.Gemini -> handleGeminiChatWithTools(creds, messages, tools, systemPrompt, history)
             Service.Anthropic -> handleAnthropicChatWithTools(creds, messages, tools, systemPrompt, history)
-            else -> handleOpenAICompatibleChatWithTools(service, creds, messages, tools, systemPrompt, history, reasoningEffort)
+            else -> handleOpenAICompatibleChatWithTools(service, creds, messages, tools, systemPrompt, history, reasoningEffort, livePreview)
         }
     }
 
@@ -720,6 +722,23 @@ class RemoteDataRepository(
      * background runs aren't attributed to whatever chat the user is viewing. Null before any
      * conversation exists. Used as the upstream session id for providers that require one.
      */
+    /** Transient plain-text preview only; final responses still use the canonical renderer. */
+    private fun liveTextPublisher(): suspend (String) -> Unit {
+        val buffer = StringBuilder()
+        var last = kotlin.time.TimeSource.Monotonic.markNow()
+        streamingText.value = ""
+        return { delta ->
+            buffer.append(delta)
+            val text = buffer.toString()
+            // Never try to render a half-written interactive UI schema.
+            val safe = if (text.contains("```kai-ui", ignoreCase = true)) "" else text
+            if (last.elapsedNow().inWholeMilliseconds >= 45 || safe.length < 8) {
+                streamingText.value = safe
+                last = kotlin.time.TimeSource.Monotonic.markNow()
+            }
+        }
+    }
+
     private suspend fun activeConversationId(): String? = currentConversationIdOrNull() ?: _currentConversationId.value
 
     /**
@@ -742,6 +761,7 @@ class RemoteDataRepository(
         retry: Boolean = true,
         strictEmptyResponse: Boolean = false,
         reasoningEffort: ReasoningEffort = ReasoningEffort.AUTO,
+        livePreview: Boolean = false,
     ): AssistantTurn {
         suspend fun <T> call(block: suspend () -> T): T = if (retry) retryApiCall(block) else block()
 
@@ -791,7 +811,14 @@ class RemoteDataRepository(
                 }
                 val sessionId = activeConversationId()
                 val response = call {
-                    requests.openAICompatibleChat(service, credentials, openAIMessages, sessionId = sessionId, requestTimeoutMs = requestTimeoutMs).getOrThrow()
+                    if (livePreview && requestTimeoutMs == null) {
+                        requests.openAICompatibleChatStreaming(
+                            service, credentials, openAIMessages, sessionId = sessionId,
+                            onTextDelta = liveTextPublisher(),
+                        ).getOrThrow()
+                    } else {
+                        requests.openAICompatibleChat(service, credentials, openAIMessages, sessionId = sessionId, requestTimeoutMs = requestTimeoutMs).getOrThrow()
+                    }
                 }
                 val message = response.choices.firstOrNull()?.message
                 val content = message?.effectiveContent
@@ -871,6 +898,7 @@ class RemoteDataRepository(
         uiSubmission: UiSubmission?,
         reasoningEffort: ReasoningEffort,
     ) {
+        streamingText.value = ""
         // Allocate a conversation id immediately for fresh chats. Without this,
         // the very first tool call lands here with _currentConversationId.value
         // still null, so per-conversation routing (e.g. the sandbox shell)
@@ -990,7 +1018,7 @@ class RemoteDataRepository(
                     } else {
                         ReasoningEffort.AUTO
                     }
-                    askWithService(entry.service, messages, systemPrompt, entry.instanceId, reasoningEffort = effort)
+                    askWithService(entry.service, messages, systemPrompt, entry.instanceId, reasoningEffort = effort, livePreview = true)
                 } catch (e: Exception) {
                     if (e is kotlinx.coroutines.CancellationException) throw e
                     // On-device services should not silently fall back — surface the error
@@ -1028,6 +1056,7 @@ class RemoteDataRepository(
                 lastException ?: OpenAICompatibleEmptyResponseException()
             }
         } finally {
+            streamingText.value = ""
             _fallbackStatus.value = null
         }
     }
@@ -1040,6 +1069,7 @@ class RemoteDataRepository(
         systemPrompt: String? = null,
         history: MutableStateFlow<List<History>> = chatHistory,
         reasoningEffort: ReasoningEffort = ReasoningEffort.AUTO,
+        livePreview: Boolean = false,
     ): AssistantTurn {
         val contextWindowTokens = ModelCatalog.estimateContextWindow(credentials.modelId)
         val declaredToolNames = tools.map { it.schema.name }.toSet()
@@ -1078,8 +1108,16 @@ class RemoteDataRepository(
                 }
                 val sessionId = activeConversationId()
                 val response = retryApiCall {
-                    requests.openAICompatibleChat(service, credentials, msgs, tools, sessionId = sessionId).getOrThrow()
+                    if (livePreview) {
+                        requests.openAICompatibleChatStreaming(
+                            service, credentials, msgs, tools, sessionId = sessionId,
+                            onTextDelta = liveTextPublisher(),
+                        ).getOrThrow()
+                    } else {
+                        requests.openAICompatibleChat(service, credentials, msgs, tools, sessionId = sessionId).getOrThrow()
+                    }
                 }
+                if (livePreview) streamingText.value = ""
                 val message = response.choices.firstOrNull()?.message ?: throw OpenAICompatibleEmptyResponseException()
                 var calls = message.toolCalls.orEmpty().map { tc ->
                     ToolCallInfo(id = tc.id, name = tc.function.name, arguments = tc.function.arguments)
