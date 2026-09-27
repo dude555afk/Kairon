@@ -40,6 +40,7 @@ object ScreenshotTestData {
         loadConversation = {},
         deleteConversation = {},
         renameConversation = { _, _ -> },
+        setConversationPinned = { _, _ -> },
         clearSnackbar = {},
         clearUnreadHeartbeat = {},
         undoDeleteConversation = { },
