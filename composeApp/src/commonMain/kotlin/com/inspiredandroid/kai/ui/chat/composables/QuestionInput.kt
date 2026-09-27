@@ -74,7 +74,6 @@ import com.inspiredandroid.kai.data.ServiceEntry
 import com.inspiredandroid.kai.data.imageExtensions
 import com.inspiredandroid.kai.data.supportedReasoningEfforts
 import com.inspiredandroid.kai.skills.SkillManifest
-import com.inspiredandroid.kai.ui.gradientBrush
 import com.inspiredandroid.kai.ui.handCursor
 import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.dialogs.FileKitType
@@ -333,7 +332,7 @@ fun QuestionInput(
                     )
                 }
                 Spacer(Modifier.weight(1f))
-                if (effortLevels.isNotEmpty()) {
+                if (activeService != null) {
                     ReasoningEffortSelector(
                         levels = effortLevels,
                         selected = reasoningEffort,
@@ -426,7 +425,7 @@ internal fun TrailingIcon(
         modifier = modifier
             .size(42.dp)
             .clip(CircleShape)
-            .background(brush = gradientBrush, CircleShape)
+            .background(MaterialTheme.colorScheme.primary, CircleShape)
             .handCursor()
             .clickable {
                 onClick()
@@ -437,7 +436,7 @@ internal fun TrailingIcon(
             vectorResource(icon),
             modifier = Modifier.size(32.dp).then(pulseModifier),
             contentDescription = null,
-            tint = Color.White,
+            tint = MaterialTheme.colorScheme.onPrimary,
         )
     }
 }
