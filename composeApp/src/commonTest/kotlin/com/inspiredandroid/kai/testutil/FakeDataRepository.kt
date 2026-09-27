@@ -18,6 +18,7 @@ import com.inspiredandroid.kai.data.ServiceInstance
 import com.inspiredandroid.kai.data.SmsDraft
 import com.inspiredandroid.kai.data.SmsSyncState
 import com.inspiredandroid.kai.data.SystemPromptVariant
+import com.inspiredandroid.kai.data.AccentPreset
 import com.inspiredandroid.kai.data.ThemeMode
 import com.inspiredandroid.kai.data.ensureSelectedModelPresent
 import com.inspiredandroid.kai.inference.DownloadError
@@ -410,6 +411,14 @@ class FakeDataRepository : DataRepository {
 
     override fun setDynamicUiEnabled(enabled: Boolean) {
         dynamicUiEnabled = enabled
+    }
+
+    private var accentPreset: AccentPreset = AccentPreset.Default
+
+    override fun getAccentPreset(): AccentPreset = accentPreset
+
+    override fun setAccentPreset(preset: AccentPreset) {
+        accentPreset = preset
     }
 
     private var themeMode: ThemeMode = ThemeMode.System
