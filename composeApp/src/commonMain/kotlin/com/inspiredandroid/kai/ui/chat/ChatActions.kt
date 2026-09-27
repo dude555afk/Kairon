@@ -15,6 +15,8 @@ data class ChatActions(
     val removeFile: (PlatformFile) -> Unit,
     val startNewChat: () -> Unit,
     val regenerate: () -> Unit,
+    val branchConversation: (String) -> Unit = {},
+    val editPrompt: (String, String) -> Unit = { _, _ -> },
     val cancel: () -> Unit,
     val selectService: (String) -> Unit,
     val loadConversation: (String) -> Unit,
