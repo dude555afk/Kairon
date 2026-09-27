@@ -1653,6 +1653,8 @@ class RemoteDataRepository(
             title = title,
             isPinned = existingConversation?.isPinned ?: false,
             type = existingConversation?.type ?: if (interactiveModeFlag) Conversation.TYPE_INTERACTIVE else Conversation.TYPE_CHAT,
+            parentConversationId = existingConversation?.parentConversationId,
+            branchPointMessageId = existingConversation?.branchPointMessageId,
         )
 
         conversationStorage.saveConversation(conversation)
@@ -1784,6 +1786,63 @@ class RemoteDataRepository(
             val index = history.indexOfFirst { it.id == messageId }
             if (index >= 0) history.take(index) else history
         }
+    }
+
+    /**
+     * Snapshot the exact visible prefix into an independent conversation. Never truncate the
+     * original or depend on sandbox/memory retrieval for context. A prompt edit forks just
+     * before the selected user message, preserving its attachments with the replacement.
+     */
+    override suspend fun branchConversation(messageId: String, editedContent: String?): Boolean {
+        val original = chatHistory.value
+        val index = original.indexOfFirst { it.id == messageId }
+        if (index < 0 || original[index].role == History.Role.TOOL_EXECUTING) return false
+        val selected = original[index]
+        if (editedContent != null && (selected.role != History.Role.USER || editedContent.isBlank())) return false
+
+        val prefix = if (editedContent == null) {
+            original.take(index + 1)
+        } else {
+            original.take(index) + History(
+                role = History.Role.USER,
+                content = editedContent.trim(),
+                attachments = selected.attachments,
+            )
+        }
+        if (prefix.isEmpty()) return false
+
+        // Persist the parent first, including a new/unsaved parent conversation.
+        saveCurrentConversation()
+        val parentId = _currentConversationId.value ?: return false
+        val now = Clock.System.now().toEpochMilliseconds()
+        val branchId = Uuid.random().toString()
+        val branch = Conversation(
+            id = branchId,
+            messages = prefix.filter { it.role != History.Role.TOOL_EXECUTING }.map { h ->
+                Conversation.Message(
+                    id = h.id,
+                    role = when (h.role) {
+                        History.Role.USER -> "user"
+                        History.Role.ASSISTANT -> "assistant"
+                        History.Role.TOOL, History.Role.TOOL_EXECUTING -> "tool"
+                    },
+                    content = h.content,
+                    attachments = h.attachments,
+                    uiSubmission = h.uiSubmission,
+                    isThinking = h.isThinking,
+                    reasoningContent = h.reasoningContent,
+                )
+            },
+            createdAt = now,
+            updatedAt = now,
+            title = deriveTitle(prefix),
+            parentConversationId = parentId,
+            branchPointMessageId = messageId,
+        )
+        conversationStorage.saveConversation(branch)
+        setCurrentConversationId(branchId)
+        chatHistory.value = prefix
+        return true
     }
 
     override fun restoreCurrentConversation() {
