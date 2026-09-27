@@ -394,6 +394,14 @@ class FakeDataRepository : DataRepository {
 
     override suspend fun pollEmailAccount(accountId: String) {}
 
+    private var thinkingHeaderVisible = true
+
+    override fun isThinkingHeaderVisible(): Boolean = thinkingHeaderVisible
+
+    override fun setThinkingHeaderVisible(visible: Boolean) {
+        thinkingHeaderVisible = visible
+    }
+
     override fun isDynamicUiEnabled(): Boolean = dynamicUiEnabled
 
     override fun setDynamicUiEnabled(enabled: Boolean) {
