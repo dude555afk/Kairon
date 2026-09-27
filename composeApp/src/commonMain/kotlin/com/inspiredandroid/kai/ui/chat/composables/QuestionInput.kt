@@ -7,6 +7,7 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -29,6 +30,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.DisableSelection
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.InsertDriveFile
 import androidx.compose.material3.DropdownMenu
@@ -44,6 +46,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -53,7 +56,9 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
@@ -69,6 +74,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import com.inspiredandroid.kai.Platform
 import com.inspiredandroid.kai.currentPlatform
+import com.inspiredandroid.kai.decodeToImageBitmap
 import com.inspiredandroid.kai.data.ReasoningEffort
 import com.inspiredandroid.kai.data.ServiceEntry
 import com.inspiredandroid.kai.data.imageExtensions
@@ -80,6 +86,7 @@ import io.github.vinceglb.filekit.dialogs.FileKitType
 import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.extension
 import io.github.vinceglb.filekit.name
+import io.github.vinceglb.filekit.readBytes
 import kai.composeapp.generated.resources.Res
 import kai.composeapp.generated.resources.ic_file
 import kai.composeapp.generated.resources.ic_image
@@ -151,31 +158,60 @@ fun QuestionInput(
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 for (file in files) {
-                    val icon = if (file.extension.lowercase() in imageExtensions) {
-                        Res.drawable.ic_image
-                    } else {
-                        Res.drawable.ic_file
-                    }
-                    SuggestionChip(
-                        modifier = Modifier.handCursor(),
-                        onClick = { removeFile(file) },
-                        icon = {
-                            Icon(
-                                modifier = Modifier.size(16.dp),
-                                painter = painterResource(icon),
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onBackground,
-                            )
-                        },
-                        label = {
-                            DisableSelection {
-                                Text(
-                                    modifier = Modifier.handCursor(),
-                                    text = truncateFileName(file.name),
+                    if (file.extension.lowercase() in imageExtensions) {
+                        val thumbnail by produceState<ImageBitmap?>(null, file) {
+                            value = try {
+                                decodeToImageBitmap(file.readBytes())
+                            } catch (_: Exception) {
+                                null
+                            }
+                        }
+                        Box(
+                            modifier = Modifier.size(76.dp)
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+                        ) {
+                            if (thumbnail != null) {
+                                Image(
+                                    bitmap = thumbnail!!,
+                                    contentDescription = file.name,
+                                    modifier = Modifier.size(76.dp),
+                                    contentScale = ContentScale.Crop,
+                                )
+                            } else {
+                                Icon(
+                                    painter = painterResource(Res.drawable.ic_image),
+                                    contentDescription = file.name,
+                                    modifier = Modifier.align(Alignment.Center),
                                 )
                             }
-                        },
-                    )
+                            IconButton(
+                                onClick = { removeFile(file) },
+                                modifier = Modifier.align(Alignment.TopEnd).size(28.dp)
+                                    .background(MaterialTheme.colorScheme.surface, CircleShape),
+                            ) {
+                                Icon(Icons.Default.Close, contentDescription = "Remove ${file.name}", modifier = Modifier.size(16.dp))
+                            }
+                        }
+                    } else {
+                        SuggestionChip(
+                            modifier = Modifier.handCursor(),
+                            onClick = { removeFile(file) },
+                            icon = {
+                                Icon(
+                                    modifier = Modifier.size(16.dp),
+                                    painter = painterResource(Res.drawable.ic_file),
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onBackground,
+                                )
+                            },
+                            label = {
+                                DisableSelection {
+                                    Text(truncateFileName(file.name) + " ×")
+                                }
+                            },
+                        )
+                    }
                 }
             }
         }
