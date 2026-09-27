@@ -39,6 +39,7 @@ object ScreenshotTestData {
         selectService = {},
         loadConversation = {},
         deleteConversation = {},
+        renameConversation = { _, _ -> },
         clearSnackbar = {},
         clearUnreadHeartbeat = {},
         undoDeleteConversation = { },
