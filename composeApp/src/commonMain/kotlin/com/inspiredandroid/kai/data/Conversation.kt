@@ -25,6 +25,7 @@ data class Conversation(
     val createdAt: Long,
     val updatedAt: Long,
     val title: String = "",
+    val isPinned: Boolean = false,
     val type: String = TYPE_CHAT,
     val shellTranscript: List<TerminalLine> = emptyList(),
 ) {
