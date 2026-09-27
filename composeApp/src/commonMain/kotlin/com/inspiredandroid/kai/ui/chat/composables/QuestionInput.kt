@@ -332,19 +332,17 @@ fun QuestionInput(
                     )
                 }
                 Spacer(Modifier.weight(1f))
-                if (activeService != null) {
-                    ReasoningEffortSelector(
-                        levels = effortLevels,
-                        selected = reasoningEffort,
-                        onSelect = onSelectReasoningEffort,
-                    )
-                }
                 if (isLoading) {
                     TrailingIcon(icon = Res.drawable.ic_stop, onClick = cancel, isPulsing = true)
                 } else if (textState.text.isNotBlank()) {
                     TrailingIcon(icon = Res.drawable.ic_up, onClick = { submitQuestion() })
                 }
             }
+            ReasoningEffortSelector(
+                levels = effortLevels,
+                selected = reasoningEffort,
+                onSelect = onSelectReasoningEffort,
+            )
         }
         val inInspection = LocalInspectionMode.current
         // Mobile welcome should not open the keyboard before a deliberate tap.
