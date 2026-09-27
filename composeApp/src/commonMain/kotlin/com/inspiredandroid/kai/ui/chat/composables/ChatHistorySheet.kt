@@ -91,8 +91,12 @@ internal fun ChatHistorySheet(
     // Material 3 owns drag tracking, dismissal, scrim and drawer animation.
     // This composable supplies content only, so the chat shell controls gestures.
     ModalDrawerSheet(
-        modifier = Modifier.fillMaxWidth(0.88f).widthIn(max = 360.dp).fillMaxHeight(),
-        drawerShape = RoundedCornerShape(topEnd = 24.dp, bottomEnd = 24.dp),
+        // About 30% narrower than the old 88%-width sheet. Inset the entire
+        // surface to evoke Zen's detached vertical-tabs panel.
+        modifier = Modifier.fillMaxWidth(0.62f).widthIn(max = 252.dp)
+            .padding(start = 10.dp, top = 12.dp, bottom = 12.dp)
+            .fillMaxHeight(),
+        drawerShape = RoundedCornerShape(22.dp),
         drawerContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
     ) {
         val snackbarHostState = remember { SnackbarHostState() }
@@ -113,9 +117,9 @@ internal fun ChatHistorySheet(
         }
 
         Box(modifier = Modifier.fillMaxSize()) {
-            Column(modifier = Modifier.fillMaxSize().padding(top = 24.dp)) {
+            Column(modifier = Modifier.fillMaxSize().padding(top = 12.dp)) {
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp),
+                    modifier = Modifier.fillMaxWidth().padding(start = 12.dp, end = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
@@ -152,7 +156,7 @@ internal fun ChatHistorySheet(
                         LazyColumn(
                             modifier = Modifier.fillMaxSize(),
                             state = historyListState,
-                            contentPadding = PaddingValues(horizontal = 16.dp),
+                            contentPadding = PaddingValues(horizontal = 8.dp),
                             verticalArrangement = Arrangement.spacedBy(2.dp),
                         ) {
                             items(conversations, key = { it.id }) { conversation ->
@@ -182,7 +186,7 @@ internal fun ChatHistorySheet(
                                             actions.loadConversation(conversation.id)
                                             onDismiss()
                                         }
-                                        .padding(vertical = 10.dp, horizontal = 12.dp),
+                                        .padding(vertical = 8.dp, horizontal = 8.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                 ) {
