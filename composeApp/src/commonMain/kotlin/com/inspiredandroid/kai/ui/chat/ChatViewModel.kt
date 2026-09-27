@@ -68,6 +68,7 @@ class ChatViewModel(
         selectService = ::selectService,
         loadConversation = ::loadConversation,
         deleteConversation = ::deleteConversation,
+        renameConversation = ::renameConversation,
         clearUnreadHeartbeat = ::clearUnreadHeartbeat,
         clearSnackbar = ::clearSnackbar,
         undoDeleteConversation = ::undoDeleteConversation,
@@ -474,6 +475,13 @@ class ChatViewModel(
                 isLoading = false,
                 composerPrefill = null,
             )
+        }
+    }
+
+    private fun renameConversation(id: String, title: String) {
+        if (title.isBlank()) return
+        viewModelScope.launch(backgroundDispatcher) {
+            dataRepository.renameConversation(id, title)
         }
     }
 
