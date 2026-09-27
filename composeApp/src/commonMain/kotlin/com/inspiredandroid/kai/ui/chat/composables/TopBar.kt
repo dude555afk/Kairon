@@ -141,14 +141,6 @@ internal fun TopBar(
                         expanded = menuExpanded,
                         onDismissRequest = { menuExpanded = false },
                     ) {
-                        DropdownMenuItem(
-                            text = { Text(stringResource(Res.string.settings_content_description)) },
-                            leadingIcon = { Icon(vectorResource(Res.drawable.ic_settings), contentDescription = null) },
-                            onClick = {
-                                menuExpanded = false
-                                onNavigateToSettings()
-                            },
-                        )
                         if (isSandboxAvailable) {
                             DropdownMenuItem(
                                 text = { Text(stringResource(Res.string.sandbox_content_description)) },
