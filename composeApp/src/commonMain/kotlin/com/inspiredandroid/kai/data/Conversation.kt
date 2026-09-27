@@ -28,6 +28,8 @@ data class Conversation(
     val isPinned: Boolean = false,
     val type: String = TYPE_CHAT,
     val shellTranscript: List<TerminalLine> = emptyList(),
+    val parentConversationId: String? = null,
+    val branchPointMessageId: String? = null,
 ) {
     companion object {
         const val TYPE_CHAT = "chat"
