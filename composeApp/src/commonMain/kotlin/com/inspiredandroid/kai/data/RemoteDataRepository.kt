@@ -1841,6 +1841,7 @@ class RemoteDataRepository(
                     toolCallId = h.toolCallId,
                     toolName = h.toolName,
                     toolCalls = h.toolCalls,
+                    modelId = h.modelId,
                     isThinking = h.isThinking,
                     reasoningContent = h.reasoningContent,
                 )
