@@ -1,41 +1,43 @@
 package com.inspiredandroid.kai.ui.chat.composables
 
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Dns
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.inspiredandroid.kai.ui.chat.ChatActions
 import com.inspiredandroid.kai.ui.handCursor
 import kai.composeapp.generated.resources.Res
 import kai.composeapp.generated.resources.chat_history_content_description
-import kai.composeapp.generated.resources.ic_add
-import kai.composeapp.generated.resources.ic_history
 import kai.composeapp.generated.resources.ic_settings
 import kai.composeapp.generated.resources.ic_volume_off
 import kai.composeapp.generated.resources.ic_volume_up
+import kai.composeapp.generated.resources.kairon_chat_more_options
 import kai.composeapp.generated.resources.new_chat_content_description
 import kai.composeapp.generated.resources.sandbox_content_description
 import kai.composeapp.generated.resources.settings_content_description
@@ -61,166 +63,193 @@ internal fun TopBar(
     navigationTabBar: (@Composable () -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
+    // Keep the navigation tab bar available on large-screen platforms, but never
+    // turn the phone's three navigation actions into a full-width toolbar.
     if (navigationTabBar != null) {
-        Box(
-            modifier = modifier.fillMaxWidth().defaultMinSize(minHeight = 64.dp),
-        ) {
-            Row(modifier = Modifier.align(Alignment.CenterStart)) {
-                LeadingButtons(textToSpeech, isSpeechOutputEnabled, isSpeaking, actions, isChatHistoryEmpty, hasSavedConversations, onShowHistory, isSandboxAvailable, isSandboxOpen, isShellExecuting, onToggleSandbox)
-            }
-            Box(modifier = Modifier.align(Alignment.Center)) {
-                navigationTabBar()
-            }
-            Row(modifier = Modifier.align(Alignment.CenterEnd)) {
-                if (textToSpeech != null) {
-                    SpeechToggleButton(textToSpeech, isSpeechOutputEnabled, isSpeaking, actions)
-                }
-            }
-        }
-    } else {
-        // Mobile-first chat header. Keep every existing action while giving the
-        // conversation a stable title and comfortable touch targets.
         Row(
-            modifier = modifier.fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 8.dp)
-                .shadow(elevation = 5.dp, shape = RoundedCornerShape(28.dp))
-                .clip(RoundedCornerShape(28.dp))
-                .background(MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.97f))
-                .defaultMinSize(minHeight = 56.dp)
-                .padding(horizontal = 4.dp),
+            modifier = modifier.fillMaxWidth().defaultMinSize(minHeight = 56.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            LeadingButtons(textToSpeech, isSpeechOutputEnabled, isSpeaking, actions, isChatHistoryEmpty, hasSavedConversations, onShowHistory, isSandboxAvailable, isSandboxOpen, isShellExecuting, onToggleSandbox)
-            Text(
-                text = "Kairon",
-                modifier = Modifier.weight(1f),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onBackground,
-                textAlign = TextAlign.Center,
-                maxLines = 1,
-            )
-            if (textToSpeech != null) {
-                SpeechToggleButton(textToSpeech, isSpeechOutputEnabled, isSpeaking, actions)
+            IconButton(onClick = onShowHistory) {
+                Icon(Icons.Default.Menu, contentDescription = stringResource(Res.string.chat_history_content_description))
             }
+            NewChatAction(actions, textToSpeech, isSpeechOutputEnabled, isSpeaking)
+            if (isSandboxAvailable) {
+                IconButton(onClick = onToggleSandbox) {
+                    Icon(
+                        Icons.Default.Dns,
+                        contentDescription = stringResource(Res.string.sandbox_content_description),
+                        tint = if (isSandboxOpen || isShellExecuting) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                    )
+                }
+            }
+            Box(Modifier.weight(1f), contentAlignment = Alignment.Center) { navigationTabBar() }
+            if (textToSpeech != null) {
+                SpeechAction(textToSpeech, isSpeechOutputEnabled, isSpeaking, actions)
+            }
+        }
+        return
+    }
+
+    Row(
+        modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Surface(
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.94f),
+            shadowElevation = 3.dp,
+        ) {
             IconButton(
-                modifier = Modifier.handCursor(),
-                onClick = onNavigateToSettings,
+                modifier = Modifier.size(48.dp).handCursor(),
+                onClick = onShowHistory,
             ) {
                 Icon(
-                    imageVector = vectorResource(Res.drawable.ic_settings),
-                    contentDescription = stringResource(Res.string.settings_content_description),
-                    tint = MaterialTheme.colorScheme.onBackground,
+                    Icons.Default.Menu,
+                    contentDescription = stringResource(Res.string.chat_history_content_description),
+                    tint = MaterialTheme.colorScheme.onSurface,
                 )
+            }
+        }
+
+        // One small floating action capsule. Settings, sandbox and speech live in
+        // the overflow rather than consuming permanent space in the header.
+        Surface(
+            shape = RoundedCornerShape(26.dp),
+            color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.94f),
+            shadowElevation = 3.dp,
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 2.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                NewChatAction(actions, textToSpeech, isSpeechOutputEnabled, isSpeaking)
+                var menuExpanded by remember { mutableStateOf(false) }
+                Box {
+                    IconButton(
+                        modifier = Modifier.size(48.dp).handCursor(),
+                        onClick = { menuExpanded = true },
+                    ) {
+                        Icon(
+                            Icons.Default.MoreVert,
+                            contentDescription = stringResource(Res.string.kairon_chat_more_options),
+                            tint = MaterialTheme.colorScheme.onSurface,
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = menuExpanded,
+                        onDismissRequest = { menuExpanded = false },
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(Res.string.settings_content_description)) },
+                            leadingIcon = { Icon(vectorResource(Res.drawable.ic_settings), contentDescription = null) },
+                            onClick = {
+                                menuExpanded = false
+                                onNavigateToSettings()
+                            },
+                        )
+                        if (isSandboxAvailable) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(Res.string.sandbox_content_description)) },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Default.Dns,
+                                        contentDescription = null,
+                                        tint = if (isSandboxOpen || isShellExecuting) MaterialTheme.colorScheme.primary
+                                            else MaterialTheme.colorScheme.onSurface,
+                                    )
+                                },
+                                onClick = {
+                                    menuExpanded = false
+                                    onToggleSandbox()
+                                },
+                            )
+                        }
+                        if (textToSpeech != null) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(Res.string.toggle_speech_output_content_description)) },
+                                leadingIcon = {
+                                    Icon(
+                                        vectorResource(
+                                            if (isSpeechOutputEnabled) Res.drawable.ic_volume_up
+                                            else Res.drawable.ic_volume_off
+                                        ),
+                                        contentDescription = null,
+                                    )
+                                },
+                                onClick = {
+                                    menuExpanded = false
+                                    if (isSpeechOutputEnabled && isSpeaking) {
+                                        actions.setIsSpeaking(false, "")
+                                        textToSpeech.stop()
+                                    }
+                                    actions.toggleSpeechOutput()
+                                },
+                            )
+                        }
+                    }
+                }
             }
         }
     }
 }
 
 @Composable
-private fun LeadingButtons(
+private fun NewChatAction(
+    actions: ChatActions,
     textToSpeech: TextToSpeechInstance?,
     isSpeechOutputEnabled: Boolean,
     isSpeaking: Boolean,
-    actions: ChatActions,
-    isChatHistoryEmpty: Boolean,
-    hasSavedConversations: Boolean,
-    onShowHistory: () -> Unit,
-    isSandboxAvailable: Boolean,
-    isSandboxOpen: Boolean,
-    isShellExecuting: Boolean,
-    onToggleSandbox: () -> Unit,
 ) {
-    // Keep the navigation affordance visible even for a fresh installation.
     IconButton(
-        modifier = Modifier.handCursor(),
-        onClick = onShowHistory,
-    ) {
-        Icon(
-            imageVector = vectorResource(Res.drawable.ic_history),
-            contentDescription = stringResource(Res.string.chat_history_content_description),
-            tint = MaterialTheme.colorScheme.onBackground,
-        )
-    }
-    if (!isChatHistoryEmpty) {
-        IconButton(
-            modifier = Modifier.handCursor(),
-            onClick = {
-                if (isSpeechOutputEnabled && isSpeaking) {
-                    actions.setIsSpeaking(false, "")
-                    textToSpeech?.stop()
-                }
-                actions.startNewChat()
-            },
-        ) {
-            Icon(
-                imageVector = vectorResource(Res.drawable.ic_add),
-                contentDescription = stringResource(Res.string.new_chat_content_description),
-                tint = MaterialTheme.colorScheme.onBackground,
-            )
-        }
-    }
-    if (isSandboxAvailable) {
-        val flashAlpha = remember { Animatable(0f) }
-        LaunchedEffect(isShellExecuting) {
-            if (isShellExecuting) {
-                flashAlpha.snapTo(0.4f)
-                flashAlpha.animateTo(
-                    targetValue = 0f,
-                    animationSpec = tween(durationMillis = 800, easing = FastOutSlowInEasing),
-                )
+        modifier = Modifier.size(48.dp).handCursor(),
+        onClick = {
+            if (isSpeechOutputEnabled && isSpeaking) {
+                actions.setIsSpeaking(false, "")
+                textToSpeech?.stop()
             }
-        }
-        val primary = MaterialTheme.colorScheme.primary
-        val checkedContainer = primary.copy(alpha = 0.2f)
-        val flashContainer = primary.copy(alpha = flashAlpha.value)
-        IconToggleButton(
-            checked = isSandboxOpen,
-            onCheckedChange = { onToggleSandbox() },
-            modifier = Modifier.handCursor(),
-            colors = IconButtonDefaults.iconToggleButtonColors(
-                containerColor = flashContainer,
-                checkedContainerColor = if (flashAlpha.value > 0f) flashContainer else checkedContainer,
-                checkedContentColor = MaterialTheme.colorScheme.primary,
-            ),
+            actions.startNewChat()
+        },
+    ) {
+        // Square-pencil is the only always-visible action next to the overflow.
+        Box(
+            modifier = Modifier.size(25.dp),
+            contentAlignment = Alignment.Center,
         ) {
+            Surface(
+                modifier = Modifier.size(22.dp),
+                shape = RoundedCornerShape(5.dp),
+                border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.onSurface),
+                color = androidx.compose.ui.graphics.Color.Transparent,
+            ) {}
             Icon(
-                imageVector = Icons.Filled.Dns,
-                contentDescription = stringResource(Res.string.sandbox_content_description),
-                tint = if (isSandboxOpen) {
-                    MaterialTheme.colorScheme.primary
-                } else {
-                    MaterialTheme.colorScheme.onBackground
-                },
+                Icons.Default.Edit,
+                contentDescription = stringResource(Res.string.new_chat_content_description),
+                modifier = Modifier.size(17.dp),
+                tint = MaterialTheme.colorScheme.onSurface,
             )
         }
     }
 }
 
 @Composable
-private fun SpeechToggleButton(
+private fun SpeechAction(
     textToSpeech: TextToSpeechInstance,
     isSpeechOutputEnabled: Boolean,
     isSpeaking: Boolean,
     actions: ChatActions,
 ) {
-    IconButton(
-        modifier = Modifier.handCursor(),
-        onClick = {
-            if (isSpeechOutputEnabled && isSpeaking) {
-                actions.setIsSpeaking(false, "")
-                textToSpeech.stop()
-            }
-            actions.toggleSpeechOutput()
-        },
-    ) {
+    IconButton(onClick = {
+        if (isSpeechOutputEnabled && isSpeaking) {
+            actions.setIsSpeaking(false, "")
+            textToSpeech.stop()
+        }
+        actions.toggleSpeechOutput()
+    }) {
         Icon(
-            imageVector = if (isSpeechOutputEnabled) {
-                vectorResource(Res.drawable.ic_volume_up)
-            } else {
-                vectorResource(Res.drawable.ic_volume_off)
-            },
+            vectorResource(if (isSpeechOutputEnabled) Res.drawable.ic_volume_up else Res.drawable.ic_volume_off),
             contentDescription = stringResource(Res.string.toggle_speech_output_content_description),
-            tint = MaterialTheme.colorScheme.onBackground,
         )
     }
 }
