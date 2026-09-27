@@ -156,8 +156,11 @@ internal fun TopBar(
                                     Icon(
                                         Icons.Default.Dns,
                                         contentDescription = null,
-                                        tint = if (isSandboxOpen || isShellExecuting) MaterialTheme.colorScheme.primary
-                                            else MaterialTheme.colorScheme.onSurface,
+                                        tint = if (isSandboxOpen || isShellExecuting) {
+                                            MaterialTheme.colorScheme.primary
+                                        } else {
+                                            MaterialTheme.colorScheme.onSurface
+                                        },
                                     )
                                 },
                                 onClick = {
@@ -172,8 +175,11 @@ internal fun TopBar(
                                 leadingIcon = {
                                     Icon(
                                         vectorResource(
-                                            if (isSpeechOutputEnabled) Res.drawable.ic_volume_up
-                                            else Res.drawable.ic_volume_off
+                                            if (isSpeechOutputEnabled) {
+                                                Res.drawable.ic_volume_up
+                                            } else {
+                                                Res.drawable.ic_volume_off
+                                            },
                                         ),
                                         contentDescription = null,
                                     )
