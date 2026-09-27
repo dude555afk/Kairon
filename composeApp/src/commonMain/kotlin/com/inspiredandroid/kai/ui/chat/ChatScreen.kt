@@ -42,6 +42,9 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -865,6 +868,19 @@ private fun ChatModeScreen(
                                             bottom = composerHeight + 24.dp,
                                         ),
                                     ) {
+                                        val parentBranch = uiState.savedConversations.firstOrNull { it.id == uiState.currentConversationId }
+                                            ?.parentConversationId?.let { parentId ->
+                                                uiState.savedConversations.firstOrNull { it.id == parentId }
+                                            }
+                                        if (parentBranch != null) {
+                                            item(key = "branch-parent") {
+                                                TextButton(
+                                                    onClick = { uiState.actions.loadConversation(parentBranch.id) },
+                                                    enabled = !uiState.isLoading,
+                                                    modifier = Modifier.padding(start = 12.dp),
+                                                ) { Text("← Original conversation") }
+                                            }
+                                        }
                                         items(uiState.history, key = { it.id }, contentType = { it.role }) { history ->
                                             when (history.role) {
                                                 History.Role.USER -> {
@@ -940,6 +956,15 @@ private fun ChatModeScreen(
 
                                                 History.Role.TOOL -> {
                                                     // Don't show completed tool results in UI
+                                                }
+                                            }
+                                            if (!uiState.isLoading && history.role != History.Role.TOOL && history.role != History.Role.TOOL_EXECUTING) {
+                                                val branches = uiState.savedConversations.filter {
+                                                    it.parentConversationId == uiState.currentConversationId &&
+                                                        it.branchPointMessageId == history.id
+                                                }
+                                                if (branches.isNotEmpty()) {
+                                                    BranchLinks(branches, uiState.actions.loadConversation)
                                                 }
                                             }
                                         }
@@ -1138,4 +1163,25 @@ private fun rememberExecutingTools(history: ImmutableList<History>): ExecutingTo
         }
     }
     return state
+}
+
+@Composable
+private fun BranchLinks(
+    branches: List<ConversationSummary>,
+    onOpen: (String) -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    Box(modifier = Modifier.padding(start = 16.dp)) {
+        TextButton(onClick = { expanded = true }) {
+            Text("Branches · ${branches.size}")
+        }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            branches.forEachIndexed { index, branch ->
+                DropdownMenuItem(
+                    text = { Text("${index + 1}. ${branch.title}") },
+                    onClick = { expanded = false; onOpen(branch.id) },
+                )
+            }
+        }
+    }
 }
