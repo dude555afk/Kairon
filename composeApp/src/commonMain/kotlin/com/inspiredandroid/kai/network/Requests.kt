@@ -40,21 +40,21 @@ import io.ktor.client.request.post
 import io.ktor.client.request.preparePost
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
-import io.ktor.client.statement.bodyAsText
 import io.ktor.client.statement.bodyAsChannel
-import io.ktor.utils.io.readUTF8Line
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.content.TextContent
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import io.ktor.serialization.kotlinx.json.json
+import io.ktor.utils.io.readUTF8Line
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlin.time.Duration.Companion.seconds
@@ -295,12 +295,14 @@ class Requests {
             contentType(ContentType.Application.Json)
             apiKey?.let { bearerAuth(it) }
             applySessionHeader(service, sessionId)
-            setBody(OpenAICompatibleChatRequestDto(
-                messages = messages,
-                model = credentials.modelId.ifEmpty { null },
-                tools = tools.toRequestTools { it.toRequestTool() },
-                stream = true,
-            ))
+            setBody(
+                OpenAICompatibleChatRequestDto(
+                    messages = messages,
+                    model = credentials.modelId.ifEmpty { null },
+                    tools = tools.toRequestTools { it.toRequestTool() },
+                    stream = true,
+                ),
+            )
         }
         request.execute { response ->
             if (!response.status.isSuccess()) {
@@ -368,20 +370,25 @@ class Requests {
                 OpenAICompatibleChatResponseDto.ToolCall(
                     id = tool.id,
                     function = OpenAICompatibleChatResponseDto.FunctionCall(
-                        name = tool.name, arguments = tool.args.toString(),
+                        name = tool.name,
+                        arguments = tool.args.toString(),
                     ),
                 )
             }.ifEmpty { null }
-            Result.success(OpenAICompatibleChatResponseDto(
-                choices = listOf(OpenAICompatibleChatResponseDto.Choice(
-                    message = OpenAICompatibleChatResponseDto.Choice.Message(
-                        role = "assistant",
-                        content = answer.toString().takeIf { it.isNotEmpty() },
-                        reasoningContent = reasoning.toString().takeIf { it.isNotEmpty() },
-                        toolCalls = calls,
+            Result.success(
+                OpenAICompatibleChatResponseDto(
+                    choices = listOf(
+                        OpenAICompatibleChatResponseDto.Choice(
+                            message = OpenAICompatibleChatResponseDto.Choice.Message(
+                                role = "assistant",
+                                content = answer.toString().takeIf { it.isNotEmpty() },
+                                reasoningContent = reasoning.toString().takeIf { it.isNotEmpty() },
+                                toolCalls = calls,
+                            ),
+                        ),
                     ),
-                )),
-            ))
+                ),
+            )
         }
     } catch (e: kotlinx.coroutines.CancellationException) {
         throw e

@@ -813,7 +813,10 @@ class RemoteDataRepository(
                 val response = call {
                     if (livePreview && requestTimeoutMs == null) {
                         requests.openAICompatibleChatStreaming(
-                            service, credentials, openAIMessages, sessionId = sessionId,
+                            service,
+                            credentials,
+                            openAIMessages,
+                            sessionId = sessionId,
                             onTextDelta = liveTextPublisher(),
                         ).getOrThrow()
                     } else {
@@ -1110,7 +1113,11 @@ class RemoteDataRepository(
                 val response = retryApiCall {
                     if (livePreview) {
                         requests.openAICompatibleChatStreaming(
-                            service, credentials, msgs, tools, sessionId = sessionId,
+                            service,
+                            credentials,
+                            msgs,
+                            tools,
+                            sessionId = sessionId,
                             onTextDelta = liveTextPublisher(),
                         ).getOrThrow()
                     } else {
