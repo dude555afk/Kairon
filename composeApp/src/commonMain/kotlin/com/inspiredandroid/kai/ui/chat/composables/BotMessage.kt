@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -75,6 +76,7 @@ internal fun BotMessage(
     isSpeaking: Boolean,
     setIsSpeaking: (Boolean) -> Unit,
     onRegenerate: (() -> Unit)? = null,
+    onFork: (() -> Unit)? = null,
     isInteractive: Boolean = false,
     onUiCallback: ((event: String, data: Map<String, String>) -> Unit)? = null,
     frozen: FrozenSubmission? = null,
@@ -196,6 +198,7 @@ internal fun BotMessage(
                 onClick = onRegenerate,
             )
         }
+        if (onFork != null) TextButton(onClick = onFork) { Text("Branch") }
         Spacer(Modifier.weight(1f))
     }
 }
