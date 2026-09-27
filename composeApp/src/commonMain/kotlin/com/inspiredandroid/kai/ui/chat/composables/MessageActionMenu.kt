@@ -27,6 +27,8 @@ internal fun MessageActionMenu(
     onWebSearch: (() -> Unit)?,
     onEdit: (() -> Unit)? = null,
     modelId: String? = null,
+    externalOpen: Boolean = false,
+    onExternalDismiss: () -> Unit = {},
     modifier: Modifier = Modifier,
     content: @Composable ((() -> Unit) -> Unit)? = null,
 ) {
@@ -39,15 +41,15 @@ internal fun MessageActionMenu(
                 Icon(Icons.Default.MoreVert, contentDescription = "Message actions")
             }
         }
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            funActionItem("Branch in new chat", onBranch) { expanded = false }
-            funActionItem("Edit prompt", onEdit) { expanded = false }
+        DropdownMenu(expanded = expanded || externalOpen, onDismissRequest = { expanded = false; onExternalDismiss() }) {
+            funActionItem("Branch in new chat", onBranch) { expanded = false; onExternalDismiss() }
+            funActionItem("Edit prompt", onEdit) { expanded = false; onExternalDismiss() }
             modelId?.takeIf { it.isNotBlank() }?.let { id ->
                 DropdownMenuItem(text = { Text("Used $id") }, onClick = {}, enabled = false)
             }
-            funActionItem("Retry", onRetry) { expanded = false }
-            funActionItem("Use Thinking", onThinking) { expanded = false }
-            funActionItem("Search the web", onWebSearch) { expanded = false }
+            funActionItem("Retry", onRetry) { expanded = false; onExternalDismiss() }
+            funActionItem("Use Thinking", onThinking) { expanded = false; onExternalDismiss() }
+            funActionItem("Search the web", onWebSearch) { expanded = false; onExternalDismiss() }
         }
     }
 }
