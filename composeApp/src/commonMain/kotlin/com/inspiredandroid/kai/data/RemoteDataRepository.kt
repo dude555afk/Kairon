@@ -1961,6 +1961,12 @@ class RemoteDataRepository(
         ).ifEmpty { null }
     }
 
+    override fun isThinkingHeaderVisible(): Boolean = appSettings.isThinkingHeaderVisible()
+
+    override fun setThinkingHeaderVisible(visible: Boolean) {
+        appSettings.setThinkingHeaderVisible(visible)
+    }
+
     override fun isDynamicUiEnabled(): Boolean = appSettings.isDynamicUiEnabled()
 
     override fun setDynamicUiEnabled(enabled: Boolean) {
