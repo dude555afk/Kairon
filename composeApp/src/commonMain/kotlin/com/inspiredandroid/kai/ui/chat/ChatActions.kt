@@ -2,6 +2,7 @@ package com.inspiredandroid.kai.ui.chat
 
 import androidx.compose.runtime.Immutable
 import io.github.vinceglb.filekit.PlatformFile
+import com.inspiredandroid.kai.data.ReasoningEffort
 
 @Immutable
 data class ChatActions(
@@ -29,4 +30,5 @@ data class ChatActions(
     val sendSmsDraft: (String) -> Unit,
     val discardSmsDraft: (String) -> Unit,
     val consumeComposerPrefill: () -> Unit,
+    val selectReasoningEffort: (ReasoningEffort) -> Unit = {},
 )
