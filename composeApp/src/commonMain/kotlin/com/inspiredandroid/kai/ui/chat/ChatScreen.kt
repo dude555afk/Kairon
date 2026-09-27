@@ -911,10 +911,25 @@ private fun ChatModeScreen(
                                                 }
                                             }
                                         }
+                                        // Plain transient preview. Do NOT send partial content through
+                                        // MarkdownContent / dynamic kai-ui / link override parsers.
+                                        // The completed assistant message below uses the original
+                                        // BotMessage path, preserving all interactive semantics.
+                                        if (uiState.streamingText.isNotBlank()) {
+                                            item(key = "streaming-preview", contentType = "stream") {
+                                                Text(
+                                                    text = uiState.streamingText,
+                                                    style = MaterialTheme.typography.bodyLarge,
+                                                    color = MaterialTheme.colorScheme.onSurface,
+                                                    modifier = Modifier.fillMaxWidth()
+                                                        .padding(horizontal = 24.dp, vertical = 12.dp),
+                                                )
+                                            }
+                                        }
                                         // Skip the generic "thinking" row during a pending kai-ui submission — the
                                         // pressed button's pulse already signals work in flight. Keep it for tool
                                         // activity so tool feedback isn't lost.
-                                        val showWaitingRow = uiState.isLoading &&
+                                        val showWaitingRow = uiState.isLoading && uiState.streamingText.isBlank() &&
                                             (frozenByAssistantId.values.none { it.isPending } || executingToolsState.tools.isNotEmpty())
                                         if (showWaitingRow) {
                                             item(key = "loading") {
