@@ -23,8 +23,11 @@ enum class ReasoningEffort(val wireValue: String?) {
  */
 fun supportedReasoningEfforts(serviceId: String, modelId: String): List<ReasoningEffort> {
     if (serviceId != Service.OpenAI.id) return emptyList()
-    val id = modelId.lowercase()
-    return if (id in setOf("gpt-5.6", "gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna")) {
+    // Model IDs may include provider revisions/snapshots; match the family rather than
+    // requiring one of four exact display IDs. Only the native OpenAI Responses route
+    // currently forwards the effort field, so other providers must not claim support.
+    val id = modelId.trim().lowercase()
+    return if (id == "gpt-5.6" || id.startsWith("gpt-5.6-")) {
         listOf(
             ReasoningEffort.AUTO,
             ReasoningEffort.LOW,
