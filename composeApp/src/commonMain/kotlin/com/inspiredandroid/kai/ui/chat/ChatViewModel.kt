@@ -65,6 +65,8 @@ class ChatViewModel(
         removeFile = ::removeFile,
         startNewChat = { startNewChat() },
         regenerate = ::regenerate,
+        branchConversation = ::branchConversation,
+        editPrompt = ::editPrompt,
         cancel = ::cancel,
         selectService = ::selectService,
         loadConversation = ::loadConversation,
@@ -476,6 +478,27 @@ class ChatViewModel(
     private fun regenerate() {
         dataRepository.regenerate()
         ask(null)
+    }
+
+    private fun branchConversation(messageId: String) {
+        if (_state.value.isLoading) return
+        viewModelScope.launch(backgroundDispatcher) {
+            if (dataRepository.branchConversation(messageId)) {
+                _state.update { it.copy(error = null, composerPrefill = null, isInteractiveMode = false) }
+                dataRepository.setInteractiveMode(false)
+            }
+        }
+    }
+
+    private fun editPrompt(messageId: String, content: String) {
+        if (_state.value.isLoading || content.isBlank()) return
+        viewModelScope.launch(backgroundDispatcher) {
+            if (dataRepository.branchConversation(messageId, content)) {
+                _state.update { it.copy(error = null, composerPrefill = null, isInteractiveMode = false) }
+                dataRepository.setInteractiveMode(false)
+                ask(null)
+            }
+        }
     }
 
     private fun loadConversation(id: String) {
