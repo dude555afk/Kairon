@@ -23,6 +23,8 @@ data class OpenAIResponsesRequestDto(
     val input: List<JsonObject>,
     val model: String? = null,
     val tools: List<Tool>? = null,
+    /** Omit entirely when AUTO or when model/provider support is unverified. */
+    val reasoning: Reasoning? = null,
     /**
      * Kept `false` so OpenAI does not retain the conversation server-side. Kai replays the whole
      * history on every request, so it never needs `previous_response_id` chaining.
@@ -38,6 +40,9 @@ data class OpenAIResponsesRequestDto(
      * requires every property to be listed in `required`. Kai's tool schemas have optional
      * parameters, so strict mode would reject them.
      */
+    @Serializable
+    data class Reasoning(val effort: String)
+
     @Serializable
     data class Tool(
         val type: String = "function",
