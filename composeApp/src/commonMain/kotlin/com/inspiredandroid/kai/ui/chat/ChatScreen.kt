@@ -88,6 +88,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.inspiredandroid.kai.BackIcon
 import com.inspiredandroid.kai.TerminalLine
 import com.inspiredandroid.kai.data.Service
+import com.inspiredandroid.kai.data.supportedReasoningEfforts
 import com.inspiredandroid.kai.data.supportsAgenticFlows
 import com.inspiredandroid.kai.getBackgroundDispatcher
 import com.inspiredandroid.kai.onDragAndDropEventDropped
@@ -892,6 +893,13 @@ private fun ChatModeScreen(
                                                             attachments = history.attachments,
                                                             onBranch = if (!uiState.isLoading) { { uiState.actions.branchConversation(history.id) } } else null,
                                                             onEdit = if (!uiState.isLoading) { { edited -> uiState.actions.editPrompt(history.id, edited) } } else null,
+                                                            onRetry = if (!uiState.isLoading) { { uiState.actions.rerunFromMessage(history.id, MessageRerunMode.RETRY) } } else null,
+                                                            onThinking = if (!uiState.isLoading && uiState.availableServices.firstOrNull()?.let { supportedReasoningEfforts(it.serviceId, it.modelId).size >= 2 } == true) {
+                                                                { uiState.actions.rerunFromMessage(history.id, MessageRerunMode.THINKING) }
+                                                            } else null,
+                                                            onWebSearch = if (!uiState.isLoading && uiState.webSearchAvailable) {
+                                                                { uiState.actions.rerunFromMessage(history.id, MessageRerunMode.WEB_SEARCH) }
+                                                            } else null,
                                                         )
                                                     }
                                                 }
@@ -910,6 +918,14 @@ private fun ChatModeScreen(
                                                             },
                                                             onRegenerate = if (isLastAssistant) uiState.actions.regenerate else null,
                                                             onFork = if (!uiState.isLoading) { { uiState.actions.branchConversation(history.id) } } else null,
+                                                            onRetry = if (!uiState.isLoading) { { uiState.actions.rerunFromMessage(history.id, MessageRerunMode.RETRY) } } else null,
+                                                            onThinking = if (!uiState.isLoading && uiState.availableServices.firstOrNull()?.let { supportedReasoningEfforts(it.serviceId, it.modelId).size >= 2 } == true) {
+                                                                { uiState.actions.rerunFromMessage(history.id, MessageRerunMode.THINKING) }
+                                                            } else null,
+                                                            onWebSearch = if (!uiState.isLoading && uiState.webSearchAvailable) {
+                                                                { uiState.actions.rerunFromMessage(history.id, MessageRerunMode.WEB_SEARCH) }
+                                                            } else null,
+                                                            modelId = history.modelId,
                                                             isInteractive = isLastAssistant && !uiState.isLoading && frozen == null,
                                                             onUiCallback = { event, data ->
                                                                 uiState.actions.submitUiCallback(event, data)
