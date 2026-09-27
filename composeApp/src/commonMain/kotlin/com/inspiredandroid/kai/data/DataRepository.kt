@@ -115,6 +115,8 @@ interface DataRepository {
     // Dynamic UI
     fun isDynamicUiEnabled(): Boolean
     fun setDynamicUiEnabled(enabled: Boolean)
+    fun isThinkingHeaderVisible(): Boolean
+    fun setThinkingHeaderVisible(visible: Boolean)
 
     // Theme mode
     fun getThemeMode(): ThemeMode
