@@ -1,5 +1,6 @@
 package com.inspiredandroid.kai.ui.chat.composables
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -206,7 +207,8 @@ fun QuestionInput(
                 .shadow(elevation = 8.dp, shape = RoundedCornerShape(28.dp))
                 .clip(RoundedCornerShape(28.dp))
                 .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(28.dp)),
+                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(28.dp))
+                .animateContentSize(animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing)),
         ) {
             TextField(
                 value = textState,
