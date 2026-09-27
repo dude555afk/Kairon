@@ -91,5 +91,4 @@ private fun effortLabel(value: ReasoningEffort): String = stringResource(
     },
 )
 
-private fun effortLabelName(effort: ReasoningEffort): String =
-    effort.name.lowercase().replaceFirstChar { it.uppercaseChar() }
+private fun effortLabelName(effort: ReasoningEffort): String = effort.name.lowercase().replaceFirstChar { it.uppercaseChar() }
