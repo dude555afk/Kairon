@@ -80,6 +80,7 @@ internal fun BotMessage(
     frozen: FrozenSubmission? = null,
     onResubmit: ((event: String, data: Map<String, String>) -> Unit)? = null,
     reasoningSegments: ImmutableList<String> = persistentListOf(),
+    showThinkingHeader: Boolean = true,
 ) {
     val document = remember(message) { parseMarkdown(message) }
     var isEditing by remember(frozen) { mutableStateOf(false) }
@@ -99,7 +100,7 @@ internal fun BotMessage(
             val nonBlankSegments = remember(reasoningSegments) {
                 reasoningSegments.filter { it.isNotBlank() }.toImmutableList()
             }
-            if (nonBlankSegments.isNotEmpty()) {
+            if (showThinkingHeader && nonBlankSegments.isNotEmpty()) {
                 ReasoningBlockquote(
                     segments = nonBlankSegments,
                     modifier = Modifier.fillMaxWidth()
@@ -109,7 +110,7 @@ internal fun BotMessage(
             if (message.isNotEmpty()) {
                 // When reasoning is shown above, the Thinking row already provides
                 // the visual gap to the answer — drop the duplicated top inset.
-                val answerTopPadding = if (nonBlankSegments.isNotEmpty()) 6.dp else 16.dp
+                val answerTopPadding = if (showThinkingHeader && nonBlankSegments.isNotEmpty()) 6.dp else 16.dp
                 SelectionContainer {
                     MarkdownContent(
                         document = document,
