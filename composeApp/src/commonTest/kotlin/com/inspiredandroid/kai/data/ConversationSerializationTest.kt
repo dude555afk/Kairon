@@ -455,4 +455,24 @@ class ConversationSerializationTest {
 
         assertEquals("Hello 世界 🌍", conversation.messages[0].content)
     }
+
+    @Test
+    fun `branch ancestry survives serialization and legacy chats default to no parent`() {
+        val branch = Conversation(
+            id = "child",
+            messages = listOf(Conversation.Message(id = "m1", role = "user", content = "edited")),
+            createdAt = 1L,
+            updatedAt = 2L,
+            parentConversationId = "parent",
+            branchPointMessageId = "original-message",
+        )
+        val decoded = json.decodeFromString<Conversation>(json.encodeToString(branch))
+        assertEquals("parent", decoded.parentConversationId)
+        assertEquals("original-message", decoded.branchPointMessageId)
+        val legacy = json.decodeFromString<Conversation>(
+            """{"id":"legacy","messages":[],"createdAt":1,"updatedAt":2}"""
+        )
+        assertNull(legacy.parentConversationId)
+        assertNull(legacy.branchPointMessageId)
+    }
 }
