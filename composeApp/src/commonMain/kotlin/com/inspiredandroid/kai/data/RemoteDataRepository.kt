@@ -1684,6 +1684,14 @@ class RemoteDataRepository(
         }
     }
 
+    override suspend fun renameConversation(id: String, title: String) {
+        val cleanTitle = title.trim().take(120)
+        if (cleanTitle.isEmpty()) return
+        val existing = savedConversations.value.find { it.id == id } ?: return
+        if (existing.type == Conversation.TYPE_HEARTBEAT) return
+        conversationStorage.saveConversation(existing.copy(title = cleanTitle))
+    }
+
     override suspend fun deleteConversation(id: String) {
         if (_currentConversationId.value == id) {
             setCurrentConversationId(null)
