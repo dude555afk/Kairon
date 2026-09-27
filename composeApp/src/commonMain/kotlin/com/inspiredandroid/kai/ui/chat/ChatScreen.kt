@@ -588,11 +588,12 @@ private fun ChatModeScreen(
         },
     ) {
         Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).navigationBarsPadding().statusBarsPadding().imePadding()) {
-            // Chat scrolls edge-to-edge underneath the floating controls.
-            // Only non-scrolling banners and the sandbox reserve a header inset.
+            // Keep the chat canvas behind the detached floating buttons.
+            // The list's own top content padding protects its first message while
+            // preserving edge-to-edge scrolling instead of creating a toolbar band.
             Column(
                 Modifier.fillMaxSize()
-                    .padding(top = 72.dp),
+                    .padding(top = if (needsHeaderInset) 72.dp else 0.dp),
             ) {
                 HeartbeatBanner(
                     visible = uiState.hasUnreadHeartbeat,
