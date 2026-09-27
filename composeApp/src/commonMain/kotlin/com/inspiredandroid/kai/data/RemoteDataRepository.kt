@@ -688,6 +688,7 @@ class RemoteDataRepository(
         systemPrompt: String?,
         instanceId: String,
         history: MutableStateFlow<List<History>> = chatHistory,
+        reasoningEffort: ReasoningEffort = ReasoningEffort.AUTO,
     ): AssistantTurn {
         if (service.isOnDevice) {
             // No retry: local-inference failures are deterministic, and this path mutates
@@ -703,13 +704,13 @@ class RemoteDataRepository(
         val tools = if (supportsTools(creds.modelId)) getAvailableTools() else emptyList()
 
         if (tools.isEmpty()) {
-            return plainChat(service, creds, messages, systemPrompt, strictEmptyResponse = true)
+            return plainChat(service, creds, messages, systemPrompt, strictEmptyResponse = true, reasoningEffort = reasoningEffort)
         }
 
         return when (service) {
             Service.Gemini -> handleGeminiChatWithTools(creds, messages, tools, systemPrompt, history)
             Service.Anthropic -> handleAnthropicChatWithTools(creds, messages, tools, systemPrompt, history)
-            else -> handleOpenAICompatibleChatWithTools(service, creds, messages, tools, systemPrompt, history)
+            else -> handleOpenAICompatibleChatWithTools(service, creds, messages, tools, systemPrompt, history, reasoningEffort)
         }
     }
 
@@ -740,6 +741,7 @@ class RemoteDataRepository(
         requestTimeoutMs: Long? = null,
         retry: Boolean = true,
         strictEmptyResponse: Boolean = false,
+        reasoningEffort: ReasoningEffort = ReasoningEffort.AUTO,
     ): AssistantTurn {
         suspend fun <T> call(block: suspend () -> T): T = if (retry) retryApiCall(block) else block()
 
@@ -774,7 +776,10 @@ class RemoteDataRepository(
                 val openAIMessages = buildOpenAIMessages(service, messages, systemPrompt, credentials.modelId, declaredToolNames = emptySet())
                 if (requiresResponsesApi(service, credentials.modelId, credentials.baseUrl)) {
                     val response = call {
-                        requests.openAIResponses(service, credentials, toResponsesInput(openAIMessages), requestTimeoutMs = requestTimeoutMs).getOrThrow()
+                        requests.openAIResponses(
+                            service, credentials, toResponsesInput(openAIMessages),
+                            requestTimeoutMs = requestTimeoutMs, reasoningEffort = reasoningEffort.wireValue,
+                        ).getOrThrow()
                     }
                     response.throwIfFailed(service)
                     val content = response.outputText
@@ -825,7 +830,13 @@ class RemoteDataRepository(
         return ordered.filterIndexed { index, entry -> index == 0 || !entry.service.isOnDevice }
     }
 
-    override suspend fun ask(question: String?, files: List<PlatformFile>, uiSubmission: UiSubmission?, activeSkillId: String?) {
+    override suspend fun ask(
+        question: String?,
+        files: List<PlatformFile>,
+        uiSubmission: UiSubmission?,
+        activeSkillId: String?,
+        reasoningEffort: ReasoningEffort,
+    ) {
         // The active skill (if any) is consumed for this single turn only — stored in a
         // field rather than a parameter on getActiveSystemPrompt so the existing internal
         // callers (heartbeat, askWithTools, etc.) don't all need a new parameter. The
@@ -834,7 +845,7 @@ class RemoteDataRepository(
         val resolvedSkillId = activeSkillId?.takeIf { skillManager.getSkill(it) != null }
         pendingActiveSkillId = resolvedSkillId
         try {
-            askInternal(question, files, uiSubmission)
+            askInternal(question, files, uiSubmission, reasoningEffort)
         } finally {
             pendingActiveSkillId = null
             // The create-skill flow writes a new /root/skills/<id>/SKILL.md via
@@ -851,7 +862,12 @@ class RemoteDataRepository(
     /** Built-in skill id; matches the bundled SKILL.md under composeResources. */
     private val createSkillId = "create-skill"
 
-    private suspend fun askInternal(question: String?, files: List<PlatformFile>, uiSubmission: UiSubmission?) {
+    private suspend fun askInternal(
+        question: String?,
+        files: List<PlatformFile>,
+        uiSubmission: UiSubmission?,
+        reasoningEffort: ReasoningEffort,
+    ) {
         // Allocate a conversation id immediately for fresh chats. Without this,
         // the very first tool call lands here with _currentConversationId.value
         // still null, so per-conversation routing (e.g. the sandbox shell)
@@ -961,7 +977,13 @@ class RemoteDataRepository(
                 // Retrying the whole call would re-enter the tool loop against a chat
                 // history already mutated by the failed attempt.
                 val turn = try {
-                    askWithService(entry.service, messages, systemPrompt, entry.instanceId)
+                    // Only the primary selected route receives the user preference.
+                    // Fall-through models must retain their own default parameters.
+                    val effort = if (index == 0 &&
+                        supportedReasoningEfforts(entry.service.id, instanceCredentials(entry.instanceId, entry.service).modelId)
+                            .contains(reasoningEffort)
+                    ) reasoningEffort else ReasoningEffort.AUTO
+                    askWithService(entry.service, messages, systemPrompt, entry.instanceId, reasoningEffort = effort)
                 } catch (e: Exception) {
                     if (e is kotlinx.coroutines.CancellationException) throw e
                     // On-device services should not silently fall back — surface the error
@@ -1010,6 +1032,7 @@ class RemoteDataRepository(
         tools: List<Tool>,
         systemPrompt: String? = null,
         history: MutableStateFlow<List<History>> = chatHistory,
+        reasoningEffort: ReasoningEffort = ReasoningEffort.AUTO,
     ): AssistantTurn {
         val contextWindowTokens = ModelCatalog.estimateContextWindow(credentials.modelId)
         val declaredToolNames = tools.map { it.schema.name }.toSet()
@@ -1022,7 +1045,10 @@ class RemoteDataRepository(
                 val msgs = trimMessagesForContext(buildOpenAIMessages(service, history, systemPrompt, credentials.modelId, declaredToolNames), contextWindowTokens)
                 if (useResponsesApi) {
                     val response = retryApiCall {
-                        requests.openAIResponses(service, credentials, toResponsesInput(msgs), tools).getOrThrow()
+                        requests.openAIResponses(
+                            service, credentials, toResponsesInput(msgs), tools,
+                            reasoningEffort = reasoningEffort.wireValue,
+                        ).getOrThrow()
                     }
                     response.throwIfFailed(service)
                     val text = response.outputText
@@ -1073,7 +1099,7 @@ class RemoteDataRepository(
             override suspend fun bailout(history: List<History>, systemPrompt: String?, reason: BailoutReason): String {
                 // Bailout sends no tools — strip historic tool_calls to satisfy strict validators.
                 val msgs = trimMessagesForContext(buildOpenAIMessages(service, history, systemPrompt, credentials.modelId, declaredToolNames = emptySet()), contextWindowTokens)
-                return makeFinalCallWithoutTools(service, credentials, msgs, reason, useResponsesApi)
+                return makeFinalCallWithoutTools(service, credentials, msgs, reason, useResponsesApi, reasoningEffort)
             }
         }
         return runToolLoop(strategy, systemPrompt, history)
@@ -1259,6 +1285,7 @@ class RemoteDataRepository(
         messages: List<com.inspiredandroid.kai.network.dtos.openaicompatible.OpenAICompatibleChatRequestDto.Message>,
         reason: BailoutReason,
         useResponsesApi: Boolean = false,
+        reasoningEffort: ReasoningEffort = ReasoningEffort.AUTO,
     ): String {
         val bailoutMessages = messages.toMutableList().apply {
             add(
@@ -1270,7 +1297,10 @@ class RemoteDataRepository(
         }
         if (useResponsesApi) {
             val response = retryApiCall {
-                requests.openAIResponses(service, credentials, toResponsesInput(bailoutMessages)).getOrThrow()
+                requests.openAIResponses(
+                    service, credentials, toResponsesInput(bailoutMessages),
+                    reasoningEffort = reasoningEffort.wireValue,
+                ).getOrThrow()
             }
             response.throwIfFailed(service)
             return response.outputText.orEmpty()
