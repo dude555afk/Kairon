@@ -36,7 +36,7 @@ internal fun MessageActionMenu(
         }
         DropdownMenu(expanded = expanded || externalOpen, onDismissRequest = { expanded = false; onExternalDismiss() }) {
             funActionItem("Branch in new chat", onBranch) { expanded = false; onExternalDismiss() }
-            funActionItem("Edit prompt", onEdit) { expanded = false; onExternalDismiss() }
+            if (onEdit != null) funActionItem("Edit prompt", onEdit) { expanded = false; onExternalDismiss() }
             modelId?.takeIf { it.isNotBlank() }?.let { id ->
                 DropdownMenuItem(text = { Text("Used $id") }, onClick = {}, enabled = false)
             }
@@ -49,10 +49,12 @@ internal fun MessageActionMenu(
 
 @Composable
 private fun funActionItem(label: String, action: (() -> Unit)?, dismiss: () -> Unit) {
-    if (action != null) {
-        DropdownMenuItem(text = { Text(label) }, onClick = {
+    DropdownMenuItem(
+        text = { Text(if (action != null) label else "$label · unavailable") },
+        enabled = action != null,
+        onClick = {
             dismiss()
-            action()
-        })
-    }
+            action?.invoke()
+        },
+    )
 }
