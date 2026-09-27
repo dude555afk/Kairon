@@ -61,6 +61,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -693,12 +694,35 @@ private fun ChatModeScreen(
                             } else {
                                 val listState = rememberLazyListState()
                                 val componentScope = rememberCoroutineScope()
+                                var followOutput by remember { mutableStateOf(true) }
+                                LaunchedEffect(listState) {
+                                    snapshotFlow {
+                                        Triple(
+                                            listState.isScrollInProgress,
+                                            listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0,
+                                            listState.layoutInfo.totalItemsCount,
+                                        )
+                                    }.collect { (scrolling, lastVisible, count) ->
+                                        if (scrolling) followOutput = lastVisible >= count - 2
+                                    }
+                                }
+                                // Follow the live stream only while the reader remains near
+                                // its end; manually scrolling up pauses the automatic motion.
+                                LaunchedEffect(uiState.streamingText.length / 80) {
+                                    if (uiState.streamingText.isNotBlank() && followOutput) {
+                                        val last = listState.layoutInfo.totalItemsCount - 1
+                                        if (last >= 0) listState.scrollToItem(last)
+                                    }
+                                }
 
                                 LaunchedEffect(uiState.history.size) {
                                     // Capture history at effect start to prevent race conditions
                                     val history = uiState.history
                                     if (history.isNotEmpty()) {
-                                        listState.requestScrollToItem(history.lastIndex)
+                                        if (followOutput || history.last().role == History.Role.USER) {
+                                            listState.requestScrollToItem(history.lastIndex)
+                                            followOutput = true
+                                        }
                                         val lastMessage = history.last()
                                         if (uiState.isSpeechOutputEnabled && lastMessage.role == History.Role.ASSISTANT) {
                                             componentScope.launch(getBackgroundDispatcher()) {
@@ -921,7 +945,7 @@ private fun ChatModeScreen(
                                         if (uiState.streamingText.isNotBlank()) {
                                             item(key = "streaming-preview", contentType = "stream") {
                                                 Text(
-                                                    text = uiState.streamingText,
+                                                    text = uiState.streamingText + " ▍",
                                                     style = MaterialTheme.typography.bodyLarge,
                                                     color = MaterialTheme.colorScheme.onSurface,
                                                     modifier = Modifier.fillMaxWidth()
@@ -973,6 +997,7 @@ private fun ChatModeScreen(
                                                 .handCursor(),
                                             onClick = {
                                                 componentScope.launch {
+                                                    followOutput = true
                                                     val totalItems = listState.layoutInfo.totalItemsCount
                                                     if (totalItems > 0) {
                                                         listState.animateScrollToItem(totalItems - 1)
