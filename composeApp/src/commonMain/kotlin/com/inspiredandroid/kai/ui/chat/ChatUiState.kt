@@ -17,6 +17,7 @@ import com.inspiredandroid.kai.network.dtos.openaicompatible.OpenAICompatibleCha
 import io.github.vinceglb.filekit.PlatformFile
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -134,6 +135,7 @@ data class History(
 fun List<History>.lastRenderedAssistant(): History? = lastOrNull { it.role == History.Role.ASSISTANT && it.content.isNotEmpty() && !it.isThinking }
 
 @Immutable
+@Serializable
 data class ToolCallInfo(
     val id: String,
     val name: String,
