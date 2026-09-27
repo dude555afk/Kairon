@@ -279,6 +279,7 @@ class Requests {
         input: List<JsonObject>,
         tools: List<Tool> = emptyList(),
         requestTimeoutMs: Long? = null,
+        reasoningEffort: String? = null,
     ): Result<OpenAIResponsesResponseDto> = try {
         val apiKey = getApiKeyOrThrow(service, credentials)
         val responsesUrl = service.responsesUrl
@@ -294,6 +295,7 @@ class Requests {
                         input = input,
                         model = credentials.modelId.ifEmpty { null },
                         tools = tools.toRequestTools { it.toResponsesTool() },
+                        reasoning = reasoningEffort?.let { OpenAIResponsesRequestDto.Reasoning(it) },
                     ),
                 )
             }
