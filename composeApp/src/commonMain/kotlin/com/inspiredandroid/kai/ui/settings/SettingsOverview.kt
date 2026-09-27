@@ -122,9 +122,7 @@ private fun SettingsGroup(title: String, tabs: List<SettingsTab>, onOpen: (Setti
 @Composable
 private fun SettingsDestination(tab: SettingsTab, onOpen: (SettingsTab) -> Unit) {
     Row(
-        modifier = Modifier.fillMaxWidth()
-            .then(Modifier)
-            .padding(horizontal = 2.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         androidx.compose.material3.Surface(
