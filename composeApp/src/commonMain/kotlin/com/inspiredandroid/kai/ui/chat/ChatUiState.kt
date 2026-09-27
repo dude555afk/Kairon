@@ -67,6 +67,8 @@ data class ConversationSummary(
     val isPinned: Boolean = false,
     val isHeartbeat: Boolean = false,
     val isInteractive: Boolean = false,
+    val parentConversationId: String? = null,
+    val branchPointMessageId: String? = null,
 )
 
 @Immutable
