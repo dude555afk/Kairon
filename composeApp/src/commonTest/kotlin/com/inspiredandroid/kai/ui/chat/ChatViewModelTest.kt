@@ -523,4 +523,31 @@ class ChatViewModelTest {
             assertTrue(state.supportedFileExtensions.isEmpty())
         }
     }
+
+    @Test
+    fun `branch keeps the selected history prefix and records its parent`() = runTest {
+        val first = History(role = History.Role.USER, content = "first")
+        val reply = History(role = History.Role.ASSISTANT, content = "reply")
+        val later = History(role = History.Role.USER, content = "later")
+        fakeRepository.currentConversationId.value = "parent"
+        fakeRepository.chatHistory.value = listOf(first, reply, later)
+
+        assertTrue(fakeRepository.branchConversation(reply.id))
+        assertEquals(listOf(first, reply), fakeRepository.chatHistory.value)
+        assertEquals("parent", fakeRepository.savedConversations.value.single().parentConversationId)
+        assertEquals(reply.id, fakeRepository.savedConversations.value.single().branchPointMessageId)
+    }
+
+    @Test
+    fun `editing an earlier prompt creates a separate branch with the replacement`() = runTest {
+        val first = History(role = History.Role.USER, content = "original")
+        val reply = History(role = History.Role.ASSISTANT, content = "old reply")
+        fakeRepository.currentConversationId.value = "parent"
+        fakeRepository.chatHistory.value = listOf(first, reply)
+
+        assertTrue(fakeRepository.branchConversation(first.id, "revised"))
+        assertEquals(listOf("revised"), fakeRepository.chatHistory.value.map { it.content })
+        assertEquals(first.id, fakeRepository.savedConversations.value.single().branchPointMessageId)
+        assertFalse(fakeRepository.branchConversation(reply.id, "cannot edit assistant"))
+    }
 }
