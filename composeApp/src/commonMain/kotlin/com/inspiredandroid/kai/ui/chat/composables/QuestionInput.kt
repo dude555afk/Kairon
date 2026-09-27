@@ -22,6 +22,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.IconButton
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -60,6 +63,8 @@ import androidx.compose.ui.unit.dp
 import com.inspiredandroid.kai.Platform
 import com.inspiredandroid.kai.currentPlatform
 import com.inspiredandroid.kai.data.ServiceEntry
+import com.inspiredandroid.kai.data.ReasoningEffort
+import com.inspiredandroid.kai.data.supportedReasoningEfforts
 import com.inspiredandroid.kai.data.imageExtensions
 import com.inspiredandroid.kai.skills.SkillManifest
 import com.inspiredandroid.kai.ui.gradientBrush
@@ -70,7 +75,7 @@ import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.extension
 import io.github.vinceglb.filekit.name
 import kai.composeapp.generated.resources.Res
-import kai.composeapp.generated.resources.ic_attach
+import kai.composeapp.generated.resources.kairon_add_attachment
 import kai.composeapp.generated.resources.ic_file
 import kai.composeapp.generated.resources.ic_image
 import kai.composeapp.generated.resources.ic_stop
@@ -98,6 +103,8 @@ fun QuestionInput(
     onSelectService: (String) -> Unit = {},
     installedSkills: ImmutableList<SkillManifest> = persistentListOf(),
     modifier: Modifier = Modifier,
+    reasoningEffort: ReasoningEffort = ReasoningEffort.AUTO,
+    onSelectReasoningEffort: (ReasoningEffort) -> Unit = {},
 ) {
     Column(modifier = modifier) {
         // Slash autocomplete: shown when the user is typing the first token and it starts
@@ -187,25 +194,27 @@ fun QuestionInput(
         }
 
         val focusRequester = remember { FocusRequester() }
-        // The cap is expressed in dp but bounds a number of text lines, so it has to
-        // grow with the font scale — otherwise the composer shows a single line of
-        // what the user is typing at the largest accessibility font size.
         val maxComposerHeight = 120.dp * LocalDensity.current.fontScale
-        TextField(
-            value = textState,
-            onValueChange = onTextStateChange,
-            modifier = Modifier
-                .focusRequester(focusRequester)
-                .padding(horizontal = 12.dp, vertical = 8.dp)
-                .heightIn(max = maxComposerHeight)
+        val activeService = availableServices.firstOrNull()
+        val effortLevels = activeService?.let { supportedReasoningEfforts(it.serviceId, it.modelId) }.orEmpty()
+
+        // The entire composer is one floating surface, not a TextField with actions
+        // squeezed into its trailing slot. Provider selection sits immediately by +.
+        Column(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
                 .fillMaxWidth()
-                .shadow(elevation = 8.dp, shape = RoundedCornerShape(26.dp))
-                .clip(RoundedCornerShape(26.dp))
-                .border(
-                    width = 1.dp,
-                    color = MaterialTheme.colorScheme.outlineVariant,
-                    shape = RoundedCornerShape(26.dp),
-                )
+                .shadow(elevation = 8.dp, shape = RoundedCornerShape(28.dp))
+                .clip(RoundedCornerShape(28.dp))
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(28.dp)),
+        ) {
+            TextField(
+                value = textState,
+                onValueChange = onTextStateChange,
+                modifier = Modifier
+                    .focusRequester(focusRequester)
+                    .heightIn(max = maxComposerHeight)
+                    .fillMaxWidth()
                 .onPreviewKeyEvent { event ->
                     // Only handle hardware keyboard on desktop/web platforms
                     if (currentPlatform !is Platform.Mobile && event.key.keyCode == Key.Enter.keyCode && event.type == KeyEventType.KeyDown) {
@@ -232,59 +241,63 @@ fun QuestionInput(
                     }
                     return@onPreviewKeyEvent false
                 },
-            shape = RoundedCornerShape(26.dp),
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent,
-            ),
-            placeholder = {
-                Text(
-                    stringResource(Res.string.prompt_ask_question),
-                    color = MaterialTheme.colorScheme.onBackground,
-                )
-            },
-            trailingIcon = {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(end = 7.dp),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    if (availableServices.size > 1) {
-                        ServiceSelector(
-                            services = availableServices,
-                            onSelectService = onSelectService,
+                shape = RoundedCornerShape(28.dp),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                ),
+                placeholder = {
+                    Text(
+                        stringResource(Res.string.prompt_ask_question),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                },
+                keyboardActions = if (currentPlatform !is Platform.Mobile) {
+                    KeyboardActions(onSend = { submitQuestion() })
+                } else {
+                    KeyboardActions()
+                },
+                keyboardOptions = KeyboardOptions(
+                    imeAction = if (currentPlatform is Platform.Mobile) ImeAction.Default else ImeAction.Send,
+                ),
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(start = 6.dp, end = 10.dp, bottom = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                if (filePickerLauncher != null) {
+                    IconButton(onClick = { filePickerLauncher.launch() }) {
+                        Icon(
+                            Icons.Default.Add,
+                            contentDescription = stringResource(Res.string.kairon_add_attachment),
+                            tint = MaterialTheme.colorScheme.onSurface,
                         )
                     }
-                    if (isLoading) {
-                        TrailingIcon(icon = Res.drawable.ic_stop, onClick = cancel, isPulsing = true)
-                    } else if (textState.text.isNotBlank()) {
-                        TrailingIcon(icon = Res.drawable.ic_up, onClick = { submitQuestion() })
-                    }
                 }
-            },
-            keyboardActions = if (currentPlatform !is Platform.Mobile) {
-                KeyboardActions(onSend = { submitQuestion() })
-            } else {
-                KeyboardActions() // No keyboard send action on mobile
-            },
-            leadingIcon = if (filePickerLauncher != null) {
-                {
-                    CircleIconButton(
-                        icon = vectorResource(Res.drawable.ic_attach),
-                        onClick = { filePickerLauncher.launch() },
-                        modifier = Modifier.padding(start = 7.dp),
-                        tint = MaterialTheme.colorScheme.onBackground,
+                if (availableServices.isNotEmpty()) {
+                    ServiceSelector(
+                        services = availableServices,
+                        onSelectService = onSelectService,
                     )
                 }
-            } else {
-                null
-            },
-            keyboardOptions = KeyboardOptions(
-                imeAction = if (currentPlatform is Platform.Mobile) ImeAction.Default else ImeAction.Send,
-            ),
-        )
+                Spacer(Modifier.weight(1f))
+                if (effortLevels.isNotEmpty()) {
+                    ReasoningEffortSelector(
+                        levels = effortLevels,
+                        selected = reasoningEffort,
+                        onSelect = onSelectReasoningEffort,
+                    )
+                }
+                if (isLoading) {
+                    TrailingIcon(icon = Res.drawable.ic_stop, onClick = cancel, isPulsing = true)
+                } else if (textState.text.isNotBlank()) {
+                    TrailingIcon(icon = Res.drawable.ic_up, onClick = { submitQuestion() })
+                }
+            }
+        }
         val inInspection = LocalInspectionMode.current
         // Mobile welcome should not open the keyboard before a deliberate tap.
         LaunchedEffect(Unit) {
