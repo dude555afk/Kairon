@@ -63,6 +63,7 @@ data class ConversationSummary(
     val id: String,
     val title: String,
     val updatedAt: Long,
+    val isPinned: Boolean = false,
     val isHeartbeat: Boolean = false,
     val isInteractive: Boolean = false,
 )
