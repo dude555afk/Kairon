@@ -49,6 +49,7 @@ data class Conversation(
         val toolCallId: String? = null,
         val toolName: String? = null,
         val toolCalls: List<ToolCallInfo>? = null,
+        val modelId: String? = null,
         val isThinking: Boolean = false,
         // Most messages have no reasoning trace; skip the null to keep the persisted blob lean.
         @EncodeDefault(EncodeDefault.Mode.NEVER)
