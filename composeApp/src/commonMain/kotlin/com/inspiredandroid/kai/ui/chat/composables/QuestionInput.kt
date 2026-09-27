@@ -149,10 +149,56 @@ fun QuestionInput(
             }
         }
 
+        fun submitQuestion() {
+            val text = textState.text
+            if (text.isNotBlank()) {
+                ask(text.trim())
+                onTextStateChange(TextFieldValue(""))
+            }
+        }
+
+        val allowFileAttachment = supportedFileExtensions.isNotEmpty()
+        val filePickerLauncher = if (allowFileAttachment) {
+            rememberFilePickerLauncher(
+                type = FileKitType.File(extensions = supportedFileExtensions),
+            ) { file ->
+                if (file != null) addFile(file)
+            }
+        } else {
+            null
+        }
+
+        // Image uses the native gallery/photo picker; Files retains the document picker.
+        // Keep launchers in the stable composer scope rather than inside the popup.
+        val imagePickerLauncher = if (supportedFileExtensions.any { it.lowercase() in imageExtensions }) {
+            rememberFilePickerLauncher(type = FileKitType.Image) { image ->
+                if (image != null) addFile(image)
+            }
+        } else {
+            null
+        }
+        var attachmentMenuExpanded by remember { mutableStateOf(false) }
+
+        val focusRequester = remember { FocusRequester() }
+        val maxComposerHeight = 120.dp * LocalDensity.current.fontScale
+        val activeService = availableServices.firstOrNull()
+        val effortLevels = activeService?.let { supportedReasoningEfforts(it.serviceId, it.modelId) }.orEmpty()
+
+        // The entire composer is one floating surface, not a TextField with actions
+        // squeezed into its trailing slot. Provider selection sits immediately by +.
+        Column(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                .fillMaxWidth()
+                .shadow(elevation = 8.dp, shape = RoundedCornerShape(28.dp))
+                .clip(RoundedCornerShape(28.dp))
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(28.dp))
+                .animateContentSize(animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing)),
+        ) {
         if (files.isNotEmpty()) {
             FlowRow(
                 modifier = Modifier
-                    .padding(horizontal = 16.dp)
+                    .padding(start = 16.dp, end = 16.dp, top = 12.dp)
                     .fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -216,52 +262,6 @@ fun QuestionInput(
             }
         }
 
-        fun submitQuestion() {
-            val text = textState.text
-            if (text.isNotBlank()) {
-                ask(text.trim())
-                onTextStateChange(TextFieldValue(""))
-            }
-        }
-
-        val allowFileAttachment = supportedFileExtensions.isNotEmpty()
-        val filePickerLauncher = if (allowFileAttachment) {
-            rememberFilePickerLauncher(
-                type = FileKitType.File(extensions = supportedFileExtensions),
-            ) { file ->
-                if (file != null) addFile(file)
-            }
-        } else {
-            null
-        }
-
-        // Image uses the native gallery/photo picker; Files retains the document picker.
-        // Keep launchers in the stable composer scope rather than inside the popup.
-        val imagePickerLauncher = if (supportedFileExtensions.any { it.lowercase() in imageExtensions }) {
-            rememberFilePickerLauncher(type = FileKitType.Image) { image ->
-                if (image != null) addFile(image)
-            }
-        } else {
-            null
-        }
-        var attachmentMenuExpanded by remember { mutableStateOf(false) }
-
-        val focusRequester = remember { FocusRequester() }
-        val maxComposerHeight = 120.dp * LocalDensity.current.fontScale
-        val activeService = availableServices.firstOrNull()
-        val effortLevels = activeService?.let { supportedReasoningEfforts(it.serviceId, it.modelId) }.orEmpty()
-
-        // The entire composer is one floating surface, not a TextField with actions
-        // squeezed into its trailing slot. Provider selection sits immediately by +.
-        Column(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
-                .fillMaxWidth()
-                .shadow(elevation = 8.dp, shape = RoundedCornerShape(28.dp))
-                .clip(RoundedCornerShape(28.dp))
-                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(28.dp))
-                .animateContentSize(animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing)),
-        ) {
             TextField(
                 value = textState,
                 onValueChange = onTextStateChange,
