@@ -4,6 +4,8 @@ import androidx.compose.runtime.Immutable
 import com.inspiredandroid.kai.data.ReasoningEffort
 import io.github.vinceglb.filekit.PlatformFile
 
+enum class MessageRerunMode { RETRY, THINKING, WEB_SEARCH }
+
 @Immutable
 data class ChatActions(
     val ask: (String) -> Unit,
@@ -17,6 +19,7 @@ data class ChatActions(
     val regenerate: () -> Unit,
     val branchConversation: (String) -> Unit = {},
     val editPrompt: (String, String) -> Unit = { _, _ -> },
+    val rerunFromMessage: (String, MessageRerunMode) -> Unit = { _, _ -> },
     val cancel: () -> Unit,
     val selectService: (String) -> Unit,
     val loadConversation: (String) -> Unit,
