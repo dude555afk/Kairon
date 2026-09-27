@@ -43,6 +43,7 @@ class FakeDataRepository : DataRepository {
     private var currentService: Service = Service.Free
 
     override val chatHistory: MutableStateFlow<List<History>> = MutableStateFlow(emptyList())
+    override val streamingText: MutableStateFlow<String> = MutableStateFlow("")
     override val currentConversationId: MutableStateFlow<String?> = MutableStateFlow(null)
     override val fallbackStatus: MutableStateFlow<FallbackStatus?> = MutableStateFlow(null)
 
