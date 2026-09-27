@@ -13,6 +13,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.foundation.border
 import androidx.compose.foundation.draganddrop.dragAndDropTarget
 import androidx.compose.foundation.layout.Arrangement
@@ -43,6 +44,9 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
@@ -53,6 +57,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
@@ -67,6 +72,8 @@ import androidx.compose.ui.draganddrop.DragAndDropEvent
 import androidx.compose.ui.draganddrop.DragAndDropTarget
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextRange
@@ -502,7 +509,8 @@ private fun ChatModeScreen(
     previewSandboxState: SandboxUiState? = null,
     previewSandboxLines: ImmutableList<TerminalLine> = persistentListOf(),
 ) {
-    var showHistorySheet by remember { mutableStateOf(false) }
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val drawerScope = rememberCoroutineScope()
     var isSandboxOpen by rememberSaveable { mutableStateOf(initialSandboxOpen) }
     // Hoisted here so the draft survives toggling the sandbox/terminal view, which
     // removes QuestionInput from composition and would otherwise drop the text.
@@ -553,28 +561,34 @@ private fun ChatModeScreen(
         }
     }
 
-    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).navigationBarsPadding().statusBarsPadding().imePadding()) {
-        Column(Modifier.fillMaxSize()) {
-            TopBar(
-                textToSpeech = textToSpeech,
-                isSpeechOutputEnabled = uiState.isSpeechOutputEnabled,
-                isSpeaking = uiState.isSpeaking,
+    // ModalNavigationDrawer provides finger-tracked opening/closing, a scrim and
+    // outside-tap/back dismissal. Keep all conversation actions in the drawer content.
+    var composerHeightPx by remember { mutableIntStateOf(0) }
+    val composerHeight = with(LocalDensity.current) { composerHeightPx.toDp() }
+    LaunchedEffect(drawerState.targetValue) {
+        if (drawerState.targetValue == DrawerValue.Open) keyboardController?.hide()
+    }
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        gesturesEnabled = navigationTabBar == null,
+        drawerContent = {
+            ChatHistorySheet(
+                conversations = filteredConversations,
+                currentConversationId = uiState.currentConversationId,
+                pendingConversationDeletion = uiState.pendingConversationDeletion,
                 actions = uiState.actions,
-                isChatHistoryEmpty = uiState.history.isEmpty(),
-                hasSavedConversations = filteredConversations.any { it.id != uiState.currentConversationId },
-                onNavigateToSettings = onNavigateToSettings,
-                isSandboxAvailable = isSandboxAvailable,
-                isSandboxOpen = isSandboxOpen,
-                isShellExecuting = isShellExecuting,
-                onToggleSandbox = { isSandboxOpen = !isSandboxOpen },
-                onShowHistory = {
-                    keyboardController?.hide()
-                    showHistorySheet = true
-                },
-                navigationTabBar = navigationTabBar,
+                onDismiss = { drawerScope.launch { drawerState.close() } },
+                onConversationSelected = { isSandboxOpen = false },
             )
-
-            HeartbeatBanner(
+        },
+    ) {
+        Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).navigationBarsPadding().statusBarsPadding().imePadding()) {
+            Column(
+                Modifier.fillMaxSize()
+                    .padding(top = 80.dp)
+                    .padding(bottom = if (isSandboxOpen) 0.dp else composerHeight),
+            ) {
+                HeartbeatBanner(
                 visible = uiState.hasUnreadHeartbeat,
                 onTap = {
                     uiState.heartbeatConversationId?.let { uiState.actions.loadConversation(it) }
@@ -918,6 +932,18 @@ private fun ChatModeScreen(
                                     modifier = Modifier.align(CenterEnd).fillMaxHeight(),
                                 )
 
+                                // Gentle scrims fade text into the floating chrome rather than
+                                // hiding it behind a hard rectangular clipping boundary.
+                                val canvasColor = MaterialTheme.colorScheme.background
+                                Box(
+                                    modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth().height(20.dp)
+                                        .background(Brush.verticalGradient(listOf(canvasColor, canvasColor.copy(alpha = 0f)))),
+                                )
+                                Box(
+                                    modifier = Modifier.align(BottomCenter).fillMaxWidth().height(24.dp)
+                                        .background(Brush.verticalGradient(listOf(canvasColor.copy(alpha = 0f), canvasColor))),
+                                )
+
                                 androidx.compose.animation.AnimatedVisibility(
                                     visible = showScrollToBottom,
                                     modifier = Modifier.align(BottomCenter).padding(bottom = 8.dp),
@@ -945,8 +971,32 @@ private fun ChatModeScreen(
                 }
             }
 
+            }
+            // Both surfaces hover over chat; measured composer height ensures no
+            // message or generated UI is hidden when attachments/skill hints expand.
+            TopBar(
+                modifier = Modifier.align(Alignment.TopCenter),
+                textToSpeech = textToSpeech,
+                isSpeechOutputEnabled = uiState.isSpeechOutputEnabled,
+                isSpeaking = uiState.isSpeaking,
+                actions = uiState.actions,
+                isChatHistoryEmpty = uiState.history.isEmpty(),
+                hasSavedConversations = filteredConversations.any { it.id != uiState.currentConversationId },
+                onNavigateToSettings = onNavigateToSettings,
+                isSandboxAvailable = isSandboxAvailable,
+                isSandboxOpen = isSandboxOpen,
+                isShellExecuting = isShellExecuting,
+                onToggleSandbox = { isSandboxOpen = !isSandboxOpen },
+                onShowHistory = { drawerScope.launch { drawerState.open() } },
+                navigationTabBar = navigationTabBar,
+            )
             if (!isSandboxOpen) {
                 QuestionInput(
+                    modifier = Modifier
+                        .align(BottomCenter)
+                        .fillMaxWidth()
+                        .padding(bottom = 10.dp)
+                        .onSizeChanged { composerHeightPx = it.height },
                     files = uiState.files,
                     addFile = uiState.actions.addFile,
                     removeFile = uiState.actions.removeFile,
@@ -961,24 +1011,13 @@ private fun ChatModeScreen(
                     installedSkills = uiState.installedSkills,
                 )
             }
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier.align(BottomCenter).padding(bottom = composerHeight + 4.dp),
+            ) { data ->
+                Snackbar(snackbarData = data)
+            }
         }
-        SnackbarHost(
-            hostState = snackbarHostState,
-            modifier = Modifier.align(BottomCenter).padding(bottom = 80.dp),
-        ) { data ->
-            Snackbar(snackbarData = data)
-        }
-    }
-
-    if (showHistorySheet) {
-        ChatHistorySheet(
-            conversations = filteredConversations,
-            currentConversationId = uiState.currentConversationId,
-            pendingConversationDeletion = uiState.pendingConversationDeletion,
-            actions = uiState.actions,
-            onDismiss = { showHistorySheet = false },
-            onConversationSelected = { isSandboxOpen = false },
-        )
     }
 }
 
