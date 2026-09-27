@@ -294,7 +294,7 @@ internal fun ChatHistorySheet(
 
             // Pinned bottom-right; it stays visible even when the history list scrolls.
             IconButton(
-                modifier = Modifier.align(Alignment.BottomEnd).padding(end = 12.dp, bottom = 12.dp),
+                modifier = Modifier.align(Alignment.BottomEnd).padding(end = 12.dp, bottom = 4.dp),
                 onClick = {
                     onDismiss()
                     onNavigateToSettings()
