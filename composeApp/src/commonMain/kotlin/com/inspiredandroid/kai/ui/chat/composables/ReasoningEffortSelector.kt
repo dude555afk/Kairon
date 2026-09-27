@@ -71,7 +71,7 @@ internal fun ReasoningEffortSelector(
                         steps = (levels.size - 2).coerceAtLeast(0),
                     )
                     Text(
-                        text = levels.joinToString(" · ") { it.name.lowercase().replaceFirstChar(Char::uppercaseChar) },
+                        text = levels.joinToString(" · ") { it.name.lowercase().replaceFirstChar { char -> char.uppercaseChar() } },
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
