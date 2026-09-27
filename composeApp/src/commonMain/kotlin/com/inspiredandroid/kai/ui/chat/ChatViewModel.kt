@@ -67,6 +67,7 @@ class ChatViewModel(
         regenerate = ::regenerate,
         branchConversation = ::branchConversation,
         editPrompt = ::editPrompt,
+        rerunFromMessage = ::rerunFromMessage,
         cancel = ::cancel,
         selectService = ::selectService,
         loadConversation = ::loadConversation,
@@ -488,6 +489,50 @@ class ChatViewModel(
             if (dataRepository.branchConversation(messageId)) {
                 _state.update { it.copy(error = null, composerPrefill = null, isInteractiveMode = false) }
                 dataRepository.setInteractiveMode(false)
+            }
+        }
+    }
+
+    /**
+     * Replays from the selected user's question in an independent branch. This also
+     * works from an older assistant answer without deleting subsequent messages.
+     */
+    private fun rerunFromMessage(messageId: String, mode: MessageRerunMode) {
+        if (_state.value.isLoading) return
+        val history = dataRepository.chatHistory.value
+        val index = history.indexOfFirst { it.id == messageId }
+        if (index < 0) return
+        val question = history.subList(0, index + 1).lastOrNull { it.role == History.Role.USER }
+            ?: return
+        val active = _state.value.availableServices.firstOrNull()
+        val allowed = active?.let {
+            com.inspiredandroid.kai.data.supportedReasoningEfforts(it.serviceId, it.modelId)
+        }.orEmpty()
+        if (mode == MessageRerunMode.THINKING && allowed.size < 2) return
+        if (mode == MessageRerunMode.WEB_SEARCH &&
+            dataRepository.getToolDefinitions().none { it.id == "web_search" && it.isEnabled }
+        ) return
+
+        viewModelScope.launch(backgroundDispatcher) {
+            if (!dataRepository.branchConversation(question.id)) return@launch
+            _state.update {
+                it.copy(
+                    error = null,
+                    composerPrefill = null,
+                    isInteractiveMode = false,
+                    reasoningEffort = if (mode == MessageRerunMode.THINKING) {
+                        if (ReasoningEffort.HIGH in allowed) ReasoningEffort.HIGH else allowed.last()
+                    } else {
+                        ReasoningEffort.AUTO
+                    },
+                )
+            }
+            dataRepository.setInteractiveMode(false)
+            when (mode) {
+                MessageRerunMode.RETRY, MessageRerunMode.THINKING -> ask(null)
+                MessageRerunMode.WEB_SEARCH -> ask(
+                    "Use the web_search tool to research my previous question and answer it with source links. Do not answer from memory alone.",
+                )
             }
         }
     }
