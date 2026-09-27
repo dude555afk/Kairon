@@ -1,8 +1,8 @@
 package com.inspiredandroid.kai.ui.chat
 
 import androidx.compose.runtime.Immutable
-import io.github.vinceglb.filekit.PlatformFile
 import com.inspiredandroid.kai.data.ReasoningEffort
+import io.github.vinceglb.filekit.PlatformFile
 
 @Immutable
 data class ChatActions(

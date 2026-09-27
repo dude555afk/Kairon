@@ -26,8 +26,12 @@ fun supportedReasoningEfforts(serviceId: String, modelId: String): List<Reasonin
     val id = modelId.lowercase()
     return if (id in setOf("gpt-5.6", "gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna")) {
         listOf(
-            ReasoningEffort.AUTO, ReasoningEffort.LOW, ReasoningEffort.MEDIUM,
-            ReasoningEffort.HIGH, ReasoningEffort.XHIGH, ReasoningEffort.MAX,
+            ReasoningEffort.AUTO,
+            ReasoningEffort.LOW,
+            ReasoningEffort.MEDIUM,
+            ReasoningEffort.HIGH,
+            ReasoningEffort.XHIGH,
+            ReasoningEffort.MAX,
         )
     } else {
         emptyList()

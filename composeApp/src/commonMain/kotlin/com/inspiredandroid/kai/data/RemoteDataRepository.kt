@@ -777,8 +777,11 @@ class RemoteDataRepository(
                 if (requiresResponsesApi(service, credentials.modelId, credentials.baseUrl)) {
                     val response = call {
                         requests.openAIResponses(
-                            service, credentials, toResponsesInput(openAIMessages),
-                            requestTimeoutMs = requestTimeoutMs, reasoningEffort = reasoningEffort.wireValue,
+                            service,
+                            credentials,
+                            toResponsesInput(openAIMessages),
+                            requestTimeoutMs = requestTimeoutMs,
+                            reasoningEffort = reasoningEffort.wireValue,
                         ).getOrThrow()
                     }
                     response.throwIfFailed(service)
@@ -982,7 +985,11 @@ class RemoteDataRepository(
                     val effort = if (index == 0 &&
                         supportedReasoningEfforts(entry.service.id, instanceCredentials(entry.instanceId, entry.service).modelId)
                             .contains(reasoningEffort)
-                    ) reasoningEffort else ReasoningEffort.AUTO
+                    ) {
+                        reasoningEffort
+                    } else {
+                        ReasoningEffort.AUTO
+                    }
                     askWithService(entry.service, messages, systemPrompt, entry.instanceId, reasoningEffort = effort)
                 } catch (e: Exception) {
                     if (e is kotlinx.coroutines.CancellationException) throw e
@@ -1046,7 +1053,10 @@ class RemoteDataRepository(
                 if (useResponsesApi) {
                     val response = retryApiCall {
                         requests.openAIResponses(
-                            service, credentials, toResponsesInput(msgs), tools,
+                            service,
+                            credentials,
+                            toResponsesInput(msgs),
+                            tools,
                             reasoningEffort = reasoningEffort.wireValue,
                         ).getOrThrow()
                     }
@@ -1298,7 +1308,9 @@ class RemoteDataRepository(
         if (useResponsesApi) {
             val response = retryApiCall {
                 requests.openAIResponses(
-                    service, credentials, toResponsesInput(bailoutMessages),
+                    service,
+                    credentials,
+                    toResponsesInput(bailoutMessages),
                     reasoningEffort = reasoningEffort.wireValue,
                 ).getOrThrow()
             }

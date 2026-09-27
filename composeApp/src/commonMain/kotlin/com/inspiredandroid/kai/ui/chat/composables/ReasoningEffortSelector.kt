@@ -4,10 +4,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -17,13 +17,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.inspiredandroid.kai.data.ReasoningEffort
 import kai.composeapp.generated.resources.Res
-import kai.composeapp.generated.resources.kairon_reasoning_effort
 import kai.composeapp.generated.resources.kairon_effort_auto
-import kai.composeapp.generated.resources.kairon_effort_low
-import kai.composeapp.generated.resources.kairon_effort_medium
 import kai.composeapp.generated.resources.kairon_effort_high
-import kai.composeapp.generated.resources.kairon_effort_xhigh
+import kai.composeapp.generated.resources.kairon_effort_low
 import kai.composeapp.generated.resources.kairon_effort_max
+import kai.composeapp.generated.resources.kairon_effort_medium
+import kai.composeapp.generated.resources.kairon_effort_xhigh
+import kai.composeapp.generated.resources.kairon_reasoning_effort
 import org.jetbrains.compose.resources.stringResource
 import kotlin.math.roundToInt
 

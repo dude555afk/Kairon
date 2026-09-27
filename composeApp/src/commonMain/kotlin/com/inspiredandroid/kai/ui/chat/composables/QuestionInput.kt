@@ -22,14 +22,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.IconButton
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.DisableSelection
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
@@ -62,10 +62,10 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import com.inspiredandroid.kai.Platform
 import com.inspiredandroid.kai.currentPlatform
-import com.inspiredandroid.kai.data.ServiceEntry
 import com.inspiredandroid.kai.data.ReasoningEffort
-import com.inspiredandroid.kai.data.supportedReasoningEfforts
+import com.inspiredandroid.kai.data.ServiceEntry
 import com.inspiredandroid.kai.data.imageExtensions
+import com.inspiredandroid.kai.data.supportedReasoningEfforts
 import com.inspiredandroid.kai.skills.SkillManifest
 import com.inspiredandroid.kai.ui.gradientBrush
 import com.inspiredandroid.kai.ui.handCursor
@@ -75,11 +75,11 @@ import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.extension
 import io.github.vinceglb.filekit.name
 import kai.composeapp.generated.resources.Res
-import kai.composeapp.generated.resources.kairon_add_attachment
 import kai.composeapp.generated.resources.ic_file
 import kai.composeapp.generated.resources.ic_image
 import kai.composeapp.generated.resources.ic_stop
 import kai.composeapp.generated.resources.ic_up
+import kai.composeapp.generated.resources.kairon_add_attachment
 import kai.composeapp.generated.resources.prompt_ask_question
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
@@ -215,32 +215,32 @@ fun QuestionInput(
                     .focusRequester(focusRequester)
                     .heightIn(max = maxComposerHeight)
                     .fillMaxWidth()
-                .onPreviewKeyEvent { event ->
-                    // Only handle hardware keyboard on desktop/web platforms
-                    if (currentPlatform !is Platform.Mobile && event.key.keyCode == Key.Enter.keyCode && event.type == KeyEventType.KeyDown) {
-                        if (event.isShiftPressed) {
-                            // Shift+Enter -> manually insert newline
-                            val currentText = textState.text
-                            val selection = textState.selection
-                            val start = minOf(selection.start, selection.end).coerceIn(0, currentText.length)
-                            val end = maxOf(selection.start, selection.end).coerceIn(0, currentText.length)
+                    .onPreviewKeyEvent { event ->
+                        // Only handle hardware keyboard on desktop/web platforms
+                        if (currentPlatform !is Platform.Mobile && event.key.keyCode == Key.Enter.keyCode && event.type == KeyEventType.KeyDown) {
+                            if (event.isShiftPressed) {
+                                // Shift+Enter -> manually insert newline
+                                val currentText = textState.text
+                                val selection = textState.selection
+                                val start = minOf(selection.start, selection.end).coerceIn(0, currentText.length)
+                                val end = maxOf(selection.start, selection.end).coerceIn(0, currentText.length)
 
-                            val newText = currentText.replaceRange(start, end, "\n")
-                            onTextStateChange(
-                                TextFieldValue(
-                                    text = newText,
-                                    selection = TextRange(start + 1),
-                                ),
-                            )
-                            return@onPreviewKeyEvent true
-                        } else {
-                            // Enter without Shift -> send message and consume event
-                            submitQuestion()
-                            return@onPreviewKeyEvent true
+                                val newText = currentText.replaceRange(start, end, "\n")
+                                onTextStateChange(
+                                    TextFieldValue(
+                                        text = newText,
+                                        selection = TextRange(start + 1),
+                                    ),
+                                )
+                                return@onPreviewKeyEvent true
+                            } else {
+                                // Enter without Shift -> send message and consume event
+                                submitQuestion()
+                                return@onPreviewKeyEvent true
+                            }
                         }
-                    }
-                    return@onPreviewKeyEvent false
-                },
+                        return@onPreviewKeyEvent false
+                    },
                 shape = RoundedCornerShape(28.dp),
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = Color.Transparent,

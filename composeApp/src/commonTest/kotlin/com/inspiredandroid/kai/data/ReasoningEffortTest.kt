@@ -18,8 +18,12 @@ class ReasoningEffortTest {
         val levels = supportedReasoningEfforts(Service.OpenAI.id, "gpt-5.6-sol")
         assertEquals(
             listOf(
-                ReasoningEffort.AUTO, ReasoningEffort.LOW, ReasoningEffort.MEDIUM,
-                ReasoningEffort.HIGH, ReasoningEffort.XHIGH, ReasoningEffort.MAX,
+                ReasoningEffort.AUTO,
+                ReasoningEffort.LOW,
+                ReasoningEffort.MEDIUM,
+                ReasoningEffort.HIGH,
+                ReasoningEffort.XHIGH,
+                ReasoningEffort.MAX,
             ),
             levels,
         )
