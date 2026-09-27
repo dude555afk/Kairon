@@ -101,6 +101,7 @@ data class ChatUiState(
     val installedSkills: ImmutableList<com.inspiredandroid.kai.skills.SkillManifest> = persistentListOf(),
     val composerPrefill: String? = null,
     val reasoningEffort: ReasoningEffort = ReasoningEffort.AUTO,
+    val webSearchAvailable: Boolean = false,
 ) {
     val heartbeatConversationId: String?
         get() = savedConversations.firstOrNull { it.isHeartbeat }?.id
