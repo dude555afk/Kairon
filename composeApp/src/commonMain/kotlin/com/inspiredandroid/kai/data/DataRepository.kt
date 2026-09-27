@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.StateFlow
 
 interface DataRepository {
     val chatHistory: StateFlow<List<History>>
+    val streamingText: StateFlow<String>
     val currentConversationId: StateFlow<String?>
     val fallbackStatus: StateFlow<FallbackStatus?>
 
