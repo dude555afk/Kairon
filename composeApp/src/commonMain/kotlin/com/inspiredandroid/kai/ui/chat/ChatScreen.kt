@@ -874,6 +874,8 @@ private fun ChatModeScreen(
                                                         UserMessage(
                                                             message = history.content,
                                                             attachments = history.attachments,
+                                                            onBranch = if (!uiState.isLoading) { { uiState.actions.branchConversation(history.id) } } else null,
+                                                            onEdit = if (!uiState.isLoading) { { edited -> uiState.actions.editPrompt(history.id, edited) } } else null,
                                                         )
                                                     }
                                                 }
@@ -891,6 +893,7 @@ private fun ChatModeScreen(
                                                                 uiState.actions.setIsSpeaking(it, history.id)
                                                             },
                                                             onRegenerate = if (isLastAssistant) uiState.actions.regenerate else null,
+                                                            onFork = if (!uiState.isLoading) { { uiState.actions.branchConversation(history.id) } } else null,
                                                             isInteractive = isLastAssistant && !uiState.isLoading && frozen == null,
                                                             onUiCallback = { event, data ->
                                                                 uiState.actions.submitUiCallback(event, data)
