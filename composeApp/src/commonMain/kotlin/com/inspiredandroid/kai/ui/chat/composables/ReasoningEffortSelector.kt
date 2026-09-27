@@ -2,12 +2,19 @@ package com.inspiredandroid.kai.ui.chat.composables
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -23,10 +30,7 @@ import kai.composeapp.generated.resources.kairon_reasoning_effort
 import org.jetbrains.compose.resources.stringResource
 import kotlin.math.roundToInt
 
-/**
- * Always visible beneath the composer, rather than hidden behind a provider-gated dropdown.
- * Unsupported models show a disabled control so the UI does not imply the API honors effort.
- */
+/** Compact composer control: expand the slider only when the user requests it. */
 @Composable
 internal fun ReasoningEffortSelector(
     levels: List<ReasoningEffort>,
@@ -34,39 +38,49 @@ internal fun ReasoningEffortSelector(
     onSelect: (ReasoningEffort) -> Unit,
 ) {
     val supported = levels.size >= 2
-    val visibleLevels = if (supported) levels else ReasoningEffort.entries
-    val safeSelected = selected.takeIf { supported && it in levels } ?: ReasoningEffort.AUTO
-    Column(
-        modifier = Modifier.fillMaxWidth().padding(start = 18.dp, end = 18.dp, bottom = 7.dp),
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+    val safeSelected = selected.takeIf { it in levels } ?: ReasoningEffort.AUTO
+    var expanded by remember { mutableStateOf(false) }
+    androidx.compose.foundation.layout.Box {
+        Surface(
+            onClick = { expanded = true },
+            shape = MaterialTheme.shapes.extraLarge,
+            color = MaterialTheme.colorScheme.surfaceContainerHighest,
+        ) {
             Text(
-                text = stringResource(Res.string.kairon_reasoning_effort),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Text(
-                text = " · " + if (supported) effortLabel(safeSelected) else "Unavailable for this model",
+                text = if (supported) "Effort · ${effortLabel(safeSelected)}" else "Effort · Auto",
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        Slider(
-            value = visibleLevels.indexOf(safeSelected).coerceAtLeast(0).toFloat(),
-            onValueChange = { position ->
-                if (supported) onSelect(visibleLevels[position.roundToInt().coerceIn(0, visibleLevels.lastIndex)])
-            },
-            enabled = supported,
-            valueRange = 0f..visibleLevels.lastIndex.toFloat(),
-            steps = (visibleLevels.size - 2).coerceAtLeast(0),
-            modifier = Modifier.fillMaxWidth(),
-        )
-        Row(modifier = Modifier.fillMaxWidth()) {
-            Text("Auto", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            androidx.compose.foundation.layout.Spacer(Modifier.weight(1f))
-            Text(if (supported) effortLabel(visibleLevels.last()) else "Not supported by provider",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            Column(Modifier.width(260.dp).padding(horizontal = 16.dp, vertical = 10.dp)) {
+                Text(stringResource(Res.string.kairon_reasoning_effort), style = MaterialTheme.typography.titleSmall)
+                if (supported) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("Auto", style = MaterialTheme.typography.labelSmall)
+                        Spacer(Modifier.weight(1f))
+                        Text(effortLabel(safeSelected), style = MaterialTheme.typography.labelMedium)
+                    }
+                    Slider(
+                        value = levels.indexOf(safeSelected).coerceAtLeast(0).toFloat(),
+                        onValueChange = { position ->
+                            onSelect(levels[position.roundToInt().coerceIn(0, levels.lastIndex)])
+                        },
+                        valueRange = 0f..levels.lastIndex.toFloat(),
+                        steps = (levels.size - 2).coerceAtLeast(0),
+                    )
+                    Text(levels.joinToString(" · ") { it.name.lowercase().replaceFirstChar { c -> c.uppercaseChar() } },
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                } else {
+                    Text(
+                        "This provider route does not currently send a verified reasoning-effort parameter. Auto uses the model's default.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
         }
     }
 }
