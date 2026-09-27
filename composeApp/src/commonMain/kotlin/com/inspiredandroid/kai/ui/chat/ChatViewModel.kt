@@ -471,7 +471,17 @@ class ChatViewModel(
         } else {
             null
         }
-        _state.update { it.copy(availableServices = entries, warning = warning, showPrivacyInfo = dataRepository.isUsingSharedKey()) }
+        val webSearchAvailable = dataRepository.getToolDefinitions().any {
+            it.id == "web_search" && it.isEnabled
+        }
+        _state.update {
+            it.copy(
+                availableServices = entries,
+                warning = warning,
+                showPrivacyInfo = dataRepository.isUsingSharedKey(),
+                webSearchAvailable = webSearchAvailable,
+            )
+        }
     }
 
     companion object {
