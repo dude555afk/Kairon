@@ -69,6 +69,7 @@ class ChatViewModel(
         loadConversation = ::loadConversation,
         deleteConversation = ::deleteConversation,
         renameConversation = ::renameConversation,
+        setConversationPinned = ::setConversationPinned,
         clearUnreadHeartbeat = ::clearUnreadHeartbeat,
         clearSnackbar = ::clearSnackbar,
         undoDeleteConversation = ::undoDeleteConversation,
@@ -175,7 +176,7 @@ class ChatViewModel(
         dataRepository.hasUnreadHeartbeat,
     ) { state, history, conversations, conversationId, hasUnreadHeartbeat ->
         val summaries = conversations
-            .sortedByDescending { it.updatedAt }
+            .sortedWith(compareByDescending<Conversation> { it.isPinned }.thenByDescending { it.updatedAt })
             .map {
                 val isHeartbeat = it.type == Conversation.TYPE_HEARTBEAT
                 val isInteractive = it.type == Conversation.TYPE_INTERACTIVE
@@ -183,6 +184,7 @@ class ChatViewModel(
                     id = it.id,
                     title = if (isHeartbeat) "" else it.title.ifEmpty { getString(Res.string.conversation_untitled) },
                     updatedAt = it.updatedAt,
+                    isPinned = it.isPinned,
                     isHeartbeat = isHeartbeat,
                     isInteractive = isInteractive,
                 )
@@ -481,6 +483,10 @@ class ChatViewModel(
                 composerPrefill = null,
             )
         }
+    }
+
+    private fun setConversationPinned(id: String, pinned: Boolean) {
+        viewModelScope.launch(backgroundDispatcher) { dataRepository.setConversationPinned(id, pinned) }
     }
 
     private fun renameConversation(id: String, title: String) {
