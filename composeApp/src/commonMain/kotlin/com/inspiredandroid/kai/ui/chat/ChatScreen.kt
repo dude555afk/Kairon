@@ -995,8 +995,8 @@ private fun ChatModeScreen(
                     modifier = Modifier
                         .align(BottomCenter)
                         .fillMaxWidth()
-                        .padding(bottom = 10.dp)
-                        .onSizeChanged { composerHeightPx = it.height },
+                        .onSizeChanged { composerHeightPx = it.height }
+                        .padding(bottom = 10.dp),
                     files = uiState.files,
                     addFile = uiState.actions.addFile,
                     removeFile = uiState.actions.removeFile,
