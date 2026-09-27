@@ -13,7 +13,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
 
 /**
  * One compact action menu shared by user and assistant bubbles. The popup may be opened
@@ -29,17 +28,11 @@ internal fun MessageActionMenu(
     modelId: String? = null,
     externalOpen: Boolean = false,
     onExternalDismiss: () -> Unit = {},
-    modifier: Modifier = Modifier,
-    content: @Composable ((() -> Unit) -> Unit)? = null,
 ) {
     var expanded by remember { mutableStateOf(false) }
-    Box(modifier = modifier) {
-        if (content != null) {
-            content { expanded = true }
-        } else {
-            IconButton(onClick = { expanded = true }) {
-                Icon(Icons.Default.MoreVert, contentDescription = "Message actions")
-            }
+    Box {
+        IconButton(onClick = { expanded = true }) {
+            Icon(Icons.Default.MoreVert, contentDescription = "Message actions")
         }
         DropdownMenu(expanded = expanded || externalOpen, onDismissRequest = { expanded = false; onExternalDismiss() }) {
             funActionItem("Branch in new chat", onBranch) { expanded = false; onExternalDismiss() }
