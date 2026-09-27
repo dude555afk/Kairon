@@ -39,6 +39,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
@@ -198,6 +199,7 @@ fun QuestionInput(
                 .padding(horizontal = 12.dp, vertical = 8.dp)
                 .heightIn(max = maxComposerHeight)
                 .fillMaxWidth()
+                .shadow(elevation = 8.dp, shape = RoundedCornerShape(26.dp))
                 .clip(RoundedCornerShape(26.dp))
                 .border(
                     width = 1.dp,
@@ -284,8 +286,9 @@ fun QuestionInput(
             ),
         )
         val inInspection = LocalInspectionMode.current
+        // Mobile welcome should not open the keyboard before a deliberate tap.
         LaunchedEffect(Unit) {
-            if (!inInspection) focusRequester.requestFocus()
+            if (!inInspection && currentPlatform !is Platform.Mobile) focusRequester.requestFocus()
         }
     }
 }
