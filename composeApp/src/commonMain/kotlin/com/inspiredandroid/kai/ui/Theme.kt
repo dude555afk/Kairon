@@ -2,6 +2,8 @@
 
 package com.inspiredandroid.kai.ui
 
+import com.inspiredandroid.kai.data.AccentPreset
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -55,6 +57,19 @@ val DarkColorScheme = darkColorScheme(
     onBackground = Color(0xFFFFFFFF),
     onSurface = Color(0xFFFFFFFF),
 )
+
+fun ColorScheme.withAccent(preset: AccentPreset): ColorScheme {
+    val accent = when (preset) {
+        AccentPreset.Default -> return this
+        AccentPreset.Graphite -> Color(0xFF9BA0AA)
+        AccentPreset.Lavender -> Color(0xFFB4A7F5)
+        AccentPreset.Rose -> Color(0xFFF38BA8)
+        AccentPreset.Teal -> Color(0xFF69D5C4)
+        AccentPreset.CatppuccinMocha -> Color(0xFFCBA6F7)
+    }
+    return copy(primary = accent, secondary = accent, tertiary = accent,
+        onPrimary = Color(0xFF171717))
+}
 
 fun ColorScheme.withBlackBackground(): ColorScheme = copy(
     background = Color.Black,
