@@ -876,6 +876,7 @@ private fun ChatModeScreen(
                                                                 null
                                                             },
                                                             reasoningSegments = reasoningSegmentsByAssistantId[history.id] ?: persistentListOf(),
+                                                            showThinkingHeader = uiState.showThinkingHeader,
                                                         )
                                                         if (history.fallbackServiceName != null) {
                                                             androidx.compose.material3.Text(
@@ -899,6 +900,7 @@ private fun ChatModeScreen(
                                                             setIsSpeaking = {},
                                                             reasoningSegments = reasoningSegmentsByAssistantId[history.id]
                                                                 ?: persistentListOf(history.content),
+                                                            showThinkingHeader = uiState.showThinkingHeader,
                                                         )
                                                     }
                                                 }
