@@ -17,24 +17,13 @@ jobs:
       github.actor != 'github-actions[bot]'
 
     permissions:
-      contents: write
+      contents: read
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{ github.head_ref || github.ref }}
-
-      - name: Check if fork PR
-        id: fork-check
-        if: github.event_name == 'pull_request'
-        run: |
-          if [ "${{ github.event.pull_request.head.repo.full_name }}" != "${{ github.repository }}" ]; then
-            echo "is_fork=true" >> $GITHUB_OUTPUT
-          else
-            echo "is_fork=false" >> $GITHUB_OUTPUT
-          fi
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v4
@@ -65,8 +54,8 @@ jobs:
           echo "JAVA_HOME: $JAVA_HOME"
           java -version
 
-      - name: Run spotlessApply
-        run: ./gradlew spotlessApply --no-daemon --stacktrace
+      - name: Check formatting (no automatic edits)
+        run: ./gradlew spotlessCheck --no-daemon --stacktrace
 
       - name: Run updateScreenshots
         run: ./gradlew :screenshotTests:updateScreenshots --no-daemon --stacktrace
@@ -80,34 +69,15 @@ jobs:
       - name: Run desktop tests
         run: ./gradlew :composeApp:desktopTest --no-daemon --stacktrace
 
-      - name: Check for changes
-        id: changes
+      # Screenshot/image generation is checked for reproducibility, never committed by CI.
+      - name: Check generated assets are committed
         run: |
           if [ -n "$(git status --porcelain)" ]; then
-            echo "has_changes=true" >> $GITHUB_OUTPUT
-          else
-            echo "has_changes=false" >> $GITHUB_OUTPUT
+            echo "::error::Generated screenshots or images differ from the committed files."
+            echo "Run these commands locally, review the changes, and commit them:"
+            echo "  ./gradlew spotlessApply"
+            echo "  ./gradlew :screenshotTests:updateScreenshots"
+            echo "  ./scripts/convert-site-images-to-webp.sh"
+            git status --short
+            exit 1
           fi
-
-      - name: Fail if fork PR has changes
-        if: |
-          steps.changes.outputs.has_changes == 'true' &&
-          steps.fork-check.outputs.is_fork == 'true'
-        run: |
-          echo "::error::This PR from a fork requires formatting or screenshot updates."
-          echo "Please run the following commands locally and push the changes:"
-          echo "  ./gradlew spotlessApply"
-          echo "  ./gradlew :screenshotTests:updateScreenshots"
-          echo "  ./scripts/convert-site-images-to-webp.sh"
-          exit 1
-
-      - name: Commit and push changes
-        if: |
-          steps.changes.outputs.has_changes == 'true' &&
-          (github.event_name == 'push' || steps.fork-check.outputs.is_fork == 'false')
-        run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          git add -A
-          git commit -m "Auto-fix: spotlessApply and updateScreenshots [skip ci]"
-          git push

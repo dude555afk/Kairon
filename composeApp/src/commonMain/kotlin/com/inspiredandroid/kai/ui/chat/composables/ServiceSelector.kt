@@ -1,7 +1,9 @@
 package com.inspiredandroid.kai.ui.chat.composables
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -21,6 +23,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -43,6 +46,7 @@ import com.inspiredandroid.kai.ui.handCursor
 import kotlinx.collections.immutable.ImmutableList
 import org.jetbrains.compose.resources.vectorResource
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun ServiceSelector(
     services: ImmutableList<ServiceEntry>,
@@ -52,6 +56,14 @@ internal fun ServiceSelector(
 
     val current = services.first()
     var expanded by remember { mutableStateOf(false) }
+    var previousInstanceId by remember { mutableStateOf<String?>(null) }
+    var observedInstanceId by remember { mutableStateOf(current.instanceId) }
+    LaunchedEffect(current.instanceId) {
+        if (observedInstanceId != current.instanceId) {
+            previousInstanceId = observedInstanceId
+            observedInstanceId = current.instanceId
+        }
+    }
 
     Box {
         Box(
@@ -59,7 +71,15 @@ internal fun ServiceSelector(
                 .size(42.dp)
                 .clip(CircleShape)
                 .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape)
-                .clickable { expanded = true }
+                .combinedClickable(
+                    onClick = { expanded = true },
+                    onLongClick = {
+                        val previous = previousInstanceId?.takeIf { id ->
+                            services.any { it.instanceId == id }
+                        }
+                        if (previous != null) onSelectService(previous) else expanded = true
+                    },
+                )
                 .handCursor(),
             contentAlignment = Alignment.Center,
         ) {

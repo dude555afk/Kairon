@@ -70,6 +70,20 @@ class OpenAIResponsesRequestDtoTest {
     }
 
     @Test
+    fun `effort is omitted by default and serialized only when selected`() {
+        val defaultBody = encode(OpenAIResponsesRequestDto(input = emptyList(), model = "gpt-5.6-sol"))
+        assertNull(defaultBody["reasoning"])
+        val highBody = encode(
+            OpenAIResponsesRequestDto(
+                input = emptyList(),
+                model = "gpt-5.6-sol",
+                reasoning = OpenAIResponsesRequestDto.Reasoning("high"),
+            ),
+        )
+        assertEquals("high", (highBody["reasoning"] as JsonObject)["effort"]?.jsonPrimitive?.content)
+    }
+
+    @Test
     fun `omits tools entirely when none are declared`() {
         val body = encode(OpenAIResponsesRequestDto(input = emptyList(), model = "gpt-5.6-luna", tools = null))
 

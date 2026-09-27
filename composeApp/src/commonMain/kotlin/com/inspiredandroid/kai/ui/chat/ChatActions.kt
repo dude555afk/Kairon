@@ -1,7 +1,10 @@
 package com.inspiredandroid.kai.ui.chat
 
 import androidx.compose.runtime.Immutable
+import com.inspiredandroid.kai.data.ReasoningEffort
 import io.github.vinceglb.filekit.PlatformFile
+
+enum class MessageRerunMode { RETRY, THINKING, WEB_SEARCH }
 
 @Immutable
 data class ChatActions(
@@ -14,10 +17,15 @@ data class ChatActions(
     val removeFile: (PlatformFile) -> Unit,
     val startNewChat: () -> Unit,
     val regenerate: () -> Unit,
+    val branchConversation: (String) -> Unit = {},
+    val editPrompt: (String, String) -> Unit = { _, _ -> },
+    val rerunFromMessage: (String, MessageRerunMode) -> Unit = { _, _ -> },
     val cancel: () -> Unit,
     val selectService: (String) -> Unit,
     val loadConversation: (String) -> Unit,
     val deleteConversation: (String) -> Unit,
+    val renameConversation: (String, String) -> Unit,
+    val setConversationPinned: (String, Boolean) -> Unit,
     val clearUnreadHeartbeat: () -> Unit,
     val clearSnackbar: () -> Unit,
     val undoDeleteConversation: () -> Unit,
@@ -29,4 +37,5 @@ data class ChatActions(
     val sendSmsDraft: (String) -> Unit,
     val discardSmsDraft: (String) -> Unit,
     val consumeComposerPrefill: () -> Unit,
+    val selectReasoningEffort: (ReasoningEffort) -> Unit = {},
 )

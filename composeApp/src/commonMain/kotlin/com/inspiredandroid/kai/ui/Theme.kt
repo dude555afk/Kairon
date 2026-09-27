@@ -4,7 +4,6 @@ package com.inspiredandroid.kai.ui
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -17,6 +16,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
@@ -30,10 +30,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import com.inspiredandroid.kai.data.AccentPreset
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 val darkPurple = Color(0xFF6200EE)
@@ -56,6 +58,46 @@ val DarkColorScheme = darkColorScheme(
     onSurface = Color(0xFFFFFFFF),
 )
 
+fun ColorScheme.withAccent(preset: AccentPreset): ColorScheme {
+    val accent = when (preset) {
+        AccentPreset.Default -> return this
+        AccentPreset.Graphite -> Color(0xFF9BA0AA)
+        AccentPreset.Lavender -> Color(0xFFB4A7F5)
+        AccentPreset.Rose -> Color(0xFFF38BA8)
+        AccentPreset.Teal -> Color(0xFF69D5C4)
+        AccentPreset.CatppuccinMocha -> Color(0xFFCBA6F7)
+    }
+    // Apply the accent consistently to the app canvas, raised surfaces, controls,
+    // and outlines while preserving pure black on OLED.
+    val oled = background == Color.Black
+    return copy(
+        primary = accent,
+        onPrimary = Color(0xFF171717),
+        primaryContainer = lerp(surfaceContainerHigh, accent, 0.26f),
+        onPrimaryContainer = onSurface,
+        secondary = accent,
+        onSecondary = Color(0xFF171717),
+        secondaryContainer = lerp(surfaceContainerHigh, accent, 0.16f),
+        onSecondaryContainer = onSurface,
+        tertiary = accent,
+        onTertiary = Color(0xFF171717),
+        tertiaryContainer = lerp(surfaceContainerHigh, accent, 0.16f),
+        onTertiaryContainer = onSurface,
+        surfaceTint = accent,
+        inversePrimary = accent,
+        background = if (oled) Color.Black else lerp(background, accent, 0.025f),
+        surface = if (oled) Color.Black else lerp(surface, accent, 0.035f),
+        surfaceContainerLowest = if (oled) Color.Black else lerp(surfaceContainerLowest, accent, 0.025f),
+        surfaceContainerLow = lerp(surfaceContainerLow, accent, 0.055f),
+        surfaceContainer = lerp(surfaceContainer, accent, 0.08f),
+        surfaceContainerHigh = lerp(surfaceContainerHigh, accent, 0.12f),
+        surfaceContainerHighest = lerp(surfaceContainerHighest, accent, 0.17f),
+        surfaceVariant = lerp(surfaceVariant, accent, 0.12f),
+        outline = lerp(outline, accent, 0.22f),
+        outlineVariant = lerp(outlineVariant, accent, 0.24f),
+    )
+}
+
 fun ColorScheme.withBlackBackground(): ColorScheme = copy(
     background = Color.Black,
     surface = Color.Black,
@@ -64,39 +106,20 @@ fun ColorScheme.withBlackBackground(): ColorScheme = copy(
 
 val ColorScheme.isOledFlavor: Boolean get() = background == Color.Black
 
+// One filled, theme-derived surface language for all settings and workspace cards.
+// Even OLED keeps readable raised surfaces instead of a grid of outlined boxes.
 @Composable
 fun kaiAdaptiveCardColors(): CardColors = CardDefaults.cardColors(
-    containerColor = if (MaterialTheme.colorScheme.isOledFlavor) {
-        Color.Transparent
-    } else {
-        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-    },
+    containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
 )
 
 @Composable
-fun kaiAdaptiveCardBorder(): BorderStroke? = if (MaterialTheme.colorScheme.isOledFlavor) {
-    BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-} else {
-    null
-}
+fun kaiAdaptiveCardBorder(): BorderStroke? = null
 
 @Composable
 fun Modifier.kaiAdaptiveCardSurface(shape: Shape = CardDefaults.shape): Modifier = this
     .clip(shape)
-    .background(
-        if (MaterialTheme.colorScheme.isOledFlavor) {
-            Color.Transparent
-        } else {
-            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-        },
-    )
-    .then(
-        if (MaterialTheme.colorScheme.isOledFlavor) {
-            Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant, shape)
-        } else {
-            Modifier
-        },
-    )
+    .background(MaterialTheme.colorScheme.surfaceContainerLow)
 
 val LightColorScheme = lightColorScheme(
     primary = darkPurple,
@@ -175,6 +198,14 @@ fun KaiClearableTextField(
     )
 }
 
+private val KaironShapes = Shapes(
+    extraSmall = RoundedCornerShape(8.dp),
+    small = RoundedCornerShape(12.dp),
+    medium = RoundedCornerShape(18.dp),
+    large = RoundedCornerShape(24.dp),
+    extraLarge = RoundedCornerShape(28.dp),
+)
+
 @Composable
 @Preview
 fun Theme(
@@ -183,6 +214,7 @@ fun Theme(
 ) {
     MaterialTheme(
         colorScheme = colorScheme,
+        shapes = KaironShapes,
     ) {
         content()
     }

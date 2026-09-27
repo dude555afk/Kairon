@@ -1,5 +1,6 @@
 package com.inspiredandroid.kai.testutil
 
+import com.inspiredandroid.kai.data.AccentPreset
 import com.inspiredandroid.kai.data.Conversation
 import com.inspiredandroid.kai.data.DataRepository
 import com.inspiredandroid.kai.data.EmailAccount
@@ -10,6 +11,7 @@ import com.inspiredandroid.kai.data.HeartbeatConfig
 import com.inspiredandroid.kai.data.HeartbeatLogEntry
 import com.inspiredandroid.kai.data.ImportSection
 import com.inspiredandroid.kai.data.MemoryEntry
+import com.inspiredandroid.kai.data.ReasoningEffort
 import com.inspiredandroid.kai.data.ScheduledTask
 import com.inspiredandroid.kai.data.Service
 import com.inspiredandroid.kai.data.ServiceEntry
@@ -42,6 +44,7 @@ class FakeDataRepository : DataRepository {
     private var currentService: Service = Service.Free
 
     override val chatHistory: MutableStateFlow<List<History>> = MutableStateFlow(emptyList())
+    override val streamingText: MutableStateFlow<String> = MutableStateFlow("")
     override val currentConversationId: MutableStateFlow<String?> = MutableStateFlow(null)
     override val fallbackStatus: MutableStateFlow<FallbackStatus?> = MutableStateFlow(null)
 
@@ -213,6 +216,7 @@ class FakeDataRepository : DataRepository {
         files: List<PlatformFile>,
         uiSubmission: com.inspiredandroid.kai.data.UiSubmission?,
         activeSkillId: String?,
+        reasoningEffort: ReasoningEffort,
     ) {
         askCalls.add(question to files)
         lastActiveSkillId = activeSkillId
@@ -263,6 +267,16 @@ class FakeDataRepository : DataRepository {
         }
     }
 
+    override suspend fun setConversationPinned(id: String, pinned: Boolean) {
+        savedConversations.update { list -> list.map { if (it.id == id) it.copy(isPinned = pinned) else it } }
+    }
+
+    override suspend fun renameConversation(id: String, title: String) {
+        savedConversations.update { list ->
+            list.map { if (it.id == id && it.type != Conversation.TYPE_HEARTBEAT) it.copy(title = title.trim().take(120)) else it }
+        }
+    }
+
     override suspend fun deleteConversation(id: String) {
         if (currentConversationId.value == id) {
             currentConversationId.value = null
@@ -300,6 +314,47 @@ class FakeDataRepository : DataRepository {
             val index = history.indexOfFirst { it.id == messageId }
             if (index >= 0) history.subList(0, index) else history
         }
+    }
+
+    private var nextBranchId = 0
+
+    override suspend fun branchConversation(messageId: String, editedContent: String?): Boolean {
+        val source = chatHistory.value
+        val index = source.indexOfFirst { it.id == messageId }
+        if (index < 0) return false
+        val target = source[index]
+        if (editedContent != null && (target.role != History.Role.USER || editedContent.isBlank())) return false
+        val prefix = if (editedContent == null) source.take(index + 1) else {
+            source.take(index) + History(
+                role = History.Role.USER,
+                content = editedContent.trim(),
+                attachments = target.attachments,
+            )
+        }
+        val parent = currentConversationId.value ?: "unsaved-parent"
+        val id = "test-branch-${++nextBranchId}"
+        savedConversations.update { it + Conversation(
+            id = id,
+            messages = prefix.map { h ->
+                Conversation.Message(
+                    id = h.id,
+                    role = when (h.role) {
+                        History.Role.USER -> "user"
+                        History.Role.TOOL, History.Role.TOOL_EXECUTING -> "tool"
+                        History.Role.ASSISTANT -> "assistant"
+                    },
+                    content = h.content,
+                    attachments = h.attachments,
+                )
+            },
+            createdAt = 0L,
+            updatedAt = 0L,
+            parentConversationId = parent,
+            branchPointMessageId = messageId,
+        ) }
+        currentConversationId.value = id
+        chatHistory.value = prefix
+        return true
     }
 
     override fun restoreCurrentConversation() {
@@ -385,10 +440,26 @@ class FakeDataRepository : DataRepository {
 
     override suspend fun pollEmailAccount(accountId: String) {}
 
+    private var thinkingHeaderVisible = true
+
+    override fun isThinkingHeaderVisible(): Boolean = thinkingHeaderVisible
+
+    override fun setThinkingHeaderVisible(visible: Boolean) {
+        thinkingHeaderVisible = visible
+    }
+
     override fun isDynamicUiEnabled(): Boolean = dynamicUiEnabled
 
     override fun setDynamicUiEnabled(enabled: Boolean) {
         dynamicUiEnabled = enabled
+    }
+
+    private var accentPreset: AccentPreset = AccentPreset.Default
+
+    override fun getAccentPreset(): AccentPreset = accentPreset
+
+    override fun setAccentPreset(preset: AccentPreset) {
+        accentPreset = preset
     }
 
     private var themeMode: ThemeMode = ThemeMode.System

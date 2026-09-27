@@ -48,6 +48,7 @@ import com.inspiredandroid.kai.ui.components.FullScreenImageHost
 import com.inspiredandroid.kai.ui.handCursor
 import com.inspiredandroid.kai.ui.rememberSandboxAwareUriHandler
 import com.inspiredandroid.kai.ui.settings.SettingsScreen
+import com.inspiredandroid.kai.ui.withAccent
 import com.inspiredandroid.kai.ui.withBlackBackground
 import kai.composeapp.generated.resources.Res
 import kai.composeapp.generated.resources.tab_chat
@@ -148,12 +149,15 @@ private fun AppContent(
 
     val themeMode by appSettings.themeModeFlow.collectAsStateWithLifecycle()
     val systemInDark = isSystemInDarkTheme()
-    val effectiveColorScheme = when (themeMode) {
-        ThemeMode.System -> if (systemInDark) darkColorScheme else lightColorScheme
-        ThemeMode.Light -> lightColorScheme
-        ThemeMode.Dark -> darkColorScheme
-        ThemeMode.OledBlack -> darkColorScheme.withBlackBackground()
-    }
+    val accentPreset by appSettings.accentPresetFlow.collectAsStateWithLifecycle()
+    val effectiveColorScheme = (
+        when (themeMode) {
+            ThemeMode.System -> if (systemInDark) darkColorScheme else lightColorScheme
+            ThemeMode.Light -> lightColorScheme
+            ThemeMode.Dark -> darkColorScheme
+            ThemeMode.OledBlack -> darkColorScheme.withBlackBackground()
+        }
+        ).withAccent(accentPreset)
 
     val sandboxController = koinInject<SandboxController>()
     val sandboxAwareUriHandler = rememberSandboxAwareUriHandler(sandboxController)

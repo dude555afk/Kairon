@@ -5,6 +5,7 @@ package com.inspiredandroid.kai.ui.chat
 import androidx.compose.runtime.Immutable
 import com.inspiredandroid.kai.data.Attachment
 import com.inspiredandroid.kai.data.FallbackStatus
+import com.inspiredandroid.kai.data.ReasoningEffort
 import com.inspiredandroid.kai.data.ReasoningRequestMode
 import com.inspiredandroid.kai.data.ServiceEntry
 import com.inspiredandroid.kai.data.SharedJson
@@ -16,6 +17,7 @@ import com.inspiredandroid.kai.network.dtos.openaicompatible.OpenAICompatibleCha
 import io.github.vinceglb.filekit.PlatformFile
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -62,8 +64,12 @@ data class ConversationSummary(
     val id: String,
     val title: String,
     val updatedAt: Long,
+    val searchContent: ImmutableList<String> = persistentListOf(),
+    val isPinned: Boolean = false,
     val isHeartbeat: Boolean = false,
     val isInteractive: Boolean = false,
+    val parentConversationId: String? = null,
+    val branchPointMessageId: String? = null,
 )
 
 @Immutable
@@ -72,6 +78,8 @@ data class ChatUiState(
     val history: ImmutableList<History> = persistentListOf(),
     val isSpeechOutputEnabled: Boolean = false,
     val isLoading: Boolean = false,
+    val streamingText: String = "",
+    val showThinkingHeader: Boolean = true,
     val error: UiError? = null,
     val showFreeProviderSuggestions: Boolean = false,
     val warning: StringResource? = null,
@@ -92,6 +100,8 @@ data class ChatUiState(
     val isRestoring: Boolean = true,
     val installedSkills: ImmutableList<com.inspiredandroid.kai.skills.SkillManifest> = persistentListOf(),
     val composerPrefill: String? = null,
+    val reasoningEffort: ReasoningEffort = ReasoningEffort.AUTO,
+    val webSearchAvailable: Boolean = false,
 ) {
     val heartbeatConversationId: String?
         get() = savedConversations.firstOrNull { it.isHeartbeat }?.id
@@ -109,6 +119,7 @@ data class History(
     val isThinking: Boolean = false,
     val isStatusMessage: Boolean = false,
     val fallbackServiceName: String? = null,
+    val modelId: String? = null,
     val uiSubmission: UiSubmission? = null,
     // Preserved from a tool-call assistant turn so it can be round-tripped
     // back to providers (e.g. DeepSeek) that require it on the next request.
@@ -126,6 +137,7 @@ data class History(
 fun List<History>.lastRenderedAssistant(): History? = lastOrNull { it.role == History.Role.ASSISTANT && it.content.isNotEmpty() && !it.isThinking }
 
 @Immutable
+@Serializable
 data class ToolCallInfo(
     val id: String,
     val name: String,

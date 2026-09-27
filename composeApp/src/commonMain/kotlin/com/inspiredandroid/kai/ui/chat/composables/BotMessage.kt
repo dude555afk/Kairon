@@ -3,6 +3,8 @@ package com.inspiredandroid.kai.ui.chat.composables
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -26,6 +28,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -68,6 +71,7 @@ import nl.marc_apps.tts.TextToSpeechInstance
 import nl.marc_apps.tts.errors.TextToSpeechSynthesisInterruptedError
 import org.jetbrains.compose.resources.stringResource
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun BotMessage(
     message: String,
@@ -75,13 +79,20 @@ internal fun BotMessage(
     isSpeaking: Boolean,
     setIsSpeaking: (Boolean) -> Unit,
     onRegenerate: (() -> Unit)? = null,
+    onFork: (() -> Unit)? = null,
+    onRetry: (() -> Unit)? = null,
+    onThinking: (() -> Unit)? = null,
+    onWebSearch: (() -> Unit)? = null,
+    modelId: String? = null,
     isInteractive: Boolean = false,
     onUiCallback: ((event: String, data: Map<String, String>) -> Unit)? = null,
     frozen: FrozenSubmission? = null,
     onResubmit: ((event: String, data: Map<String, String>) -> Unit)? = null,
     reasoningSegments: ImmutableList<String> = persistentListOf(),
+    showThinkingHeader: Boolean = true,
 ) {
     val document = remember(message) { parseMarkdown(message) }
+    var actionMenuOpen by remember { mutableStateOf(false) }
     var isEditing by remember(frozen) { mutableStateOf(false) }
     val effectiveFrozen = if (isEditing && frozen != null) frozen.copy(pressedEvent = null) else frozen
     val effectiveInteractive = if (frozen != null) (onResubmit != null && isEditing) else isInteractive
@@ -94,12 +105,12 @@ internal fun BotMessage(
         onUiCallback ?: { _, _ -> }
     }
 
-    Box(modifier = Modifier.fillMaxWidth()) {
+    Box(modifier = Modifier.fillMaxWidth().combinedClickable(onClick = {}, onLongClick = { actionMenuOpen = true })) {
         Column(modifier = Modifier.fillMaxWidth()) {
             val nonBlankSegments = remember(reasoningSegments) {
                 reasoningSegments.filter { it.isNotBlank() }.toImmutableList()
             }
-            if (nonBlankSegments.isNotEmpty()) {
+            if (showThinkingHeader && nonBlankSegments.isNotEmpty()) {
                 ReasoningBlockquote(
                     segments = nonBlankSegments,
                     modifier = Modifier.fillMaxWidth()
@@ -109,7 +120,7 @@ internal fun BotMessage(
             if (message.isNotEmpty()) {
                 // When reasoning is shown above, the Thinking row already provides
                 // the visual gap to the answer — drop the duplicated top inset.
-                val answerTopPadding = if (nonBlankSegments.isNotEmpty()) 6.dp else 16.dp
+                val answerTopPadding = if (showThinkingHeader && nonBlankSegments.isNotEmpty()) 6.dp else 16.dp
                 SelectionContainer {
                     MarkdownContent(
                         document = document,
@@ -193,6 +204,17 @@ internal fun BotMessage(
                 iconResource = Res.drawable.ic_refresh,
                 contentDescription = stringResource(Res.string.bot_message_regenerate_content_description),
                 onClick = onRegenerate,
+            )
+        }
+        if (onFork != null || onRetry != null || onThinking != null || onWebSearch != null) {
+            MessageActionMenu(
+                onBranch = onFork,
+                onRetry = onRetry,
+                onThinking = onThinking,
+                onWebSearch = onWebSearch,
+                modelId = modelId,
+                externalOpen = actionMenuOpen,
+                onExternalDismiss = { actionMenuOpen = false },
             )
         }
         Spacer(Modifier.weight(1f))

@@ -1,6 +1,7 @@
 package com.inspiredandroid.kai.ui.settings
 
 import androidx.compose.runtime.Immutable
+import com.inspiredandroid.kai.data.AccentPreset
 import com.inspiredandroid.kai.data.ImportSection
 import com.inspiredandroid.kai.data.Service
 import com.inspiredandroid.kai.data.ThemeMode
@@ -23,7 +24,9 @@ data class SettingsActions(
     val onToggleTool: (String, Boolean) -> Unit,
     val onSaveSoul: (String) -> Unit,
     val onToggleDynamicUi: (Boolean) -> Unit,
+    val onToggleThinkingHeader: (Boolean) -> Unit,
     val onChangeThemeMode: (ThemeMode) -> Unit,
+    val onChangeAccentPreset: (AccentPreset) -> Unit,
     val onToggleMemory: (Boolean) -> Unit,
     val onDeleteMemory: (String) -> Unit,
     val onUpdateMemory: (String, String) -> Unit,
@@ -87,7 +90,9 @@ data class SettingsActions(
             onToggleTool = { _, _ -> },
             onSaveSoul = {},
             onToggleDynamicUi = {},
+            onToggleThinkingHeader = {},
             onChangeThemeMode = {},
+            onChangeAccentPreset = {},
             onToggleMemory = {},
             onDeleteMemory = {},
             onUpdateMemory = { _, _ -> },

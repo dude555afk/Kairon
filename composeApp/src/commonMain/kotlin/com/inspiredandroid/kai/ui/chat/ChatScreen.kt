@@ -18,6 +18,7 @@ import androidx.compose.foundation.draganddrop.dragAndDropTarget
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -40,24 +41,32 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Alignment.Companion.BottomCenter
 import androidx.compose.ui.Alignment.Companion.CenterEnd
@@ -67,6 +76,9 @@ import androidx.compose.ui.draganddrop.DragAndDropEvent
 import androidx.compose.ui.draganddrop.DragAndDropTarget
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextRange
@@ -76,6 +88,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.inspiredandroid.kai.BackIcon
 import com.inspiredandroid.kai.TerminalLine
 import com.inspiredandroid.kai.data.Service
+import com.inspiredandroid.kai.data.supportedReasoningEfforts
 import com.inspiredandroid.kai.data.supportsAgenticFlows
 import com.inspiredandroid.kai.getBackgroundDispatcher
 import com.inspiredandroid.kai.onDragAndDropEventDropped
@@ -296,6 +309,8 @@ private fun InteractiveModeScreen(
                         availableServices = interactiveServices,
                         onSelectService = uiState.actions.selectService,
                         installedSkills = uiState.installedSkills,
+                        reasoningEffort = uiState.reasoningEffort,
+                        onSelectReasoningEffort = uiState.actions.selectReasoningEffort,
                     )
                 }
             }
@@ -502,7 +517,8 @@ private fun ChatModeScreen(
     previewSandboxState: SandboxUiState? = null,
     previewSandboxLines: ImmutableList<TerminalLine> = persistentListOf(),
 ) {
-    var showHistorySheet by remember { mutableStateOf(false) }
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val drawerScope = rememberCoroutineScope()
     var isSandboxOpen by rememberSaveable { mutableStateOf(initialSandboxOpen) }
     // Hoisted here so the draft survives toggling the sandbox/terminal view, which
     // removes QuestionInput from composition and would otherwise drop the text.
@@ -553,9 +569,548 @@ private fun ChatModeScreen(
         }
     }
 
-    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).navigationBarsPadding().statusBarsPadding().imePadding()) {
-        Column(Modifier.fillMaxSize()) {
+    // ModalNavigationDrawer provides finger-tracked opening/closing, a scrim and
+    // outside-tap/back dismissal. Keep all conversation actions in the drawer content.
+    var composerHeightPx by remember { mutableIntStateOf(0) }
+    val composerHeight = with(LocalDensity.current) { composerHeightPx.toDp() }
+    val hasTopBanners = uiState.hasUnreadHeartbeat ||
+        uiState.smsDrafts.isNotEmpty() || uiState.warning != null
+    val needsHeaderInset = isSandboxOpen || hasTopBanners
+    LaunchedEffect(drawerState.targetValue) {
+        if (drawerState.targetValue == DrawerValue.Open) keyboardController?.hide()
+    }
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        gesturesEnabled = navigationTabBar == null,
+        drawerContent = {
+            ChatHistorySheet(
+                conversations = filteredConversations,
+                currentConversationId = uiState.currentConversationId,
+                pendingConversationDeletion = uiState.pendingConversationDeletion,
+                actions = uiState.actions,
+                onDismiss = { drawerScope.launch { drawerState.close() } },
+                onNavigateToSettings = onNavigateToSettings,
+                onConversationSelected = { isSandboxOpen = false },
+            )
+        },
+    ) {
+        Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).navigationBarsPadding().statusBarsPadding().imePadding()) {
+            // Keep the chat canvas behind the detached floating buttons.
+            // The list's own top content padding protects its first message while
+            // preserving edge-to-edge scrolling instead of creating a toolbar band.
+            Column(
+                Modifier.fillMaxSize()
+                    .padding(top = if (needsHeaderInset) 72.dp else 0.dp),
+            ) {
+                HeartbeatBanner(
+                    visible = uiState.hasUnreadHeartbeat,
+                    onTap = {
+                        uiState.heartbeatConversationId?.let { uiState.actions.loadConversation(it) }
+                        uiState.actions.clearUnreadHeartbeat()
+                        isSandboxOpen = false
+                    },
+                    onDismiss = {
+                        uiState.actions.clearUnreadHeartbeat()
+                    },
+                )
+
+                PendingSmsBanners(
+                    drafts = uiState.smsDrafts,
+                    onSend = uiState.actions.sendSmsDraft,
+                    onDiscard = uiState.actions.discardSmsDraft,
+                )
+
+                uiState.warning?.let { warning ->
+                    Text(
+                        text = stringResource(warning),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                    )
+                }
+
+                if (isSandboxOpen) {
+                    val isPreview = LocalInspectionMode.current
+                    val sandboxViewModel = if (!isPreview) koinViewModel<SandboxViewModel>() else null
+                    val liveState = sandboxViewModel?.state?.collectAsStateWithLifecycle()?.value
+                    val sandboxState = liveState ?: previewSandboxState ?: SandboxUiState()
+                    SandboxTabsContent(
+                        sandboxState = sandboxState,
+                        onSetupSandbox = sandboxViewModel?.let { { it.onSetupSandbox() } } ?: {},
+                        onCancelSandbox = sandboxViewModel?.let { { it.onCancelSandbox() } } ?: {},
+                        previewLines = previewSandboxLines,
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                    )
+                } else {
+                    Box(Modifier.weight(1f)) {
+                        var isDropping by remember {
+                            mutableStateOf(false)
+                        }
+                        val addFile by rememberUpdatedState(uiState.actions.addFile)
+                        val canAcceptDrop by rememberUpdatedState(uiState.supportedFileExtensions.isNotEmpty())
+                        val shouldStartDragAndDrop = remember { { _: DragAndDropEvent -> canAcceptDrop } }
+                        val dropTarget = remember {
+                            object : DragAndDropTarget {
+                                override fun onEntered(event: DragAndDropEvent) {
+                                    super.onEntered(event)
+                                    isDropping = true
+                                }
+                                override fun onExited(event: DragAndDropEvent) {
+                                    super.onExited(event)
+                                    isDropping = false
+                                }
+                                override fun onDrop(event: DragAndDropEvent): Boolean {
+                                    val file = onDragAndDropEventDropped(event)
+                                    if (file != null) addFile(file)
+                                    isDropping = false
+                                    return file != null
+                                }
+                            }
+                        }
+                        Column(
+                            Modifier
+                                .fillMaxSize()
+                                .blur(radius = if (isDropping) 4.dp else 0.dp)
+                                .dragAndDropTarget(
+                                    shouldStartDragAndDrop = shouldStartDragAndDrop,
+                                    target = dropTarget,
+                                ),
+                        ) {
+                            if (uiState.history.isEmpty()) {
+                                // Interactive UI mode isn't offered on on-device LiteRT: the kai-ui
+                                // component schema is too large for small Gemma models to coherently
+                                // attend to, and even the minimal variant we tried was unreliable.
+                                val primaryIsOnDevice = uiState.availableServices
+                                    .firstOrNull()
+                                    ?.let { Service.fromId(it.serviceId).isOnDevice } == true
+                                EmptyState(
+                                    modifier = Modifier.fillMaxWidth().weight(1f)
+                                        .padding(top = if (needsHeaderInset) 0.dp else 72.dp)
+                                        .padding(bottom = composerHeight),
+                                    isUsingSharedKey = uiState.showPrivacyInfo,
+                                    onStartInteractiveMode = uiState.actions.enterInteractiveMode
+                                        .takeUnless { primaryIsOnDevice },
+                                    onOpenKaiBuild = onOpenKaiBuild,
+                                )
+                            } else {
+                                val listState = rememberLazyListState()
+                                val componentScope = rememberCoroutineScope()
+                                var followOutput by remember { mutableStateOf(true) }
+                                LaunchedEffect(listState) {
+                                    snapshotFlow {
+                                        Triple(
+                                            listState.isScrollInProgress,
+                                            listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0,
+                                            listState.layoutInfo.totalItemsCount,
+                                        )
+                                    }.collect { (scrolling, lastVisible, count) ->
+                                        if (scrolling) followOutput = lastVisible >= count - 2
+                                    }
+                                }
+                                // Follow the live stream only while the reader remains near
+                                // its end; manually scrolling up pauses the automatic motion.
+                                LaunchedEffect(uiState.streamingText.length / 80) {
+                                    if (uiState.streamingText.isNotBlank() && followOutput) {
+                                        val last = listState.layoutInfo.totalItemsCount - 1
+                                        if (last >= 0) listState.scrollToItem(last)
+                                    }
+                                }
+
+                                LaunchedEffect(uiState.history.size) {
+                                    // Capture history at effect start to prevent race conditions
+                                    val history = uiState.history
+                                    if (history.isNotEmpty()) {
+                                        if (followOutput || history.last().role == History.Role.USER) {
+                                            listState.requestScrollToItem(history.lastIndex)
+                                            followOutput = true
+                                        }
+                                        val lastMessage = history.last()
+                                        if (uiState.isSpeechOutputEnabled && lastMessage.role == History.Role.ASSISTANT) {
+                                            componentScope.launch(getBackgroundDispatcher()) {
+                                                textToSpeech?.stop()
+                                                uiState.actions.setIsSpeaking(true, lastMessage.id)
+                                                try {
+                                                    textToSpeech?.say(lastMessage.content.toSpeakableText())
+                                                } catch (_: TextToSpeechSynthesisInterruptedError) {
+                                                    // Speech was interrupted by user
+                                                } catch (_: Exception) {
+                                                    // Handle TTS errors gracefully (service failure, audio issues, etc.)
+                                                } finally {
+                                                    uiState.actions.setIsSpeaking(false, lastMessage.id)
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                                val lastAssistantId = remember(uiState.history) { uiState.history.lastRenderedAssistant()?.id }
+                                // Pair every user submission with its originating assistant so the kai-ui
+                                // renders once (on the assistant side) with a frozen snapshot — never as a
+                                // separate user-side card. pressedEvent + values persist across the loading
+                                // transition; isPending is only set for the latest in-flight submission.
+                                val pairings = remember(uiState.history, uiState.isLoading) {
+                                    val history = uiState.history
+                                    val lastUserIdx = history.indexOfLast { it.role == History.Role.USER }
+                                    val frozen = mutableMapOf<String, FrozenSubmission>()
+                                    val userIdByAssistant = mutableMapOf<String, String>()
+                                    for ((i, h) in history.withIndex()) {
+                                        if (h.role != History.Role.USER) continue
+                                        val sub = h.uiSubmission ?: continue
+                                        val originId = (i - 1 downTo 0).firstNotNullOfOrNull { j ->
+                                            history[j].takeIf {
+                                                it.role == History.Role.ASSISTANT &&
+                                                    it.content.isNotEmpty() && !it.isThinking &&
+                                                    it.content == sub.sourceContent
+                                            }?.id
+                                        } ?: (i - 1 downTo 0).firstNotNullOfOrNull { j ->
+                                            history[j].takeIf {
+                                                it.role == History.Role.ASSISTANT &&
+                                                    it.content.isNotEmpty() && !it.isThinking
+                                            }?.id
+                                        } ?: continue
+                                        frozen[originId] = FrozenSubmission(
+                                            values = sub.values,
+                                            pressedEvent = sub.pressedEvent,
+                                            isPending = uiState.isLoading && i == lastUserIdx,
+                                        )
+                                        userIdByAssistant[originId] = h.id
+                                    }
+                                    frozen.toMap() to userIdByAssistant.toMap()
+                                }
+                                val frozenByAssistantId = pairings.first
+                                val userIdByAssistantId = pairings.second
+                                val executingToolsState = rememberExecutingTools(uiState.history)
+
+                                val fallbackStatusText = uiState.fallbackStatus?.let { status ->
+                                    val failed = stringResource(Res.string.fallback_service_failed, status.serviceName, uiErrorText(status.errorReason))
+                                    val next = status.nextServiceName?.let { stringResource(Res.string.fallback_trying_next, it) }
+                                    if (next != null) "$failed\n$next" else failed
+                                }
+
+                                // Group every reasoning segment in a response (intermediate tool-call /
+                                // thinking-only turns plus the final answer's own reasoning) under the
+                                // answer-bearing assistant message, so each response shows a single
+                                // collapsible "Thinking" section instead of N standalone ones.
+                                val (reasoningSegmentsByAssistantId, suppressedThinkingIds) = remember(uiState.history) {
+                                    val byAnswerId = mutableMapOf<String, ImmutableList<String>>()
+                                    val suppressed = mutableSetOf<String>()
+                                    val pending = mutableListOf<String>()
+                                    val pendingThinkingIds = mutableListOf<String>()
+                                    for (entry in uiState.history) {
+                                        when {
+                                            entry.role == History.Role.USER -> {
+                                                pending.clear()
+                                                pendingThinkingIds.clear()
+                                            }
+
+                                            entry.role == History.Role.ASSISTANT &&
+                                                entry.isThinking &&
+                                                entry.content.isNotEmpty() -> {
+                                                pending.add(entry.content)
+                                                pendingThinkingIds.add(entry.id)
+                                            }
+
+                                            entry.role == History.Role.ASSISTANT &&
+                                                !entry.isThinking &&
+                                                entry.content.isNotEmpty() -> {
+                                                val combined = buildList {
+                                                    addAll(pending)
+                                                    entry.reasoningContent?.takeIf { it.isNotBlank() }?.let { add(it) }
+                                                }
+                                                if (combined.isNotEmpty()) byAnswerId[entry.id] = combined.toImmutableList()
+                                                suppressed.addAll(pendingThinkingIds)
+                                                pending.clear()
+                                                pendingThinkingIds.clear()
+                                            }
+
+                                            entry.role == History.Role.ASSISTANT &&
+                                                entry.toolCalls != null -> {
+                                                // Assistant turn with tool calls but no answer text yet —
+                                                // capture its reasoning, attach to the eventual answer.
+                                                entry.reasoningContent
+                                                    ?.takeIf { it.isNotBlank() }
+                                                    ?.let { pending.add(it) }
+                                            }
+                                        }
+                                    }
+                                    // In-flight: the user is still waiting for the answer but earlier
+                                    // thinking turns are already in history. Collapse them into the most
+                                    // recent thinking entry so the user sees ONE growing Thinking section
+                                    // instead of a separate bubble per tool-loop iteration.
+                                    if (pendingThinkingIds.isNotEmpty()) {
+                                        val lastId = pendingThinkingIds.last()
+                                        byAnswerId[lastId] = pending.toImmutableList()
+                                        for (i in 0 until pendingThinkingIds.size - 1) {
+                                            suppressed.add(pendingThinkingIds[i])
+                                        }
+                                    }
+                                    byAnswerId to suppressed
+                                }
+
+                                val showScrollToBottom by remember {
+                                    derivedStateOf {
+                                        val lastVisibleItem = listState.layoutInfo.visibleItemsInfo.lastOrNull()
+                                        lastVisibleItem != null && lastVisibleItem.index < listState.layoutInfo.totalItemsCount - 1
+                                    }
+                                }
+
+                                Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
+                                    LazyColumn(
+                                        modifier = Modifier.fillMaxSize(),
+                                        state = listState,
+                                        horizontalAlignment = CenterHorizontally,
+                                        contentPadding = PaddingValues(
+                                            top = if (needsHeaderInset) 8.dp else 76.dp,
+                                            bottom = composerHeight + 24.dp,
+                                        ),
+                                    ) {
+                                        val parentBranch = uiState.savedConversations.firstOrNull { it.id == uiState.currentConversationId }
+                                            ?.parentConversationId?.let { parentId ->
+                                                uiState.savedConversations.firstOrNull { it.id == parentId }
+                                            }
+                                        if (parentBranch != null) {
+                                            item(key = "branch-parent") {
+                                                TextButton(
+                                                    onClick = { uiState.actions.loadConversation(parentBranch.id) },
+                                                    enabled = !uiState.isLoading,
+                                                    modifier = Modifier.padding(start = 12.dp),
+                                                ) { Text("← Original conversation") }
+                                            }
+                                        }
+                                        items(uiState.history, key = { it.id }, contentType = { it.role }) { history ->
+                                            when (history.role) {
+                                                History.Role.USER -> {
+                                                    // Submissions are shown by the paired assistant's frozen kai-ui card
+                                                    // above; the "Responded with: …" text bubble would be redundant.
+                                                    if (history.uiSubmission == null) {
+                                                        UserMessage(
+                                                            message = history.content,
+                                                            attachments = history.attachments,
+                                                            onBranch = if (!uiState.isLoading) { { uiState.actions.branchConversation(history.id) } } else null,
+                                                            onEdit = if (!uiState.isLoading) { { edited -> uiState.actions.editPrompt(history.id, edited) } } else null,
+                                                            onRetry = if (!uiState.isLoading) { { uiState.actions.rerunFromMessage(history.id, MessageRerunMode.RETRY) } } else null,
+                                                            onThinking = if (!uiState.isLoading && uiState.availableServices.firstOrNull()?.let { supportedReasoningEfforts(it.serviceId, it.modelId).size >= 2 } == true) {
+                                                                { uiState.actions.rerunFromMessage(history.id, MessageRerunMode.THINKING) }
+                                                            } else null,
+                                                            onWebSearch = if (!uiState.isLoading && uiState.webSearchAvailable) {
+                                                                { uiState.actions.rerunFromMessage(history.id, MessageRerunMode.WEB_SEARCH) }
+                                                            } else null,
+                                                        )
+                                                    }
+                                                }
+
+                                                History.Role.ASSISTANT -> {
+                                                    if (history.content.isNotEmpty() && !history.isThinking) {
+                                                        val isLastAssistant = history.id == lastAssistantId
+                                                        val frozen = frozenByAssistantId[history.id]
+                                                        val pairedUserId = userIdByAssistantId[history.id]
+                                                        BotMessage(
+                                                            message = history.content,
+                                                            textToSpeech = textToSpeech,
+                                                            isSpeaking = uiState.isSpeaking && uiState.isSpeakingContentId == history.id,
+                                                            setIsSpeaking = {
+                                                                uiState.actions.setIsSpeaking(it, history.id)
+                                                            },
+                                                            onRegenerate = if (isLastAssistant) uiState.actions.regenerate else null,
+                                                            onFork = if (!uiState.isLoading) { { uiState.actions.branchConversation(history.id) } } else null,
+                                                            onRetry = if (!uiState.isLoading) { { uiState.actions.rerunFromMessage(history.id, MessageRerunMode.RETRY) } } else null,
+                                                            onThinking = if (!uiState.isLoading && uiState.availableServices.firstOrNull()?.let { supportedReasoningEfforts(it.serviceId, it.modelId).size >= 2 } == true) {
+                                                                { uiState.actions.rerunFromMessage(history.id, MessageRerunMode.THINKING) }
+                                                            } else null,
+                                                            onWebSearch = if (!uiState.isLoading && uiState.webSearchAvailable) {
+                                                                { uiState.actions.rerunFromMessage(history.id, MessageRerunMode.WEB_SEARCH) }
+                                                            } else null,
+                                                            modelId = history.modelId,
+                                                            isInteractive = isLastAssistant && !uiState.isLoading && frozen == null,
+                                                            onUiCallback = { event, data ->
+                                                                uiState.actions.submitUiCallback(event, data)
+                                                            },
+                                                            frozen = frozen,
+                                                            onResubmit = if (pairedUserId != null && !uiState.isLoading) {
+                                                                { event, data -> uiState.actions.resubmit(pairedUserId, event, data) }
+                                                            } else {
+                                                                null
+                                                            },
+                                                            reasoningSegments = reasoningSegmentsByAssistantId[history.id] ?: persistentListOf(),
+                                                            showThinkingHeader = uiState.showThinkingHeader,
+                                                        )
+                                                        if (history.fallbackServiceName != null) {
+                                                            androidx.compose.material3.Text(
+                                                                text = stringResource(Res.string.fallback_answered_by, history.fallbackServiceName),
+                                                                style = MaterialTheme.typography.labelSmall,
+                                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                                modifier = Modifier.padding(start = 16.dp, bottom = 8.dp),
+                                                            )
+                                                        }
+                                                    } else if (history.isThinking &&
+                                                        history.content.isNotEmpty() &&
+                                                        history.id !in suppressedThinkingIds
+                                                    ) {
+                                                        // Thinking-only turn still in flight — render as a standalone
+                                                        // reasoning bubble. The precomputation above has already gathered
+                                                        // every earlier thinking segment in this cycle under this id.
+                                                        BotMessage(
+                                                            message = "",
+                                                            textToSpeech = null,
+                                                            isSpeaking = false,
+                                                            setIsSpeaking = {},
+                                                            reasoningSegments = reasoningSegmentsByAssistantId[history.id]
+                                                                ?: persistentListOf(history.content),
+                                                            showThinkingHeader = uiState.showThinkingHeader,
+                                                        )
+                                                    }
+                                                }
+
+                                                History.Role.TOOL_EXECUTING -> {
+                                                    // Rendered in WaitingResponseRow below
+                                                }
+
+                                                History.Role.TOOL -> {
+                                                    // Don't show completed tool results in UI
+                                                }
+                                            }
+                                            if (!uiState.isLoading && history.role != History.Role.TOOL && history.role != History.Role.TOOL_EXECUTING) {
+                                                val branches = uiState.savedConversations.filter {
+                                                    it.parentConversationId == uiState.currentConversationId &&
+                                                        it.branchPointMessageId == history.id
+                                                }
+                                                if (branches.isNotEmpty()) {
+                                                    BranchLinks(branches, uiState.actions.loadConversation)
+                                                }
+                                            }
+                                        }
+                                        // Plain transient preview. Do NOT send partial content through
+                                        // MarkdownContent / dynamic kai-ui / link override parsers.
+                                        // The completed assistant message below uses the original
+                                        // BotMessage path, preserving all interactive semantics.
+                                        if (uiState.streamingText.isNotBlank()) {
+                                            item(key = "streaming-preview", contentType = "stream") {
+                                                Text(
+                                                    text = uiState.streamingText + " ▍",
+                                                    style = MaterialTheme.typography.bodyLarge,
+                                                    color = MaterialTheme.colorScheme.onSurface,
+                                                    modifier = Modifier.fillMaxWidth()
+                                                        .padding(horizontal = 24.dp, vertical = 12.dp),
+                                                )
+                                            }
+                                        }
+                                        // Skip the generic "thinking" row during a pending kai-ui submission — the
+                                        // pressed button's pulse already signals work in flight. Keep it for tool
+                                        // activity so tool feedback isn't lost.
+                                        val showWaitingRow = uiState.isLoading && uiState.streamingText.isBlank() &&
+                                            (frozenByAssistantId.values.none { it.isPending } || executingToolsState.tools.isNotEmpty())
+                                        if (showWaitingRow) {
+                                            item(key = "loading") {
+                                                WaitingResponseRow(
+                                                    executingTools = executingToolsState.tools,
+                                                    isStatusOnly = executingToolsState.isStatusOnly,
+                                                    statusText = fallbackStatusText,
+                                                )
+                                            }
+                                        }
+                                        uiState.error?.let { error ->
+                                            item(key = "error") {
+                                                if (uiState.showFreeProviderSuggestions) {
+                                                    FreeProviderSuggestionsPanel(
+                                                        error = error,
+                                                        retry = uiState.actions.retry,
+                                                    )
+                                                } else {
+                                                    ErrorMessage(error = error, retry = uiState.actions.retry)
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    VerticalScrollbarForList(
+                                        listState = listState,
+                                        modifier = Modifier.align(CenterEnd).fillMaxHeight(),
+                                    )
+
+                                    androidx.compose.animation.AnimatedVisibility(
+                                        visible = showScrollToBottom,
+                                        modifier = Modifier.align(BottomCenter).padding(bottom = composerHeight + 8.dp),
+                                        enter = fadeIn() + scaleIn(),
+                                        exit = fadeOut() + scaleOut(),
+                                    ) {
+                                        SmallFloatingActionButton(
+                                            modifier = Modifier
+                                                .handCursor(),
+                                            onClick = {
+                                                componentScope.launch {
+                                                    followOutput = true
+                                                    val totalItems = listState.layoutInfo.totalItemsCount
+                                                    if (totalItems > 0) {
+                                                        listState.animateScrollToItem(totalItems - 1)
+                                                    }
+                                                }
+                                            },
+                                        ) {
+                                            Icon(Icons.Default.KeyboardArrowDown, contentDescription = stringResource(Res.string.scroll_to_bottom_content_description))
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            // Soft gradients fade the scrolling text close to the chrome, while
+            // preserving visible content beneath and around both floating surfaces.
+            val canvasColor = MaterialTheme.colorScheme.background
+            if (!needsHeaderInset) {
+                Box(
+                    modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth().height(76.dp)
+                        .background(
+                            Brush.verticalGradient(
+                                listOf(
+                                    canvasColor.copy(alpha = 0.85f),
+                                    canvasColor.copy(alpha = 0.35f),
+                                    canvasColor.copy(alpha = 0f),
+                                ),
+                            ),
+                        ),
+                )
+            }
+            if (!isSandboxOpen) {
+                Box(
+                    modifier = Modifier.align(BottomCenter).fillMaxWidth().height(composerHeight + 44.dp)
+                        .background(
+                            Brush.verticalGradient(
+                                listOf(
+                                    canvasColor.copy(alpha = 0f),
+                                    canvasColor.copy(alpha = 0.12f),
+                                    canvasColor.copy(alpha = 0.54f),
+                                ),
+                            ),
+                        ),
+                )
+            }
+            // A soft fade protects floating header legibility when old messages
+            // scroll behind it. No opaque toolbar or extra layout inset.
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .fillMaxWidth()
+                    .height(100.dp)
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(
+                                MaterialTheme.colorScheme.background,
+                                MaterialTheme.colorScheme.background.copy(alpha = 0.96f),
+                                MaterialTheme.colorScheme.background.copy(alpha = 0f),
+                            ),
+                        ),
+                    ),
+            )
+            // Three compact controls rather than the old full-width header.
             TopBar(
+                modifier = Modifier.align(Alignment.TopCenter),
                 textToSpeech = textToSpeech,
                 isSpeechOutputEnabled = uiState.isSpeechOutputEnabled,
                 isSpeaking = uiState.isSpeaking,
@@ -567,386 +1122,16 @@ private fun ChatModeScreen(
                 isSandboxOpen = isSandboxOpen,
                 isShellExecuting = isShellExecuting,
                 onToggleSandbox = { isSandboxOpen = !isSandboxOpen },
-                onShowHistory = {
-                    keyboardController?.hide()
-                    showHistorySheet = true
-                },
+                onShowHistory = { drawerScope.launch { drawerState.open() } },
                 navigationTabBar = navigationTabBar,
             )
-
-            HeartbeatBanner(
-                visible = uiState.hasUnreadHeartbeat,
-                onTap = {
-                    uiState.heartbeatConversationId?.let { uiState.actions.loadConversation(it) }
-                    uiState.actions.clearUnreadHeartbeat()
-                    isSandboxOpen = false
-                },
-                onDismiss = {
-                    uiState.actions.clearUnreadHeartbeat()
-                },
-            )
-
-            PendingSmsBanners(
-                drafts = uiState.smsDrafts,
-                onSend = uiState.actions.sendSmsDraft,
-                onDiscard = uiState.actions.discardSmsDraft,
-            )
-
-            uiState.warning?.let { warning ->
-                Text(
-                    text = stringResource(warning),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                )
-            }
-
-            if (isSandboxOpen) {
-                val isPreview = LocalInspectionMode.current
-                val sandboxViewModel = if (!isPreview) koinViewModel<SandboxViewModel>() else null
-                val liveState = sandboxViewModel?.state?.collectAsStateWithLifecycle()?.value
-                val sandboxState = liveState ?: previewSandboxState ?: SandboxUiState()
-                SandboxTabsContent(
-                    sandboxState = sandboxState,
-                    onSetupSandbox = sandboxViewModel?.let { { it.onSetupSandbox() } } ?: {},
-                    onCancelSandbox = sandboxViewModel?.let { { it.onCancelSandbox() } } ?: {},
-                    previewLines = previewSandboxLines,
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                )
-            } else {
-                Box(Modifier.weight(1f)) {
-                    var isDropping by remember {
-                        mutableStateOf(false)
-                    }
-                    val addFile by rememberUpdatedState(uiState.actions.addFile)
-                    val canAcceptDrop by rememberUpdatedState(uiState.supportedFileExtensions.isNotEmpty())
-                    val shouldStartDragAndDrop = remember { { _: DragAndDropEvent -> canAcceptDrop } }
-                    val dropTarget = remember {
-                        object : DragAndDropTarget {
-                            override fun onEntered(event: DragAndDropEvent) {
-                                super.onEntered(event)
-                                isDropping = true
-                            }
-                            override fun onExited(event: DragAndDropEvent) {
-                                super.onExited(event)
-                                isDropping = false
-                            }
-                            override fun onDrop(event: DragAndDropEvent): Boolean {
-                                val file = onDragAndDropEventDropped(event)
-                                if (file != null) addFile(file)
-                                isDropping = false
-                                return file != null
-                            }
-                        }
-                    }
-                    Column(
-                        Modifier
-                            .fillMaxSize()
-                            .blur(radius = if (isDropping) 4.dp else 0.dp)
-                            .dragAndDropTarget(
-                                shouldStartDragAndDrop = shouldStartDragAndDrop,
-                                target = dropTarget,
-                            ),
-                    ) {
-                        if (uiState.history.isEmpty()) {
-                            // Interactive UI mode isn't offered on on-device LiteRT: the kai-ui
-                            // component schema is too large for small Gemma models to coherently
-                            // attend to, and even the minimal variant we tried was unreliable.
-                            val primaryIsOnDevice = uiState.availableServices
-                                .firstOrNull()
-                                ?.let { Service.fromId(it.serviceId).isOnDevice } == true
-                            EmptyState(
-                                modifier = Modifier.fillMaxWidth().weight(1f),
-                                isUsingSharedKey = uiState.showPrivacyInfo,
-                                onStartInteractiveMode = uiState.actions.enterInteractiveMode
-                                    .takeUnless { primaryIsOnDevice },
-                                onOpenKaiBuild = onOpenKaiBuild,
-                            )
-                        } else {
-                            val listState = rememberLazyListState()
-                            val componentScope = rememberCoroutineScope()
-
-                            LaunchedEffect(uiState.history.size) {
-                                // Capture history at effect start to prevent race conditions
-                                val history = uiState.history
-                                if (history.isNotEmpty()) {
-                                    listState.requestScrollToItem(history.lastIndex)
-                                    val lastMessage = history.last()
-                                    if (uiState.isSpeechOutputEnabled && lastMessage.role == History.Role.ASSISTANT) {
-                                        componentScope.launch(getBackgroundDispatcher()) {
-                                            textToSpeech?.stop()
-                                            uiState.actions.setIsSpeaking(true, lastMessage.id)
-                                            try {
-                                                textToSpeech?.say(lastMessage.content.toSpeakableText())
-                                            } catch (_: TextToSpeechSynthesisInterruptedError) {
-                                                // Speech was interrupted by user
-                                            } catch (_: Exception) {
-                                                // Handle TTS errors gracefully (service failure, audio issues, etc.)
-                                            } finally {
-                                                uiState.actions.setIsSpeaking(false, lastMessage.id)
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-
-                            val lastAssistantId = remember(uiState.history) { uiState.history.lastRenderedAssistant()?.id }
-                            // Pair every user submission with its originating assistant so the kai-ui
-                            // renders once (on the assistant side) with a frozen snapshot — never as a
-                            // separate user-side card. pressedEvent + values persist across the loading
-                            // transition; isPending is only set for the latest in-flight submission.
-                            val pairings = remember(uiState.history, uiState.isLoading) {
-                                val history = uiState.history
-                                val lastUserIdx = history.indexOfLast { it.role == History.Role.USER }
-                                val frozen = mutableMapOf<String, FrozenSubmission>()
-                                val userIdByAssistant = mutableMapOf<String, String>()
-                                for ((i, h) in history.withIndex()) {
-                                    if (h.role != History.Role.USER) continue
-                                    val sub = h.uiSubmission ?: continue
-                                    val originId = (i - 1 downTo 0).firstNotNullOfOrNull { j ->
-                                        history[j].takeIf {
-                                            it.role == History.Role.ASSISTANT &&
-                                                it.content.isNotEmpty() && !it.isThinking &&
-                                                it.content == sub.sourceContent
-                                        }?.id
-                                    } ?: (i - 1 downTo 0).firstNotNullOfOrNull { j ->
-                                        history[j].takeIf {
-                                            it.role == History.Role.ASSISTANT &&
-                                                it.content.isNotEmpty() && !it.isThinking
-                                        }?.id
-                                    } ?: continue
-                                    frozen[originId] = FrozenSubmission(
-                                        values = sub.values,
-                                        pressedEvent = sub.pressedEvent,
-                                        isPending = uiState.isLoading && i == lastUserIdx,
-                                    )
-                                    userIdByAssistant[originId] = h.id
-                                }
-                                frozen.toMap() to userIdByAssistant.toMap()
-                            }
-                            val frozenByAssistantId = pairings.first
-                            val userIdByAssistantId = pairings.second
-                            val executingToolsState = rememberExecutingTools(uiState.history)
-
-                            val fallbackStatusText = uiState.fallbackStatus?.let { status ->
-                                val failed = stringResource(Res.string.fallback_service_failed, status.serviceName, uiErrorText(status.errorReason))
-                                val next = status.nextServiceName?.let { stringResource(Res.string.fallback_trying_next, it) }
-                                if (next != null) "$failed\n$next" else failed
-                            }
-
-                            // Group every reasoning segment in a response (intermediate tool-call /
-                            // thinking-only turns plus the final answer's own reasoning) under the
-                            // answer-bearing assistant message, so each response shows a single
-                            // collapsible "Thinking" section instead of N standalone ones.
-                            val (reasoningSegmentsByAssistantId, suppressedThinkingIds) = remember(uiState.history) {
-                                val byAnswerId = mutableMapOf<String, ImmutableList<String>>()
-                                val suppressed = mutableSetOf<String>()
-                                val pending = mutableListOf<String>()
-                                val pendingThinkingIds = mutableListOf<String>()
-                                for (entry in uiState.history) {
-                                    when {
-                                        entry.role == History.Role.USER -> {
-                                            pending.clear()
-                                            pendingThinkingIds.clear()
-                                        }
-
-                                        entry.role == History.Role.ASSISTANT &&
-                                            entry.isThinking &&
-                                            entry.content.isNotEmpty() -> {
-                                            pending.add(entry.content)
-                                            pendingThinkingIds.add(entry.id)
-                                        }
-
-                                        entry.role == History.Role.ASSISTANT &&
-                                            !entry.isThinking &&
-                                            entry.content.isNotEmpty() -> {
-                                            val combined = buildList {
-                                                addAll(pending)
-                                                entry.reasoningContent?.takeIf { it.isNotBlank() }?.let { add(it) }
-                                            }
-                                            if (combined.isNotEmpty()) byAnswerId[entry.id] = combined.toImmutableList()
-                                            suppressed.addAll(pendingThinkingIds)
-                                            pending.clear()
-                                            pendingThinkingIds.clear()
-                                        }
-
-                                        entry.role == History.Role.ASSISTANT &&
-                                            entry.toolCalls != null -> {
-                                            // Assistant turn with tool calls but no answer text yet —
-                                            // capture its reasoning, attach to the eventual answer.
-                                            entry.reasoningContent
-                                                ?.takeIf { it.isNotBlank() }
-                                                ?.let { pending.add(it) }
-                                        }
-                                    }
-                                }
-                                // In-flight: the user is still waiting for the answer but earlier
-                                // thinking turns are already in history. Collapse them into the most
-                                // recent thinking entry so the user sees ONE growing Thinking section
-                                // instead of a separate bubble per tool-loop iteration.
-                                if (pendingThinkingIds.isNotEmpty()) {
-                                    val lastId = pendingThinkingIds.last()
-                                    byAnswerId[lastId] = pending.toImmutableList()
-                                    for (i in 0 until pendingThinkingIds.size - 1) {
-                                        suppressed.add(pendingThinkingIds[i])
-                                    }
-                                }
-                                byAnswerId to suppressed
-                            }
-
-                            val showScrollToBottom by remember {
-                                derivedStateOf {
-                                    val lastVisibleItem = listState.layoutInfo.visibleItemsInfo.lastOrNull()
-                                    lastVisibleItem != null && lastVisibleItem.index < listState.layoutInfo.totalItemsCount - 1
-                                }
-                            }
-
-                            Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
-                                LazyColumn(
-                                    modifier = Modifier.fillMaxSize(),
-                                    state = listState,
-                                    horizontalAlignment = CenterHorizontally,
-                                ) {
-                                    items(uiState.history, key = { it.id }, contentType = { it.role }) { history ->
-                                        when (history.role) {
-                                            History.Role.USER -> {
-                                                // Submissions are shown by the paired assistant's frozen kai-ui card
-                                                // above; the "Responded with: …" text bubble would be redundant.
-                                                if (history.uiSubmission == null) {
-                                                    UserMessage(
-                                                        message = history.content,
-                                                        attachments = history.attachments,
-                                                    )
-                                                }
-                                            }
-
-                                            History.Role.ASSISTANT -> {
-                                                if (history.content.isNotEmpty() && !history.isThinking) {
-                                                    val isLastAssistant = history.id == lastAssistantId
-                                                    val frozen = frozenByAssistantId[history.id]
-                                                    val pairedUserId = userIdByAssistantId[history.id]
-                                                    BotMessage(
-                                                        message = history.content,
-                                                        textToSpeech = textToSpeech,
-                                                        isSpeaking = uiState.isSpeaking && uiState.isSpeakingContentId == history.id,
-                                                        setIsSpeaking = {
-                                                            uiState.actions.setIsSpeaking(it, history.id)
-                                                        },
-                                                        onRegenerate = if (isLastAssistant) uiState.actions.regenerate else null,
-                                                        isInteractive = isLastAssistant && !uiState.isLoading && frozen == null,
-                                                        onUiCallback = { event, data ->
-                                                            uiState.actions.submitUiCallback(event, data)
-                                                        },
-                                                        frozen = frozen,
-                                                        onResubmit = if (pairedUserId != null && !uiState.isLoading) {
-                                                            { event, data -> uiState.actions.resubmit(pairedUserId, event, data) }
-                                                        } else {
-                                                            null
-                                                        },
-                                                        reasoningSegments = reasoningSegmentsByAssistantId[history.id] ?: persistentListOf(),
-                                                    )
-                                                    if (history.fallbackServiceName != null) {
-                                                        androidx.compose.material3.Text(
-                                                            text = stringResource(Res.string.fallback_answered_by, history.fallbackServiceName),
-                                                            style = MaterialTheme.typography.labelSmall,
-                                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                            modifier = Modifier.padding(start = 16.dp, bottom = 8.dp),
-                                                        )
-                                                    }
-                                                } else if (history.isThinking &&
-                                                    history.content.isNotEmpty() &&
-                                                    history.id !in suppressedThinkingIds
-                                                ) {
-                                                    // Thinking-only turn still in flight — render as a standalone
-                                                    // reasoning bubble. The precomputation above has already gathered
-                                                    // every earlier thinking segment in this cycle under this id.
-                                                    BotMessage(
-                                                        message = "",
-                                                        textToSpeech = null,
-                                                        isSpeaking = false,
-                                                        setIsSpeaking = {},
-                                                        reasoningSegments = reasoningSegmentsByAssistantId[history.id]
-                                                            ?: persistentListOf(history.content),
-                                                    )
-                                                }
-                                            }
-
-                                            History.Role.TOOL_EXECUTING -> {
-                                                // Rendered in WaitingResponseRow below
-                                            }
-
-                                            History.Role.TOOL -> {
-                                                // Don't show completed tool results in UI
-                                            }
-                                        }
-                                    }
-                                    // Skip the generic "thinking" row during a pending kai-ui submission — the
-                                    // pressed button's pulse already signals work in flight. Keep it for tool
-                                    // activity so tool feedback isn't lost.
-                                    val showWaitingRow = uiState.isLoading &&
-                                        (frozenByAssistantId.values.none { it.isPending } || executingToolsState.tools.isNotEmpty())
-                                    if (showWaitingRow) {
-                                        item(key = "loading") {
-                                            WaitingResponseRow(
-                                                executingTools = executingToolsState.tools,
-                                                isStatusOnly = executingToolsState.isStatusOnly,
-                                                statusText = fallbackStatusText,
-                                            )
-                                        }
-                                    }
-                                    uiState.error?.let { error ->
-                                        item(key = "error") {
-                                            if (uiState.showFreeProviderSuggestions) {
-                                                FreeProviderSuggestionsPanel(
-                                                    error = error,
-                                                    retry = uiState.actions.retry,
-                                                )
-                                            } else {
-                                                ErrorMessage(error = error, retry = uiState.actions.retry)
-                                            }
-                                        }
-                                    }
-                                }
-
-                                VerticalScrollbarForList(
-                                    listState = listState,
-                                    modifier = Modifier.align(CenterEnd).fillMaxHeight(),
-                                )
-
-                                androidx.compose.animation.AnimatedVisibility(
-                                    visible = showScrollToBottom,
-                                    modifier = Modifier.align(BottomCenter).padding(bottom = 8.dp),
-                                    enter = fadeIn() + scaleIn(),
-                                    exit = fadeOut() + scaleOut(),
-                                ) {
-                                    SmallFloatingActionButton(
-                                        modifier = Modifier
-                                            .handCursor(),
-                                        onClick = {
-                                            componentScope.launch {
-                                                val totalItems = listState.layoutInfo.totalItemsCount
-                                                if (totalItems > 0) {
-                                                    listState.animateScrollToItem(totalItems - 1)
-                                                }
-                                            }
-                                        },
-                                    ) {
-                                        Icon(Icons.Default.KeyboardArrowDown, contentDescription = stringResource(Res.string.scroll_to_bottom_content_description))
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
             if (!isSandboxOpen) {
                 QuestionInput(
+                    modifier = Modifier
+                        .align(BottomCenter)
+                        .fillMaxWidth()
+                        .onSizeChanged { composerHeightPx = it.height }
+                        .padding(bottom = 10.dp),
                     files = uiState.files,
                     addFile = uiState.actions.addFile,
                     removeFile = uiState.actions.removeFile,
@@ -959,26 +1144,17 @@ private fun ChatModeScreen(
                     availableServices = uiState.availableServices,
                     onSelectService = uiState.actions.selectService,
                     installedSkills = uiState.installedSkills,
+                    reasoningEffort = uiState.reasoningEffort,
+                    onSelectReasoningEffort = uiState.actions.selectReasoningEffort,
                 )
             }
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier.align(BottomCenter).padding(bottom = composerHeight + 4.dp),
+            ) { data ->
+                Snackbar(snackbarData = data)
+            }
         }
-        SnackbarHost(
-            hostState = snackbarHostState,
-            modifier = Modifier.align(BottomCenter).padding(bottom = 80.dp),
-        ) { data ->
-            Snackbar(snackbarData = data)
-        }
-    }
-
-    if (showHistorySheet) {
-        ChatHistorySheet(
-            conversations = filteredConversations,
-            currentConversationId = uiState.currentConversationId,
-            pendingConversationDeletion = uiState.pendingConversationDeletion,
-            actions = uiState.actions,
-            onDismiss = { showHistorySheet = false },
-            onConversationSelected = { isSandboxOpen = false },
-        )
     }
 }
 
@@ -1003,4 +1179,25 @@ private fun rememberExecutingTools(history: ImmutableList<History>): ExecutingTo
         }
     }
     return state
+}
+
+@Composable
+private fun BranchLinks(
+    branches: List<ConversationSummary>,
+    onOpen: (String) -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    Box(modifier = Modifier.padding(start = 16.dp)) {
+        TextButton(onClick = { expanded = true }) {
+            Text("Branches · ${branches.size}")
+        }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            branches.forEachIndexed { index, branch ->
+                DropdownMenuItem(
+                    text = { Text("${index + 1}. ${branch.title}") },
+                    onClick = { expanded = false; onOpen(branch.id) },
+                )
+            }
+        }
+    }
 }

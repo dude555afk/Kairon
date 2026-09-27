@@ -38,10 +38,10 @@ import com.inspiredandroid.kai.ui.components.animatedGradientBorder
 import com.inspiredandroid.kai.ui.handCursor
 import kai.composeapp.generated.resources.Res
 import kai.composeapp.generated.resources.kai_build_open
+import kai.composeapp.generated.resources.kairon_welcome
 import kai.composeapp.generated.resources.privacy_agree_prefix
 import kai.composeapp.generated.resources.privacy_policy
 import kai.composeapp.generated.resources.start_interactive_ui
-import kai.composeapp.generated.resources.welcome_message
 import org.jetbrains.compose.resources.stringResource
 
 /**
@@ -66,11 +66,19 @@ internal fun EmptyState(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         LogoAnimation()
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(20.dp))
         Text(
-            text = stringResource(Res.string.welcome_message),
+            text = "Kairon",
             modifier = Modifier.padding(horizontal = 16.dp),
-            style = MaterialTheme.typography.titleLarge,
+            style = MaterialTheme.typography.titleMedium,
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = stringResource(Res.string.kairon_welcome),
+            modifier = Modifier.padding(horizontal = 16.dp),
+            style = MaterialTheme.typography.headlineSmall,
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onBackground,
         )

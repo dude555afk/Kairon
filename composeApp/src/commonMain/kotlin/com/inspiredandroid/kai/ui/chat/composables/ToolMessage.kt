@@ -1,6 +1,7 @@
 package com.inspiredandroid.kai.ui.chat.composables
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -13,7 +14,9 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
@@ -27,6 +30,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -70,32 +74,50 @@ internal fun WaitingResponseRow(
     val summary = statusText ?: toolSummaryText(executingTools)
     val effectiveStatusOnly = isStatusOnly || statusText != null
     val waitingCd = stringResource(Res.string.waiting_content_description)
+    var expanded by remember { mutableStateOf(false) }
 
     Row(
         modifier = Modifier
             .padding(horizontal = 16.dp, vertical = 8.dp)
             .clipToBounds(),
     ) {
-        Box(
+        Column(
             modifier = Modifier
-                .background(
-                    MaterialTheme.colorScheme.surfaceVariant,
-                    RoundedCornerShape(8.dp),
-                )
-                .animateContentSize(
-                    animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
-                )
-                .padding(12.dp)
+                .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(20.dp))
+                .animateContentSize(animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing))
+                .then(if (executingTools.isNotEmpty()) Modifier.clickable { expanded = !expanded } else Modifier)
+                .padding(horizontal = 12.dp, vertical = 9.dp)
                 .semantics { contentDescription = waitingCd },
         ) {
-            PulsingStatusIndicator(
-                toolSummary = summary,
-                isStatusOnly = effectiveStatusOnly,
-                dotSize = 16.dp,
-                dotColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                textColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                textStyle = MaterialTheme.typography.bodyMedium,
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                PulsingStatusIndicator(
+                    toolSummary = summary,
+                    isStatusOnly = effectiveStatusOnly,
+                    dotSize = 9.dp,
+                    dotColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textStyle = MaterialTheme.typography.labelMedium,
+                )
+                if (executingTools.isNotEmpty()) {
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        if (expanded) "⌃" else "⌄",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+            AnimatedVisibility(visible = expanded && executingTools.isNotEmpty()) {
+                Column(Modifier.padding(top = 8.dp)) {
+                    executingTools.forEach { (_, name) ->
+                        Text(
+                            "• $name",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
         }
     }
 }

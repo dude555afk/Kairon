@@ -2,6 +2,7 @@ package com.inspiredandroid.kai.data
 
 import androidx.compose.runtime.Immutable
 import com.inspiredandroid.kai.TerminalLine
+import com.inspiredandroid.kai.ui.chat.ToolCallInfo
 import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
@@ -25,8 +26,11 @@ data class Conversation(
     val createdAt: Long,
     val updatedAt: Long,
     val title: String = "",
+    val isPinned: Boolean = false,
     val type: String = TYPE_CHAT,
     val shellTranscript: List<TerminalLine> = emptyList(),
+    val parentConversationId: String? = null,
+    val branchPointMessageId: String? = null,
 ) {
     companion object {
         const val TYPE_CHAT = "chat"
@@ -42,6 +46,10 @@ data class Conversation(
         val content: String,
         val attachments: List<Attachment> = emptyList(),
         val uiSubmission: UiSubmission? = null,
+        val toolCallId: String? = null,
+        val toolName: String? = null,
+        val toolCalls: List<ToolCallInfo>? = null,
+        val modelId: String? = null,
         val isThinking: Boolean = false,
         // Most messages have no reasoning trace; skip the null to keep the persisted blob lean.
         @EncodeDefault(EncodeDefault.Mode.NEVER)

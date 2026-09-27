@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.StateFlow
 
 interface DataRepository {
     val chatHistory: StateFlow<List<History>>
+    val streamingText: StateFlow<String>
     val currentConversationId: StateFlow<String?>
     val fallbackStatus: StateFlow<FallbackStatus?>
 
@@ -53,6 +54,7 @@ interface DataRepository {
         files: List<PlatformFile>,
         uiSubmission: UiSubmission? = null,
         activeSkillId: String? = null,
+        reasoningEffort: ReasoningEffort = ReasoningEffort.AUTO,
     )
     fun clearHistory()
     fun currentService(): Service
@@ -64,10 +66,14 @@ interface DataRepository {
     fun loadConversations()
     fun loadConversation(id: String)
     suspend fun deleteConversation(id: String)
+    suspend fun renameConversation(id: String, title: String)
+    suspend fun setConversationPinned(id: String, pinned: Boolean)
     fun startNewChat()
     fun regenerate()
     fun popLastExchange()
     fun truncateFrom(messageId: String)
+    /** Create a separate chat at this message. Editing replaces a user prompt in the new branch. */
+    suspend fun branchConversation(messageId: String, editedContent: String? = null): Boolean
     fun restoreCurrentConversation()
 
     // Tool management
@@ -112,9 +118,13 @@ interface DataRepository {
     // Dynamic UI
     fun isDynamicUiEnabled(): Boolean
     fun setDynamicUiEnabled(enabled: Boolean)
+    fun isThinkingHeaderVisible(): Boolean
+    fun setThinkingHeaderVisible(visible: Boolean)
 
     // Theme mode
     fun getThemeMode(): ThemeMode
+    fun getAccentPreset(): AccentPreset
+    fun setAccentPreset(preset: AccentPreset)
     fun setThemeMode(mode: ThemeMode)
 
     // Interactive mode

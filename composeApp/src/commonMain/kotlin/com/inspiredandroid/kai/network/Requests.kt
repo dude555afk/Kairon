@@ -37,19 +37,24 @@ import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.post
+import io.ktor.client.request.preparePost
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.bodyAsChannel
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.content.TextContent
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import io.ktor.serialization.kotlinx.json.json
+import io.ktor.utils.io.readUTF8Line
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlin.time.Duration.Companion.seconds
@@ -269,6 +274,131 @@ class Requests {
     }
 
     /**
+     * Progressive SSE path. Reassembles the complete response before returning it to
+     * callers, so tool dispatch, reasoning preservation, dynamic UI and links still
+     * consume the same final DTO as the non-streaming path.
+     *
+     * If an OpenAI-compatible gateway responds with regular JSON instead of SSE,
+     * decode that result without manufacturing fake token updates.
+     */
+    suspend fun openAICompatibleChatStreaming(
+        service: Service,
+        credentials: ServiceCredentials,
+        messages: List<OpenAICompatibleChatRequestDto.Message>,
+        tools: List<Tool> = emptyList(),
+        sessionId: String? = null,
+        onTextDelta: suspend (String) -> Unit = {},
+    ): Result<OpenAICompatibleChatResponseDto> = try {
+        val apiKey = getApiKeyOrThrow(service, credentials)
+        val url = resolveUrl(service, credentials, service.chatUrl)
+        val request = defaultClient.preparePost(url) {
+            contentType(ContentType.Application.Json)
+            apiKey?.let { bearerAuth(it) }
+            applySessionHeader(service, sessionId)
+            setBody(
+                OpenAICompatibleChatRequestDto(
+                    messages = messages,
+                    model = credentials.modelId.ifEmpty { null },
+                    tools = tools.toRequestTools { it.toRequestTool() },
+                    stream = true,
+                ),
+            )
+        }
+        request.execute { response ->
+            if (!response.status.isSuccess()) {
+                return@execute handleOpenAICompatibleError(service, credentials, response)
+            }
+            val body = response.bodyAsChannel()
+            val answer = StringBuilder()
+            val reasoning = StringBuilder()
+            data class PartialTool(var id: String = "", var name: String = "", val args: StringBuilder = StringBuilder())
+            val partialTools = mutableMapOf<Int, PartialTool>()
+            var sawEvent = false
+            var done = false
+            var ordinaryJson: String? = null
+            var finishReason: String? = null
+            while (!done) {
+                val line = body.readUTF8Line() ?: break
+                if (line.isBlank() || line.startsWith(":") || line.startsWith("event:")) continue
+                if (!line.startsWith("data:")) {
+                    if (!sawEvent) {
+                        ordinaryJson = (ordinaryJson ?: "") + line
+                    }
+                    continue
+                }
+                sawEvent = true
+                val payload = line.removePrefix("data:").trim()
+                if (payload == "[DONE]") {
+                    done = true
+                    continue
+                }
+                val event = runCatching { Json.parseToJsonElement(payload).jsonObject }.getOrNull() ?: continue
+                event["error"]?.let { throw OpenAICompatibleGenericException(it.toString()) }
+                val choice = event["choices"]?.jsonArray?.firstOrNull()?.jsonObject ?: continue
+                finishReason = choice["finish_reason"]?.jsonPrimitive?.contentOrNull ?: finishReason
+                val delta = choice["delta"]?.jsonObject ?: continue
+                val text = delta["content"]?.jsonPrimitive?.contentOrNull
+                if (!text.isNullOrEmpty()) {
+                    answer.append(text)
+                    onTextDelta(text)
+                }
+                val thoughts = delta["reasoning_content"]?.jsonPrimitive?.contentOrNull
+                    ?: delta["reasoning"]?.jsonPrimitive?.contentOrNull
+                if (!thoughts.isNullOrEmpty()) reasoning.append(thoughts)
+                delta["tool_calls"]?.jsonArray?.forEach { part ->
+                    val tool = part.jsonObject
+                    val index = tool["index"]?.jsonPrimitive?.intOrNull ?: 0
+                    val existing = partialTools.getOrPut(index) { PartialTool() }
+                    tool["id"]?.jsonPrimitive?.contentOrNull?.let { existing.id = it }
+                    tool["function"]?.jsonObject?.let { fn ->
+                        fn["name"]?.jsonPrimitive?.contentOrNull?.let { existing.name += it }
+                        fn["arguments"]?.jsonPrimitive?.contentOrNull?.let { existing.args.append(it) }
+                    }
+                }
+            }
+            if (!sawEvent && ordinaryJson != null) {
+                return@execute Result.success(Json { ignoreUnknownKeys = true }.decodeFromString<OpenAICompatibleChatResponseDto>(ordinaryJson))
+            }
+            if (!sawEvent) throw OpenAICompatibleEmptyResponseException()
+            if (finishReason == "length" && partialTools.isNotEmpty()) {
+                throw OpenAICompatibleGenericException("Tool call arguments were truncated by the provider")
+            }
+            val calls = partialTools.toSortedMap().values.map { tool ->
+                if (tool.id.isBlank() || tool.name.isBlank()) {
+                    throw OpenAICompatibleGenericException("Incomplete streamed tool call")
+                }
+                OpenAICompatibleChatResponseDto.ToolCall(
+                    id = tool.id,
+                    function = OpenAICompatibleChatResponseDto.FunctionCall(
+                        name = tool.name,
+                        arguments = tool.args.toString(),
+                    ),
+                )
+            }.ifEmpty { null }
+            Result.success(
+                OpenAICompatibleChatResponseDto(
+                    choices = listOf(
+                        OpenAICompatibleChatResponseDto.Choice(
+                            message = OpenAICompatibleChatResponseDto.Choice.Message(
+                                role = "assistant",
+                                content = answer.toString().takeIf { it.isNotEmpty() },
+                                reasoningContent = reasoning.toString().takeIf { it.isNotEmpty() },
+                                toolCalls = calls,
+                            ),
+                        ),
+                    ),
+                ),
+            )
+        }
+    } catch (e: kotlinx.coroutines.CancellationException) {
+        throw e
+    } catch (e: OpenAICompatibleApiException) {
+        Result.failure(e)
+    } catch (e: Exception) {
+        Result.failure(mapOpenAICompatibleException(e))
+    }
+
+    /**
      * OpenAI Responses API (`POST /v1/responses`). Used for the model families whose function
      * calling chat completions rejects — see `requiresResponsesApi`. Auth, URL resolution and
      * error mapping are shared with [openAICompatibleChat]; only the body and result shape differ.
@@ -279,6 +409,7 @@ class Requests {
         input: List<JsonObject>,
         tools: List<Tool> = emptyList(),
         requestTimeoutMs: Long? = null,
+        reasoningEffort: String? = null,
     ): Result<OpenAIResponsesResponseDto> = try {
         val apiKey = getApiKeyOrThrow(service, credentials)
         val responsesUrl = service.responsesUrl
@@ -294,6 +425,7 @@ class Requests {
                         input = input,
                         model = credentials.modelId.ifEmpty { null },
                         tools = tools.toRequestTools { it.toResponsesTool() },
+                        reasoning = reasoningEffort?.let { OpenAIResponsesRequestDto.Reasoning(it) },
                     ),
                 )
             }

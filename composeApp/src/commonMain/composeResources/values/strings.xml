@@ -1,5 +1,25 @@
 <resources>
     <string name="welcome_message">Welcome to Kai 9000</string>
+    <string name="kairon_welcome">What can I help with?</string>
+    <string name="kairon_settings_intro">Everything in one place.</string>
+    <string name="kairon_conversation_options">Conversation options</string>
+    <string name="kairon_chat_more_options">More options</string>
+    <string name="kairon_add_attachment">Add attachment</string>
+    <string name="kairon_reasoning_effort">Reasoning effort</string>
+    <string name="kairon_effort_auto">Auto</string>
+    <string name="kairon_effort_low">Low</string>
+    <string name="kairon_effort_medium">Medium</string>
+    <string name="kairon_effort_high">High</string>
+    <string name="kairon_effort_xhigh">Extra high</string>
+    <string name="kairon_effort_max">Maximum</string>
+    <string name="kairon_settings_workspace">Workspace</string>
+    <string name="kairon_settings_capabilities">Capabilities</string>
+    <string name="kairon_settings_general_desc">Appearance, privacy and application preferences</string>
+    <string name="kairon_settings_agent_desc">Soul, memories, scheduled tasks, heartbeat and email</string>
+    <string name="kairon_settings_services_desc">Models, providers, connections and fallback</string>
+    <string name="kairon_settings_tools_desc">Device tools, MCP connections and skills</string>
+    <string name="kairon_settings_integrations_desc">Connected services and integrations</string>
+    <string name="kairon_settings_sandbox_desc">Linux environment, terminal, files and packages</string>
     <string name="prompt_ask_question">Ask a question</string>
     <string name="error_invalid_api_key">Invalid API Key. Please check your settings.</string>
     <string name="error_rate_limit_exceeded">Rate limit exceeded. Please try again later.</string>

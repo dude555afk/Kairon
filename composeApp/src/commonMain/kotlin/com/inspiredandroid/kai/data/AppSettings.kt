@@ -276,6 +276,26 @@ class AppSettings(internal val settings: Settings) {
         settings.putBoolean(KEY_SCHEDULING_ENABLED, enabled)
     }
 
+    // Purely visual: keep the reasoning data and model behavior untouched.
+    fun isThinkingHeaderVisible(): Boolean = settings.getBoolean("show_thinking_header", true)
+
+    fun setThinkingHeaderVisible(visible: Boolean) {
+        settings.putBoolean("show_thinking_header", visible)
+    }
+
+    private val _accentPresetFlow = MutableStateFlow(
+        runCatching { AccentPreset.valueOf(settings.getString("accent_preset", AccentPreset.Default.name)) }
+            .getOrDefault(AccentPreset.Default),
+    )
+    val accentPresetFlow: StateFlow<AccentPreset> = _accentPresetFlow
+
+    fun getAccentPreset(): AccentPreset = _accentPresetFlow.value
+
+    fun setAccentPreset(preset: AccentPreset) {
+        settings.putString("accent_preset", preset.name)
+        _accentPresetFlow.value = preset
+    }
+
     // Dynamic UI
     fun isDynamicUiEnabled(): Boolean = settings.getBoolean(KEY_DYNAMIC_UI_ENABLED, true)
 

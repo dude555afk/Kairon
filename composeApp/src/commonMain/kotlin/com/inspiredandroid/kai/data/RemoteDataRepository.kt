@@ -229,6 +229,7 @@ class RemoteDataRepository(
     )
 
     override val chatHistory: MutableStateFlow<List<History>> = MutableStateFlow(emptyList())
+    override val streamingText: MutableStateFlow<String> = MutableStateFlow("")
 
     private val _currentConversationId = MutableStateFlow<String?>(null)
     override val currentConversationId: StateFlow<String?> = _currentConversationId
@@ -688,6 +689,8 @@ class RemoteDataRepository(
         systemPrompt: String?,
         instanceId: String,
         history: MutableStateFlow<List<History>> = chatHistory,
+        reasoningEffort: ReasoningEffort = ReasoningEffort.AUTO,
+        livePreview: Boolean = false,
     ): AssistantTurn {
         if (service.isOnDevice) {
             // No retry: local-inference failures are deterministic, and this path mutates
@@ -703,13 +706,30 @@ class RemoteDataRepository(
         val tools = if (supportsTools(creds.modelId)) getAvailableTools() else emptyList()
 
         if (tools.isEmpty()) {
-            return plainChat(service, creds, messages, systemPrompt, strictEmptyResponse = true)
+            return plainChat(service, creds, messages, systemPrompt, strictEmptyResponse = true, reasoningEffort = reasoningEffort, livePreview = livePreview)
         }
 
         return when (service) {
             Service.Gemini -> handleGeminiChatWithTools(creds, messages, tools, systemPrompt, history)
             Service.Anthropic -> handleAnthropicChatWithTools(creds, messages, tools, systemPrompt, history)
-            else -> handleOpenAICompatibleChatWithTools(service, creds, messages, tools, systemPrompt, history)
+            else -> handleOpenAICompatibleChatWithTools(service, creds, messages, tools, systemPrompt, history, reasoningEffort, livePreview)
+        }
+    }
+
+    /** Transient plain-text preview only; final responses still use the canonical renderer. */
+    private fun liveTextPublisher(): suspend (String) -> Unit {
+        val buffer = StringBuilder()
+        var last = kotlin.time.TimeSource.Monotonic.markNow()
+        streamingText.value = ""
+        return { delta ->
+            buffer.append(delta)
+            val text = buffer.toString()
+            // Never try to render a half-written interactive UI schema.
+            val safe = if (text.contains("```kai-ui", ignoreCase = true)) "" else text
+            if (last.elapsedNow().inWholeMilliseconds >= 45 || safe.length < 8) {
+                streamingText.value = safe
+                last = kotlin.time.TimeSource.Monotonic.markNow()
+            }
         }
     }
 
@@ -740,6 +760,8 @@ class RemoteDataRepository(
         requestTimeoutMs: Long? = null,
         retry: Boolean = true,
         strictEmptyResponse: Boolean = false,
+        reasoningEffort: ReasoningEffort = ReasoningEffort.AUTO,
+        livePreview: Boolean = false,
     ): AssistantTurn {
         suspend fun <T> call(block: suspend () -> T): T = if (retry) retryApiCall(block) else block()
 
@@ -774,7 +796,13 @@ class RemoteDataRepository(
                 val openAIMessages = buildOpenAIMessages(service, messages, systemPrompt, credentials.modelId, declaredToolNames = emptySet())
                 if (requiresResponsesApi(service, credentials.modelId, credentials.baseUrl)) {
                     val response = call {
-                        requests.openAIResponses(service, credentials, toResponsesInput(openAIMessages), requestTimeoutMs = requestTimeoutMs).getOrThrow()
+                        requests.openAIResponses(
+                            service,
+                            credentials,
+                            toResponsesInput(openAIMessages),
+                            requestTimeoutMs = requestTimeoutMs,
+                            reasoningEffort = reasoningEffort.wireValue,
+                        ).getOrThrow()
                     }
                     response.throwIfFailed(service)
                     val content = response.outputText
@@ -783,7 +811,17 @@ class RemoteDataRepository(
                 }
                 val sessionId = activeConversationId()
                 val response = call {
-                    requests.openAICompatibleChat(service, credentials, openAIMessages, sessionId = sessionId, requestTimeoutMs = requestTimeoutMs).getOrThrow()
+                    if (livePreview && requestTimeoutMs == null) {
+                        requests.openAICompatibleChatStreaming(
+                            service,
+                            credentials,
+                            openAIMessages,
+                            sessionId = sessionId,
+                            onTextDelta = liveTextPublisher(),
+                        ).getOrThrow()
+                    } else {
+                        requests.openAICompatibleChat(service, credentials, openAIMessages, sessionId = sessionId, requestTimeoutMs = requestTimeoutMs).getOrThrow()
+                    }
                 }
                 val message = response.choices.firstOrNull()?.message
                 val content = message?.effectiveContent
@@ -825,7 +863,13 @@ class RemoteDataRepository(
         return ordered.filterIndexed { index, entry -> index == 0 || !entry.service.isOnDevice }
     }
 
-    override suspend fun ask(question: String?, files: List<PlatformFile>, uiSubmission: UiSubmission?, activeSkillId: String?) {
+    override suspend fun ask(
+        question: String?,
+        files: List<PlatformFile>,
+        uiSubmission: UiSubmission?,
+        activeSkillId: String?,
+        reasoningEffort: ReasoningEffort,
+    ) {
         // The active skill (if any) is consumed for this single turn only — stored in a
         // field rather than a parameter on getActiveSystemPrompt so the existing internal
         // callers (heartbeat, askWithTools, etc.) don't all need a new parameter. The
@@ -834,7 +878,7 @@ class RemoteDataRepository(
         val resolvedSkillId = activeSkillId?.takeIf { skillManager.getSkill(it) != null }
         pendingActiveSkillId = resolvedSkillId
         try {
-            askInternal(question, files, uiSubmission)
+            askInternal(question, files, uiSubmission, reasoningEffort)
         } finally {
             pendingActiveSkillId = null
             // The create-skill flow writes a new /root/skills/<id>/SKILL.md via
@@ -851,7 +895,13 @@ class RemoteDataRepository(
     /** Built-in skill id; matches the bundled SKILL.md under composeResources. */
     private val createSkillId = "create-skill"
 
-    private suspend fun askInternal(question: String?, files: List<PlatformFile>, uiSubmission: UiSubmission?) {
+    private suspend fun askInternal(
+        question: String?,
+        files: List<PlatformFile>,
+        uiSubmission: UiSubmission?,
+        reasoningEffort: ReasoningEffort,
+    ) {
+        streamingText.value = ""
         // Allocate a conversation id immediately for fresh chats. Without this,
         // the very first tool call lands here with _currentConversationId.value
         // still null, so per-conversation routing (e.g. the sandbox shell)
@@ -961,7 +1011,17 @@ class RemoteDataRepository(
                 // Retrying the whole call would re-enter the tool loop against a chat
                 // history already mutated by the failed attempt.
                 val turn = try {
-                    askWithService(entry.service, messages, systemPrompt, entry.instanceId)
+                    // Only the primary selected route receives the user preference.
+                    // Fall-through models must retain their own default parameters.
+                    val effort = if (index == 0 &&
+                        supportedReasoningEfforts(entry.service.id, instanceCredentials(entry.instanceId, entry.service).modelId)
+                            .contains(reasoningEffort)
+                    ) {
+                        reasoningEffort
+                    } else {
+                        ReasoningEffort.AUTO
+                    }
+                    askWithService(entry.service, messages, systemPrompt, entry.instanceId, reasoningEffort = effort, livePreview = true)
                 } catch (e: Exception) {
                     if (e is kotlinx.coroutines.CancellationException) throw e
                     // On-device services should not silently fall back — surface the error
@@ -985,6 +1045,7 @@ class RemoteDataRepository(
                                 content = turn.content,
                                 reasoningContent = turn.reasoningContent,
                                 fallbackServiceName = fallbackServiceName,
+                                modelId = instanceCredentials(entry.instanceId, entry.service).modelId,
                             ),
                         )
                     }
@@ -999,6 +1060,7 @@ class RemoteDataRepository(
                 lastException ?: OpenAICompatibleEmptyResponseException()
             }
         } finally {
+            streamingText.value = ""
             _fallbackStatus.value = null
         }
     }
@@ -1010,6 +1072,8 @@ class RemoteDataRepository(
         tools: List<Tool>,
         systemPrompt: String? = null,
         history: MutableStateFlow<List<History>> = chatHistory,
+        reasoningEffort: ReasoningEffort = ReasoningEffort.AUTO,
+        livePreview: Boolean = false,
     ): AssistantTurn {
         val contextWindowTokens = ModelCatalog.estimateContextWindow(credentials.modelId)
         val declaredToolNames = tools.map { it.schema.name }.toSet()
@@ -1022,7 +1086,13 @@ class RemoteDataRepository(
                 val msgs = trimMessagesForContext(buildOpenAIMessages(service, history, systemPrompt, credentials.modelId, declaredToolNames), contextWindowTokens)
                 if (useResponsesApi) {
                     val response = retryApiCall {
-                        requests.openAIResponses(service, credentials, toResponsesInput(msgs), tools).getOrThrow()
+                        requests.openAIResponses(
+                            service,
+                            credentials,
+                            toResponsesInput(msgs),
+                            tools,
+                            reasoningEffort = reasoningEffort.wireValue,
+                        ).getOrThrow()
                     }
                     response.throwIfFailed(service)
                     val text = response.outputText
@@ -1042,8 +1112,20 @@ class RemoteDataRepository(
                 }
                 val sessionId = activeConversationId()
                 val response = retryApiCall {
-                    requests.openAICompatibleChat(service, credentials, msgs, tools, sessionId = sessionId).getOrThrow()
+                    if (livePreview) {
+                        requests.openAICompatibleChatStreaming(
+                            service,
+                            credentials,
+                            msgs,
+                            tools,
+                            sessionId = sessionId,
+                            onTextDelta = liveTextPublisher(),
+                        ).getOrThrow()
+                    } else {
+                        requests.openAICompatibleChat(service, credentials, msgs, tools, sessionId = sessionId).getOrThrow()
+                    }
                 }
+                if (livePreview) streamingText.value = ""
                 val message = response.choices.firstOrNull()?.message ?: throw OpenAICompatibleEmptyResponseException()
                 var calls = message.toolCalls.orEmpty().map { tc ->
                     ToolCallInfo(id = tc.id, name = tc.function.name, arguments = tc.function.arguments)
@@ -1073,7 +1155,7 @@ class RemoteDataRepository(
             override suspend fun bailout(history: List<History>, systemPrompt: String?, reason: BailoutReason): String {
                 // Bailout sends no tools — strip historic tool_calls to satisfy strict validators.
                 val msgs = trimMessagesForContext(buildOpenAIMessages(service, history, systemPrompt, credentials.modelId, declaredToolNames = emptySet()), contextWindowTokens)
-                return makeFinalCallWithoutTools(service, credentials, msgs, reason, useResponsesApi)
+                return makeFinalCallWithoutTools(service, credentials, msgs, reason, useResponsesApi, reasoningEffort)
             }
         }
         return runToolLoop(strategy, systemPrompt, history)
@@ -1259,6 +1341,7 @@ class RemoteDataRepository(
         messages: List<com.inspiredandroid.kai.network.dtos.openaicompatible.OpenAICompatibleChatRequestDto.Message>,
         reason: BailoutReason,
         useResponsesApi: Boolean = false,
+        reasoningEffort: ReasoningEffort = ReasoningEffort.AUTO,
     ): String {
         val bailoutMessages = messages.toMutableList().apply {
             add(
@@ -1270,7 +1353,12 @@ class RemoteDataRepository(
         }
         if (useResponsesApi) {
             val response = retryApiCall {
-                requests.openAIResponses(service, credentials, toResponsesInput(bailoutMessages)).getOrThrow()
+                requests.openAIResponses(
+                    service,
+                    credentials,
+                    toResponsesInput(bailoutMessages),
+                    reasoningEffort = reasoningEffort.wireValue,
+                ).getOrThrow()
             }
             response.throwIfFailed(service)
             return response.outputText.orEmpty()
@@ -1557,6 +1645,10 @@ class RemoteDataRepository(
                         content = h.content,
                         attachments = h.attachments,
                         uiSubmission = h.uiSubmission,
+                        toolCallId = h.toolCallId,
+                        toolName = h.toolName,
+                        toolCalls = h.toolCalls,
+                        modelId = h.modelId,
                         isThinking = h.isThinking,
                         reasoningContent = h.reasoningContent,
                     )
@@ -1564,7 +1656,10 @@ class RemoteDataRepository(
             createdAt = existingConversation?.createdAt ?: now,
             updatedAt = now,
             title = title,
+            isPinned = existingConversation?.isPinned ?: false,
             type = existingConversation?.type ?: if (interactiveModeFlag) Conversation.TYPE_INTERACTIVE else Conversation.TYPE_CHAT,
+            parentConversationId = existingConversation?.parentConversationId,
+            branchPointMessageId = existingConversation?.branchPointMessageId,
         )
 
         conversationStorage.saveConversation(conversation)
@@ -1636,10 +1731,28 @@ class RemoteDataRepository(
                 content = m.content,
                 attachments = attachments,
                 uiSubmission = m.uiSubmission,
+                toolCallId = m.toolCallId,
+                toolName = m.toolName,
+                toolCalls = m.toolCalls?.toImmutableList(),
+                modelId = m.modelId,
                 isThinking = m.isThinking,
                 reasoningContent = m.reasoningContent,
             )
         }
+    }
+
+    override suspend fun setConversationPinned(id: String, pinned: Boolean) {
+        val existing = savedConversations.value.find { it.id == id } ?: return
+        if (existing.type == Conversation.TYPE_HEARTBEAT) return
+        conversationStorage.saveConversation(existing.copy(isPinned = pinned))
+    }
+
+    override suspend fun renameConversation(id: String, title: String) {
+        val cleanTitle = title.trim().take(120)
+        if (cleanTitle.isEmpty()) return
+        val existing = savedConversations.value.find { it.id == id } ?: return
+        if (existing.type == Conversation.TYPE_HEARTBEAT) return
+        conversationStorage.saveConversation(existing.copy(title = cleanTitle))
     }
 
     override suspend fun deleteConversation(id: String) {
@@ -1682,6 +1795,67 @@ class RemoteDataRepository(
             val index = history.indexOfFirst { it.id == messageId }
             if (index >= 0) history.take(index) else history
         }
+    }
+
+    /**
+     * Snapshot the exact visible prefix into an independent conversation. Never truncate the
+     * original or depend on sandbox/memory retrieval for context. A prompt edit forks just
+     * before the selected user message, preserving its attachments with the replacement.
+     */
+    override suspend fun branchConversation(messageId: String, editedContent: String?): Boolean {
+        val original = chatHistory.value
+        val index = original.indexOfFirst { it.id == messageId }
+        if (index < 0 || original[index].role == History.Role.TOOL_EXECUTING) return false
+        val selected = original[index]
+        if (editedContent != null && (selected.role != History.Role.USER || editedContent.isBlank())) return false
+
+        val prefix = if (editedContent == null) {
+            original.take(index + 1)
+        } else {
+            original.take(index) + History(
+                role = History.Role.USER,
+                content = editedContent.trim(),
+                attachments = selected.attachments,
+            )
+        }
+        if (prefix.isEmpty()) return false
+
+        // Persist the parent first, including a new/unsaved parent conversation.
+        saveCurrentConversation()
+        val parentId = _currentConversationId.value ?: return false
+        val now = Clock.System.now().toEpochMilliseconds()
+        val branchId = Uuid.random().toString()
+        val branch = Conversation(
+            id = branchId,
+            messages = prefix.filter { it.role != History.Role.TOOL_EXECUTING }.map { h ->
+                Conversation.Message(
+                    id = h.id,
+                    role = when (h.role) {
+                        History.Role.USER -> "user"
+                        History.Role.ASSISTANT -> "assistant"
+                        History.Role.TOOL, History.Role.TOOL_EXECUTING -> "tool"
+                    },
+                    content = h.content,
+                    attachments = h.attachments,
+                    uiSubmission = h.uiSubmission,
+                    toolCallId = h.toolCallId,
+                    toolName = h.toolName,
+                    toolCalls = h.toolCalls,
+                    modelId = h.modelId,
+                    isThinking = h.isThinking,
+                    reasoningContent = h.reasoningContent,
+                )
+            },
+            createdAt = now,
+            updatedAt = now,
+            title = deriveTitle(prefix),
+            parentConversationId = parentId,
+            branchPointMessageId = messageId,
+        )
+        conversationStorage.saveConversation(branch)
+        setCurrentConversationId(branchId)
+        chatHistory.value = prefix
+        return true
     }
 
     override fun restoreCurrentConversation() {
@@ -1866,10 +2040,22 @@ class RemoteDataRepository(
         ).ifEmpty { null }
     }
 
+    override fun isThinkingHeaderVisible(): Boolean = appSettings.isThinkingHeaderVisible()
+
+    override fun setThinkingHeaderVisible(visible: Boolean) {
+        appSettings.setThinkingHeaderVisible(visible)
+    }
+
     override fun isDynamicUiEnabled(): Boolean = appSettings.isDynamicUiEnabled()
 
     override fun setDynamicUiEnabled(enabled: Boolean) {
         appSettings.setDynamicUiEnabled(enabled)
+    }
+
+    override fun getAccentPreset(): AccentPreset = appSettings.getAccentPreset()
+
+    override fun setAccentPreset(preset: AccentPreset) {
+        appSettings.setAccentPreset(preset)
     }
 
     override fun getThemeMode(): ThemeMode = appSettings.getThemeMode()
