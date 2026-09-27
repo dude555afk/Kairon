@@ -27,6 +27,7 @@ import kai.composeapp.generated.resources.conversation_untitled
 import kai.composeapp.generated.resources.error_local_network_permission
 import kai.composeapp.generated.resources.error_unsupported_file_type
 import kai.composeapp.generated.resources.litert_no_model_warning
+import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CancellationException
@@ -168,6 +169,9 @@ class ChatViewModel(
         }
     }
 
+    private var indexedConversations: List<Conversation>? = null
+    private var indexedSummaries: ImmutableList<ConversationSummary> = persistentListOf()
+
     val state = combine(
         _state,
         dataRepository.chatHistory,
@@ -175,25 +179,31 @@ class ChatViewModel(
         dataRepository.currentConversationId,
         dataRepository.hasUnreadHeartbeat,
     ) { state, history, conversations, conversationId, hasUnreadHeartbeat ->
-        val summaries = conversations
-            .sortedWith(compareByDescending<Conversation> { it.isPinned }.thenByDescending { it.updatedAt })
-            .map {
-                val isHeartbeat = it.type == Conversation.TYPE_HEARTBEAT
-                val isInteractive = it.type == Conversation.TYPE_INTERACTIVE
-                ConversationSummary(
-                    id = it.id,
-                    title = if (isHeartbeat) "" else it.title.ifEmpty { getString(Res.string.conversation_untitled) },
-                    searchContent = it.messages.filter { message -> message.role == "user" || message.role == "assistant" }.joinToString("\n") { message -> message.content },
-                    updatedAt = it.updatedAt,
-                    isPinned = it.isPinned,
-                    isHeartbeat = isHeartbeat,
-                    isInteractive = isInteractive,
-                )
-            }
+        // The live stream updates _state frequently. Rebuild the search index only
+        // when the saved-conversation list actually changes, not for every text delta.
+        if (conversations !== indexedConversations) {
+            indexedConversations = conversations
+            indexedSummaries = conversations
+                .sortedWith(compareByDescending<Conversation> { it.isPinned }.thenByDescending { it.updatedAt })
+                .map {
+                    val isHeartbeat = it.type == Conversation.TYPE_HEARTBEAT
+                    val isInteractive = it.type == Conversation.TYPE_INTERACTIVE
+                    ConversationSummary(
+                        id = it.id,
+                        title = if (isHeartbeat) "" else it.title.ifEmpty { getString(Res.string.conversation_untitled) },
+                        searchContent = it.messages.filter { message -> message.role == "user" || message.role == "assistant" }
+                            .joinToString("\n") { message -> message.content },
+                        updatedAt = it.updatedAt,
+                        isPinned = it.isPinned,
+                        isHeartbeat = isHeartbeat,
+                        isInteractive = isInteractive,
+                    )
+                }.toImmutableList()
+        }
         state.copy(
             history = history.toImmutableList(),
             supportedFileExtensions = dataRepository.supportedFileExtensions().toImmutableList(),
-            savedConversations = summaries.toImmutableList(),
+            savedConversations = indexedSummaries,
             currentConversationId = conversationId,
             hasUnreadHeartbeat = hasUnreadHeartbeat,
             installedSkills = dataRepository.getInstalledSkills().toImmutableList(),
