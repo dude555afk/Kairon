@@ -116,6 +116,11 @@ class ChatViewModel(
             dataRepository.connectEnabledMcpServers()
         }
         viewModelScope.launch {
+            dataRepository.streamingText.collect { text ->
+                _state.update { it.copy(streamingText = text) }
+            }
+        }
+        viewModelScope.launch {
             dataRepository.fallbackStatus.collect { status ->
                 _state.update { it.copy(fallbackStatus = status) }
             }
