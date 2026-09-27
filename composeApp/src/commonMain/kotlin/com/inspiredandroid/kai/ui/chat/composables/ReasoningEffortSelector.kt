@@ -25,6 +25,7 @@ import kai.composeapp.generated.resources.kairon_effort_high
 import kai.composeapp.generated.resources.kairon_effort_xhigh
 import kai.composeapp.generated.resources.kairon_effort_max
 import org.jetbrains.compose.resources.stringResource
+import kotlin.math.roundToInt
 
 /** Only rendered for a service/model pair on the explicit capability allowlist. */
 @Composable
@@ -63,7 +64,7 @@ internal fun ReasoningEffortSelector(
                 Slider(
                     value = levels.indexOf(safeSelected).coerceAtLeast(0).toFloat(),
                     onValueChange = { position ->
-                        onSelect(levels[position.toInt().coerceIn(0, levels.lastIndex)])
+                        onSelect(levels[position.roundToInt().coerceIn(0, levels.lastIndex)])
                     },
                     valueRange = 0f..levels.lastIndex.toFloat(),
                     steps = (levels.size - 2).coerceAtLeast(0),
