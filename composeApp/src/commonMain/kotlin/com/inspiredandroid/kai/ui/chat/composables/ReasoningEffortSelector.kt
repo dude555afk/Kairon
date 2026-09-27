@@ -34,21 +34,21 @@ internal fun ReasoningEffortSelector(
     selected: ReasoningEffort,
     onSelect: (ReasoningEffort) -> Unit,
 ) {
-    val supported = levels.isNotEmpty()
+    if (levels.size < 2) return // Unsupported/free routes must not show a fake effort control.
     var expanded by remember { mutableStateOf(false) }
-    val safeSelected = selected.takeIf { supported && it in levels } ?: ReasoningEffort.AUTO
+    val safeSelected = selected.takeIf { it in levels } ?: ReasoningEffort.AUTO
     val currentLabel = effortLabel(safeSelected)
     androidx.compose.foundation.layout.Box {
         Surface(
             onClick = { expanded = true },
             shape = MaterialTheme.shapes.extraLarge,
-            color = if (supported) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest,
+            color = MaterialTheme.colorScheme.primaryContainer,
         ) {
             Text(
-                text = currentLabel,
+                text = "Effort: $currentLabel",
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                 style = MaterialTheme.typography.labelMedium,
-                color = if (supported) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
             )
         }
         DropdownMenu(
@@ -60,28 +60,20 @@ internal fun ReasoningEffortSelector(
                     text = stringResource(Res.string.kairon_reasoning_effort),
                     style = MaterialTheme.typography.titleSmall,
                 )
-                if (supported) {
-                    Text(currentLabel, style = MaterialTheme.typography.bodySmall)
-                    Slider(
-                        value = levels.indexOf(safeSelected).coerceAtLeast(0).toFloat(),
-                        onValueChange = { position ->
-                            onSelect(levels[position.roundToInt().coerceIn(0, levels.lastIndex)])
-                        },
-                        valueRange = 0f..levels.lastIndex.toFloat(),
-                        steps = (levels.size - 2).coerceAtLeast(0),
-                    )
-                    Text(
-                        text = levels.joinToString(" · ") { it.name.lowercase().replaceFirstChar { char -> char.uppercaseChar() } },
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                } else {
-                    Text(
-                        "This model or provider does not expose a verified reasoning-effort setting. Auto uses its native default.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
+                Text(currentLabel, style = MaterialTheme.typography.bodySmall)
+                Slider(
+                    value = levels.indexOf(safeSelected).coerceAtLeast(0).toFloat(),
+                    onValueChange = { position ->
+                        onSelect(levels[position.roundToInt().coerceIn(0, levels.lastIndex)])
+                    },
+                    valueRange = 0f..levels.lastIndex.toFloat(),
+                    steps = (levels.size - 2).coerceAtLeast(0),
+                )
+                Text(
+                    text = levels.joinToString(" · ") { effortLabelName(it) },
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
     }
@@ -98,3 +90,6 @@ private fun effortLabel(value: ReasoningEffort): String = stringResource(
         ReasoningEffort.MAX -> Res.string.kairon_effort_max
     },
 )
+
+private fun effortLabelName(effort: ReasoningEffort): String =
+    effort.name.lowercase().replaceFirstChar { it.uppercaseChar() }
