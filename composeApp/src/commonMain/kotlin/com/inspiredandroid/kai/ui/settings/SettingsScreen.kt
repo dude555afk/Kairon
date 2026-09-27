@@ -508,33 +508,35 @@ internal fun ToggleableHeadline(
     actions: @Composable RowScope.() -> Unit = {},
 ) {
     val switchInteractionSource = remember { MutableInteractionSource() }
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(
+                    interactionSource = switchInteractionSource,
+                    indication = null,
+                ) { onCheckedChange(!checked) }
+                .handCursor(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.weight(1f),
+            )
+            actions()
+            Switch(
+                checked = checked,
+                onCheckedChange = null,
                 interactionSource = switchInteractionSource,
-                indication = null,
-            ) { onCheckedChange(!checked) }
-            .handCursor(),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
+            )
+        }
+        Spacer(Modifier.size(4.dp))
         Text(
-            text = title,
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.weight(1f),
-        )
-        actions()
-        Switch(
-            checked = checked,
-            onCheckedChange = null,
-            interactionSource = switchInteractionSource,
+            text = description,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
-    Spacer(Modifier.size(4.dp))
-    Text(
-        text = description,
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
 }
