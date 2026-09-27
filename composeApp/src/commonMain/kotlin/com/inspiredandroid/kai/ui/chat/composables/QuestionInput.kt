@@ -29,8 +29,12 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.DisableSelection
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.InsertDriveFile
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
@@ -40,6 +44,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -194,6 +200,17 @@ fun QuestionInput(
             null
         }
 
+        // Image uses the native gallery/photo picker; Files retains the document picker.
+        // Keep launchers in the stable composer scope rather than inside the popup.
+        val imagePickerLauncher = if (supportedFileExtensions.any { it.lowercase() in imageExtensions }) {
+            rememberFilePickerLauncher(type = FileKitType.Image) { image ->
+                if (image != null) addFile(image)
+            }
+        } else {
+            null
+        }
+        var attachmentMenuExpanded by remember { mutableStateOf(false) }
+
         val focusRequester = remember { FocusRequester() }
         val maxComposerHeight = 120.dp * LocalDensity.current.fontScale
         val activeService = availableServices.firstOrNull()
@@ -270,13 +287,43 @@ fun QuestionInput(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(2.dp),
             ) {
-                if (filePickerLauncher != null) {
-                    IconButton(onClick = { filePickerLauncher.launch() }) {
-                        Icon(
-                            Icons.Default.Add,
-                            contentDescription = stringResource(Res.string.kairon_add_attachment),
-                            tint = MaterialTheme.colorScheme.onSurface,
-                        )
+                if (filePickerLauncher != null || imagePickerLauncher != null) {
+                    Box {
+                        IconButton(onClick = { attachmentMenuExpanded = true }) {
+                            Icon(
+                                Icons.Default.Add,
+                                contentDescription = stringResource(Res.string.kairon_add_attachment),
+                                tint = MaterialTheme.colorScheme.onSurface,
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = attachmentMenuExpanded,
+                            onDismissRequest = { attachmentMenuExpanded = false },
+                            shape = RoundedCornerShape(22.dp),
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                            shadowElevation = 8.dp,
+                        ) {
+                            if (imagePickerLauncher != null) {
+                                DropdownMenuItem(
+                                    text = { Text("Photos") },
+                                    leadingIcon = { Icon(Icons.Default.Image, contentDescription = null) },
+                                    onClick = {
+                                        attachmentMenuExpanded = false
+                                        imagePickerLauncher.launch()
+                                    },
+                                )
+                            }
+                            if (filePickerLauncher != null) {
+                                DropdownMenuItem(
+                                    text = { Text("Files") },
+                                    leadingIcon = { Icon(Icons.Default.InsertDriveFile, contentDescription = null) },
+                                    onClick = {
+                                        attachmentMenuExpanded = false
+                                        filePickerLauncher.launch()
+                                    },
+                                )
+                            }
+                        }
                     }
                 }
                 if (availableServices.isNotEmpty()) {
