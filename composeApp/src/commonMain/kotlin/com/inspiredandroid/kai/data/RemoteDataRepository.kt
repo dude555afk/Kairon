@@ -716,12 +716,6 @@ class RemoteDataRepository(
         }
     }
 
-    /**
-     * The conversation a request belongs to: an explicit coroutine-context id (set by
-     * askWithTools for heartbeat / scheduled runs) wins over the globally active chat id, so
-     * background runs aren't attributed to whatever chat the user is viewing. Null before any
-     * conversation exists. Used as the upstream session id for providers that require one.
-     */
     /** Transient plain-text preview only; final responses still use the canonical renderer. */
     private fun liveTextPublisher(): suspend (String) -> Unit {
         val buffer = StringBuilder()
@@ -739,6 +733,12 @@ class RemoteDataRepository(
         }
     }
 
+    /**
+     * The conversation a request belongs to: an explicit coroutine-context id (set by
+     * askWithTools for heartbeat / scheduled runs) wins over the globally active chat id, so
+     * background runs aren't attributed to whatever chat the user is viewing. Null before any
+     * conversation exists. Used as the upstream session id for providers that require one.
+     */
     private suspend fun activeConversationId(): String? = currentConversationIdOrNull() ?: _currentConversationId.value
 
     /**
