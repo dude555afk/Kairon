@@ -109,7 +109,7 @@ class ChatViewModel(
                 dataRepository.restoreCurrentConversation()
                 presetInteractiveModeForCurrentConversation()
             }
-            _state.update { it.copy(isRestoring = false) }
+            _state.update { it.copy(isRestoring = false, showThinkingHeader = dataRepository.isThinkingHeaderVisible()) }
         }
 
         viewModelScope.launch(backgroundDispatcher) {
@@ -607,6 +607,7 @@ class ChatViewModel(
     }
 
     fun refreshSettings() {
+        _state.update { it.copy(showThinkingHeader = dataRepository.isThinkingHeaderVisible()) }
         updateAvailableServices()
         viewModelScope.launch(backgroundDispatcher) {
             dataRepository.restoreCurrentConversation()
