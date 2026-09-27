@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.inspiredandroid.kai.data.Conversation
 import com.inspiredandroid.kai.data.DataRepository
 import com.inspiredandroid.kai.data.FreeMode
+import com.inspiredandroid.kai.data.ReasoningEffort
 import com.inspiredandroid.kai.data.Service
 import com.inspiredandroid.kai.data.ServiceEntry
 import com.inspiredandroid.kai.data.TaskScheduler
@@ -78,6 +79,7 @@ class ChatViewModel(
         sendSmsDraft = ::sendSmsDraft,
         discardSmsDraft = ::discardSmsDraft,
         consumeComposerPrefill = ::consumeComposerPrefill,
+        selectReasoningEffort = ::selectReasoningEffort,
     )
     private val freeModeNames: Map<FreeMode, String> = FreeMode.entries.associateWith { "Free ${it.modelId.replaceFirstChar { c -> c.uppercase() }}" }
     private var currentJob: Job? = null
@@ -217,6 +219,7 @@ class ChatViewModel(
 
         // Capture files before launching coroutine to avoid race with files being cleared
         val files = _state.value.files
+        val effortForTurn = _state.value.reasoningEffort
 
         val (strippedQuestion, activeSkillId) = parseSkillInvocation(question)
 
@@ -242,7 +245,7 @@ class ChatViewModel(
                 return@launch
             }
             try {
-                dataRepository.ask(strippedQuestion, files, uiSubmission, activeSkillId)
+                dataRepository.ask(strippedQuestion, files, uiSubmission, activeSkillId, effortForTurn)
 
                 // Auto-retry in interactive mode if the response has no valid kai-ui
                 if (_state.value.isInteractiveMode) {
@@ -391,15 +394,23 @@ class ChatViewModel(
         }
     }
 
+    private fun selectReasoningEffort(effort: ReasoningEffort) {
+        val active = _state.value.availableServices.firstOrNull()
+        val allowed = active?.let { com.inspiredandroid.kai.data.supportedReasoningEfforts(it.serviceId, it.modelId) }.orEmpty()
+        _state.update { it.copy(reasoningEffort = if (effort in allowed) effort else ReasoningEffort.AUTO) }
+    }
+
     private fun selectService(instanceId: String) {
         val freeMode = FREE_MODE_INSTANCE_IDS[instanceId]
         if (freeMode != null) {
+            _state.update { it.copy(reasoningEffort = ReasoningEffort.AUTO) }
             dataRepository.setFreeMode(freeMode)
             dataRepository.setFreeServicePrimary(true)
             updateAvailableServices()
             return
         }
 
+        _state.update { it.copy(reasoningEffort = ReasoningEffort.AUTO) }
         dataRepository.setFreeServicePrimary(false)
         val instances = dataRepository.getConfiguredServiceInstances()
         val currentIds = instances.map { it.instanceId }
