@@ -82,6 +82,7 @@ class SettingsViewModel(
         tools = dataRepository.getToolDefinitions().toImmutableList(),
         soulText = dataRepository.getSoulText(),
         isDynamicUiEnabled = dataRepository.isDynamicUiEnabled(),
+        isThinkingHeaderVisible = dataRepository.isThinkingHeaderVisible(),
         themeMode = dataRepository.getThemeMode(),
         isMemoryEnabled = dataRepository.isMemoryEnabled(),
         memories = dataRepository.getMemories().toImmutableList(),
@@ -155,6 +156,7 @@ class SettingsViewModel(
         onToggleTool = ::onToggleTool,
         onSaveSoul = ::onSaveSoul,
         onToggleDynamicUi = ::onToggleDynamicUi,
+        onToggleThinkingHeader = ::onToggleThinkingHeader,
         onChangeThemeMode = ::onChangeThemeMode,
         onToggleMemory = ::onToggleMemory,
         onDeleteMemory = ::onDeleteMemory,
@@ -491,6 +493,11 @@ class SettingsViewModel(
     private fun onSaveSoul(text: String) {
         dataRepository.setSoulText(text)
         _state.update { it.copy(soulText = text) }
+    }
+
+    private fun onToggleThinkingHeader(visible: Boolean) {
+        dataRepository.setThinkingHeaderVisible(visible)
+        _state.update { it.copy(isThinkingHeaderVisible = visible) }
     }
 
     private fun onToggleDynamicUi(enabled: Boolean) {
