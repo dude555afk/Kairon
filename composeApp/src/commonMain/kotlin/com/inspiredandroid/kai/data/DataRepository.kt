@@ -67,6 +67,7 @@ interface DataRepository {
     fun loadConversation(id: String)
     suspend fun deleteConversation(id: String)
     suspend fun renameConversation(id: String, title: String)
+    suspend fun setConversationPinned(id: String, pinned: Boolean)
     fun startNewChat()
     fun regenerate()
     fun popLastExchange()
