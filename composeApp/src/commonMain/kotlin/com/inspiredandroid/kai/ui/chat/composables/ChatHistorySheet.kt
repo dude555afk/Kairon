@@ -21,7 +21,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -35,9 +37,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Alignment.Companion.CenterEnd
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -54,6 +60,8 @@ import kai.composeapp.generated.resources.chat_history_empty
 import kai.composeapp.generated.resources.chat_history_heartbeat_label
 import kai.composeapp.generated.resources.chat_history_title
 import kai.composeapp.generated.resources.ic_history
+import kai.composeapp.generated.resources.ic_add
+import kai.composeapp.generated.resources.new_chat_content_description
 import kai.composeapp.generated.resources.snackbar_conversation_deleted
 import kai.composeapp.generated.resources.snackbar_undo
 import kotlinx.collections.immutable.ImmutableList
@@ -96,7 +104,7 @@ internal fun ChatHistorySheet(
                     .fillMaxWidth(0.88f)
                     .widthIn(max = 360.dp),
                 shape = RoundedCornerShape(topEnd = 24.dp, bottomEnd = 24.dp),
-                color = MaterialTheme.colorScheme.surface,
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
                 tonalElevation = 2.dp,
             ) {
                 val snackbarHostState = remember { SnackbarHostState() }
@@ -118,13 +126,30 @@ internal fun ChatHistorySheet(
 
                 Box(modifier = Modifier.fillMaxSize()) {
                     Column(modifier = Modifier.fillMaxSize().padding(top = 24.dp)) {
-                        Text(
-                            modifier = Modifier.padding(horizontal = 16.dp),
-                            text = stringResource(Res.string.chat_history_title),
-                            style = MaterialTheme.typography.titleLarge,
-                            color = MaterialTheme.colorScheme.onBackground,
-                        )
-                        Spacer(Modifier.height(12.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = stringResource(Res.string.chat_history_title),
+                                style = MaterialTheme.typography.titleLarge,
+                                color = MaterialTheme.colorScheme.onBackground,
+                                modifier = Modifier.weight(1f),
+                            )
+                            IconButton(
+                                onClick = {
+                                    actions.startNewChat()
+                                    onDismiss()
+                                },
+                            ) {
+                                Icon(
+                                    imageVector = vectorResource(Res.drawable.ic_add),
+                                    contentDescription = stringResource(Res.string.new_chat_content_description),
+                                    tint = MaterialTheme.colorScheme.onBackground,
+                                )
+                            }
+                        }
+                        Spacer(Modifier.height(8.dp))
 
                         if (conversations.isEmpty()) {
                             Text(
@@ -140,7 +165,7 @@ internal fun ChatHistorySheet(
                                     modifier = Modifier.fillMaxSize(),
                                     state = historyListState,
                                     contentPadding = PaddingValues(horizontal = 16.dp),
-                                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                                    verticalArrangement = Arrangement.spacedBy(2.dp),
                                 ) {
                                     items(conversations, key = { it.id }) { conversation ->
                                         val isActive = conversation.id == currentConversationId
@@ -156,7 +181,7 @@ internal fun ChatHistorySheet(
                                                     if (isActive) {
                                                         MaterialTheme.colorScheme.surfaceContainerHigh
                                                     } else {
-                                                        MaterialTheme.colorScheme.surface
+                                                        Color.Transparent
                                                     },
                                                 )
                                         }
@@ -169,7 +194,7 @@ internal fun ChatHistorySheet(
                                                     actions.loadConversation(conversation.id)
                                                     onDismiss()
                                                 }
-                                                .padding(vertical = 8.dp, horizontal = 8.dp),
+                                                .padding(vertical = 10.dp, horizontal = 12.dp),
                                             verticalAlignment = Alignment.CenterVertically,
                                             horizontalArrangement = Arrangement.SpaceBetween,
                                         ) {
@@ -218,15 +243,30 @@ internal fun ChatHistorySheet(
                                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                 )
                                             }
-                                            IconButton(
-                                                modifier = Modifier.handCursor(),
-                                                onClick = { actions.deleteConversation(conversation.id) },
-                                            ) {
-                                                Icon(
-                                                    imageVector = Icons.Default.Delete,
-                                                    contentDescription = stringResource(Res.string.chat_history_delete_content_description),
-                                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                )
+                                            var menuExpanded by remember { mutableStateOf(false) }
+                                            Box {
+                                                IconButton(
+                                                    modifier = Modifier.handCursor(),
+                                                    onClick = { menuExpanded = true },
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.Default.MoreVert,
+                                                        contentDescription = stringResource(Res.string.chat_history_delete_content_description),
+                                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    )
+                                                }
+                                                DropdownMenu(
+                                                    expanded = menuExpanded,
+                                                    onDismissRequest = { menuExpanded = false },
+                                                ) {
+                                                    DropdownMenuItem(
+                                                        text = { Text(stringResource(Res.string.chat_history_delete_content_description)) },
+                                                        onClick = {
+                                                            menuExpanded = false
+                                                            actions.deleteConversation(conversation.id)
+                                                        },
+                                                    )
+                                                }
                                             }
                                         }
                                     }
