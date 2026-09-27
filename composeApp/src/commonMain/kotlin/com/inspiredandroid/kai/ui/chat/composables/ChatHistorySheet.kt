@@ -113,7 +113,7 @@ internal fun ChatHistorySheet(
         val matchingConversations = remember(conversations, searchText) {
             val query = searchText.trim()
             if (query.isEmpty()) conversations else conversations.filter {
-                it.title.contains(query, ignoreCase = true) || it.searchContent.contains(query, ignoreCase = true)
+                it.title.contains(query, ignoreCase = true) || it.searchContent.any { message -> message.contains(query, ignoreCase = true) }
             }
         }
         val deletedMessage = stringResource(Res.string.snackbar_conversation_deleted)
