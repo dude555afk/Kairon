@@ -29,6 +29,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
@@ -66,11 +67,29 @@ fun ColorScheme.withAccent(preset: AccentPreset): ColorScheme {
         AccentPreset.Teal -> Color(0xFF69D5C4)
         AccentPreset.CatppuccinMocha -> Color(0xFFCBA6F7)
     }
+    // Tint the entire Material surface hierarchy, not only buttons. Keep the
+    // underlying light/dark/OLED neutrals readable, like ChatGPT's restrained accent.
     return copy(
         primary = accent,
-        secondary = accent,
-        tertiary = accent,
         onPrimary = Color(0xFF171717),
+        primaryContainer = lerp(surfaceContainerHigh, accent, 0.26f),
+        onPrimaryContainer = onSurface,
+        secondary = accent,
+        onSecondary = Color(0xFF171717),
+        secondaryContainer = lerp(surfaceContainerHigh, accent, 0.16f),
+        onSecondaryContainer = onSurface,
+        tertiary = accent,
+        onTertiary = Color(0xFF171717),
+        tertiaryContainer = lerp(surfaceContainerHigh, accent, 0.16f),
+        onTertiaryContainer = onSurface,
+        surfaceTint = accent,
+        inversePrimary = accent,
+        surfaceContainerLow = lerp(surfaceContainerLow, accent, 0.035f),
+        surfaceContainer = lerp(surfaceContainer, accent, 0.055f),
+        surfaceContainerHigh = lerp(surfaceContainerHigh, accent, 0.09f),
+        surfaceContainerHighest = lerp(surfaceContainerHighest, accent, 0.13f),
+        surfaceVariant = lerp(surfaceVariant, accent, 0.07f),
+        outlineVariant = lerp(outlineVariant, accent, 0.16f),
     )
 }
 
