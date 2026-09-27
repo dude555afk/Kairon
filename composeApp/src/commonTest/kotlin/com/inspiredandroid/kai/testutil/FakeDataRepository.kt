@@ -266,6 +266,10 @@ class FakeDataRepository : DataRepository {
         }
     }
 
+    override suspend fun setConversationPinned(id: String, pinned: Boolean) {
+        savedConversations.update { list -> list.map { if (it.id == id) it.copy(isPinned = pinned) else it } }
+    }
+
     override suspend fun renameConversation(id: String, title: String) {
         savedConversations.update { list ->
             list.map { if (it.id == id && it.type != Conversation.TYPE_HEARTBEAT) it.copy(title = title.trim().take(120)) else it }
