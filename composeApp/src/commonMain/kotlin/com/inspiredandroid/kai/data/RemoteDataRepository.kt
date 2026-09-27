@@ -1644,6 +1644,9 @@ class RemoteDataRepository(
                         content = h.content,
                         attachments = h.attachments,
                         uiSubmission = h.uiSubmission,
+                        toolCallId = h.toolCallId,
+                        toolName = h.toolName,
+                        toolCalls = h.toolCalls,
                         isThinking = h.isThinking,
                         reasoningContent = h.reasoningContent,
                     )
@@ -1726,6 +1729,9 @@ class RemoteDataRepository(
                 content = m.content,
                 attachments = attachments,
                 uiSubmission = m.uiSubmission,
+                toolCallId = m.toolCallId,
+                toolName = m.toolName,
+                toolCalls = m.toolCalls?.toImmutableList(),
                 isThinking = m.isThinking,
                 reasoningContent = m.reasoningContent,
             )
@@ -1829,6 +1835,9 @@ class RemoteDataRepository(
                     content = h.content,
                     attachments = h.attachments,
                     uiSubmission = h.uiSubmission,
+                    toolCallId = h.toolCallId,
+                    toolName = h.toolName,
+                    toolCalls = h.toolCalls,
                     isThinking = h.isThinking,
                     reasoningContent = h.reasoningContent,
                 )
