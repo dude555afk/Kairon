@@ -2,8 +2,6 @@
 
 package com.inspiredandroid.kai.ui
 
-import com.inspiredandroid.kai.data.AccentPreset
-
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -36,6 +34,7 @@ import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import com.inspiredandroid.kai.data.AccentPreset
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 val darkPurple = Color(0xFF6200EE)
@@ -67,8 +66,12 @@ fun ColorScheme.withAccent(preset: AccentPreset): ColorScheme {
         AccentPreset.Teal -> Color(0xFF69D5C4)
         AccentPreset.CatppuccinMocha -> Color(0xFFCBA6F7)
     }
-    return copy(primary = accent, secondary = accent, tertiary = accent,
-        onPrimary = Color(0xFF171717))
+    return copy(
+        primary = accent,
+        secondary = accent,
+        tertiary = accent,
+        onPrimary = Color(0xFF171717),
+    )
 }
 
 fun ColorScheme.withBlackBackground(): ColorScheme = copy(

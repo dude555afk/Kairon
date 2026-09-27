@@ -1,5 +1,6 @@
 package com.inspiredandroid.kai.testutil
 
+import com.inspiredandroid.kai.data.AccentPreset
 import com.inspiredandroid.kai.data.Conversation
 import com.inspiredandroid.kai.data.DataRepository
 import com.inspiredandroid.kai.data.EmailAccount
@@ -18,7 +19,6 @@ import com.inspiredandroid.kai.data.ServiceInstance
 import com.inspiredandroid.kai.data.SmsDraft
 import com.inspiredandroid.kai.data.SmsSyncState
 import com.inspiredandroid.kai.data.SystemPromptVariant
-import com.inspiredandroid.kai.data.AccentPreset
 import com.inspiredandroid.kai.data.ThemeMode
 import com.inspiredandroid.kai.data.ensureSelectedModelPresent
 import com.inspiredandroid.kai.inference.DownloadError

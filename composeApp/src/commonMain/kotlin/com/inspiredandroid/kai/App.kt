@@ -150,12 +150,14 @@ private fun AppContent(
     val themeMode by appSettings.themeModeFlow.collectAsStateWithLifecycle()
     val systemInDark = isSystemInDarkTheme()
     val accentPreset by appSettings.accentPresetFlow.collectAsStateWithLifecycle()
-    val effectiveColorScheme = (when (themeMode) {
-        ThemeMode.System -> if (systemInDark) darkColorScheme else lightColorScheme
-        ThemeMode.Light -> lightColorScheme
-        ThemeMode.Dark -> darkColorScheme
-        ThemeMode.OledBlack -> darkColorScheme.withBlackBackground()
-    }).withAccent(accentPreset)
+    val effectiveColorScheme = (
+        when (themeMode) {
+            ThemeMode.System -> if (systemInDark) darkColorScheme else lightColorScheme
+            ThemeMode.Light -> lightColorScheme
+            ThemeMode.Dark -> darkColorScheme
+            ThemeMode.OledBlack -> darkColorScheme.withBlackBackground()
+        }
+        ).withAccent(accentPreset)
 
     val sandboxController = koinInject<SandboxController>()
     val sandboxAwareUriHandler = rememberSandboxAwareUriHandler(sandboxController)

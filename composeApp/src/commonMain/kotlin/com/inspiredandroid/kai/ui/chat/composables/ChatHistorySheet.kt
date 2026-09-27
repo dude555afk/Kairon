@@ -23,8 +23,8 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.PushPin
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -112,8 +112,12 @@ internal fun ChatHistorySheet(
         var searchText by remember { mutableStateOf("") }
         val matchingConversations = remember(conversations, searchText) {
             val query = searchText.trim()
-            if (query.isEmpty()) conversations else conversations.filter {
-                it.title.contains(query, ignoreCase = true) || it.searchContent.any { message -> message.contains(query, ignoreCase = true) }
+            if (query.isEmpty()) {
+                conversations
+            } else {
+                conversations.filter {
+                    it.title.contains(query, ignoreCase = true) || it.searchContent.any { message -> message.contains(query, ignoreCase = true) }
+                }
             }
         }
         val deletedMessage = stringResource(Res.string.snackbar_conversation_deleted)
@@ -243,20 +247,24 @@ internal fun ChatHistorySheet(
                                         if (conversation.title.isNotEmpty()) {
                                             Row(verticalAlignment = Alignment.CenterVertically) {
                                                 if (conversation.isPinned) {
-                                                    Icon(Icons.Default.PushPin, contentDescription = "Pinned", modifier = Modifier.size(12.dp),
-                                                        tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                    Icon(
+                                                        Icons.Default.PushPin,
+                                                        contentDescription = "Pinned",
+                                                        modifier = Modifier.size(12.dp),
+                                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    )
                                                 }
                                                 Text(
-                                                text = conversation.title,
-                                                style = MaterialTheme.typography.bodyLarge,
-                                                color = if (isActive) {
-                                                    MaterialTheme.colorScheme.primary
-                                                } else {
-                                                    MaterialTheme.colorScheme.onBackground
-                                                },
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis,
-                                            )
+                                                    text = conversation.title,
+                                                    style = MaterialTheme.typography.bodyLarge,
+                                                    color = if (isActive) {
+                                                        MaterialTheme.colorScheme.primary
+                                                    } else {
+                                                        MaterialTheme.colorScheme.onBackground
+                                                    },
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis,
+                                                )
                                             }
                                         }
                                         Text(

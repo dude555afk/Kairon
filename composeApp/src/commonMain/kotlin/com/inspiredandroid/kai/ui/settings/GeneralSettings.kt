@@ -87,9 +87,11 @@ internal fun GeneralContent(uiState: SettingsUiState, actions: SettingsActions) 
             Box(Modifier.fillMaxWidth().padding(16.dp)) {
                 Column {
                     Text("Accent", style = MaterialTheme.typography.titleMedium)
-                    Text("Lightweight colour presets. No wallpapers or extra assets.",
+                    Text(
+                        "Lightweight colour presets. No wallpapers or extra assets.",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                     var expanded by remember { mutableStateOf(false) }
                     Box {
                         KaiOutlinedTextField(

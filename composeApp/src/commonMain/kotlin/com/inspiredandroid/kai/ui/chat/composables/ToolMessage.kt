@@ -15,8 +15,8 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
@@ -100,15 +100,21 @@ internal fun WaitingResponseRow(
                 )
                 if (executingTools.isNotEmpty()) {
                     Spacer(Modifier.width(8.dp))
-                    Text(if (expanded) "⌃" else "⌄", style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        if (expanded) "⌃" else "⌄",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
             AnimatedVisibility(visible = expanded && executingTools.isNotEmpty()) {
                 Column(Modifier.padding(top = 8.dp)) {
                     executingTools.forEach { (_, name) ->
-                        Text("• $name", style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(
+                            "• $name",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     }
                 }
             }
