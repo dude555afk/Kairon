@@ -1651,6 +1651,7 @@ class RemoteDataRepository(
             createdAt = existingConversation?.createdAt ?: now,
             updatedAt = now,
             title = title,
+            isPinned = existingConversation?.isPinned ?: false,
             type = existingConversation?.type ?: if (interactiveModeFlag) Conversation.TYPE_INTERACTIVE else Conversation.TYPE_CHAT,
         )
 
@@ -1727,6 +1728,12 @@ class RemoteDataRepository(
                 reasoningContent = m.reasoningContent,
             )
         }
+    }
+
+    override suspend fun setConversationPinned(id: String, pinned: Boolean) {
+        val existing = savedConversations.value.find { it.id == id } ?: return
+        if (existing.type == Conversation.TYPE_HEARTBEAT) return
+        conversationStorage.saveConversation(existing.copy(isPinned = pinned))
     }
 
     override suspend fun renameConversation(id: String, title: String) {
