@@ -60,6 +60,7 @@ import kai.composeapp.generated.resources.chat_history_empty
 import kai.composeapp.generated.resources.chat_history_heartbeat_label
 import kai.composeapp.generated.resources.chat_history_title
 import kai.composeapp.generated.resources.ic_history
+import kai.composeapp.generated.resources.kairon_conversation_options
 import kai.composeapp.generated.resources.ic_add
 import kai.composeapp.generated.resources.new_chat_content_description
 import kai.composeapp.generated.resources.snackbar_conversation_deleted
@@ -251,7 +252,7 @@ internal fun ChatHistorySheet(
                                                 ) {
                                                     Icon(
                                                         imageVector = Icons.Default.MoreVert,
-                                                        contentDescription = stringResource(Res.string.chat_history_delete_content_description),
+                                                        contentDescription = stringResource(Res.string.kairon_conversation_options),
                                                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                                     )
                                                 }
