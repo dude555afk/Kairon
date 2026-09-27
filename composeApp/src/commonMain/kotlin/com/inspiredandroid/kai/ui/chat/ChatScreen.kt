@@ -1037,6 +1037,8 @@ private fun ChatModeScreen(
                     availableServices = uiState.availableServices,
                     onSelectService = uiState.actions.selectService,
                     installedSkills = uiState.installedSkills,
+                    reasoningEffort = uiState.reasoningEffort,
+                    onSelectReasoningEffort = uiState.actions.selectReasoningEffort,
                 )
             }
             SnackbarHost(
