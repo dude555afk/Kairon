@@ -24,7 +24,7 @@ enum class ReasoningEffort(val wireValue: String?) {
 fun supportedReasoningEfforts(serviceId: String, modelId: String): List<ReasoningEffort> {
     if (serviceId != Service.OpenAI.id) return emptyList()
     val id = modelId.lowercase()
-    return if (id == "gpt-5.6" || id == "gpt-5.6-sol") {
+    return if (id in setOf("gpt-5.6", "gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna")) {
         listOf(
             ReasoningEffort.AUTO, ReasoningEffort.LOW, ReasoningEffort.MEDIUM,
             ReasoningEffort.HIGH, ReasoningEffort.XHIGH, ReasoningEffort.MAX,
