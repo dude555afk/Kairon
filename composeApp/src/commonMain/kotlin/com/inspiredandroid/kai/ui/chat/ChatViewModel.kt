@@ -199,6 +199,8 @@ class ChatViewModel(
                         isPinned = it.isPinned,
                         isHeartbeat = isHeartbeat,
                         isInteractive = isInteractive,
+                        parentConversationId = it.parentConversationId,
+                        branchPointMessageId = it.branchPointMessageId,
                     )
                 }.toImmutableList()
         }
