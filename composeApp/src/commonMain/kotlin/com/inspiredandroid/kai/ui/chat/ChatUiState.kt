@@ -6,6 +6,7 @@ import androidx.compose.runtime.Immutable
 import com.inspiredandroid.kai.data.Attachment
 import com.inspiredandroid.kai.data.FallbackStatus
 import com.inspiredandroid.kai.data.ReasoningRequestMode
+import com.inspiredandroid.kai.data.ReasoningEffort
 import com.inspiredandroid.kai.data.ServiceEntry
 import com.inspiredandroid.kai.data.SharedJson
 import com.inspiredandroid.kai.data.SmsDraft
@@ -92,6 +93,7 @@ data class ChatUiState(
     val isRestoring: Boolean = true,
     val installedSkills: ImmutableList<com.inspiredandroid.kai.skills.SkillManifest> = persistentListOf(),
     val composerPrefill: String? = null,
+    val reasoningEffort: ReasoningEffort = ReasoningEffort.AUTO,
 ) {
     val heartbeatConversationId: String?
         get() = savedConversations.firstOrNull { it.isHeartbeat }?.id
