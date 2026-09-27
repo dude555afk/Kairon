@@ -12,6 +12,7 @@ import com.inspiredandroid.kai.data.ImportSection
 import com.inspiredandroid.kai.data.MemoryEntry
 import com.inspiredandroid.kai.data.ScheduledTask
 import com.inspiredandroid.kai.data.Service
+import com.inspiredandroid.kai.data.ReasoningEffort
 import com.inspiredandroid.kai.data.ServiceEntry
 import com.inspiredandroid.kai.data.ServiceInstance
 import com.inspiredandroid.kai.data.SmsDraft
@@ -213,6 +214,7 @@ class FakeDataRepository : DataRepository {
         files: List<PlatformFile>,
         uiSubmission: com.inspiredandroid.kai.data.UiSubmission?,
         activeSkillId: String?,
+        reasoningEffort: ReasoningEffort,
     ) {
         askCalls.add(question to files)
         lastActiveSkillId = activeSkillId
