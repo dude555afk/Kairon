@@ -1,5 +1,7 @@
 package com.inspiredandroid.kai.ui.chat.composables
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -44,20 +46,24 @@ import org.jetbrains.compose.resources.painterResource
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 
-@OptIn(ExperimentalEncodingApi::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalEncodingApi::class, ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
 internal fun UserMessage(
     message: String,
     attachments: ImmutableList<Attachment> = persistentListOf(),
     onBranch: (() -> Unit)? = null,
     onEdit: ((String) -> Unit)? = null,
+    onRetry: (() -> Unit)? = null,
+    onThinking: (() -> Unit)? = null,
+    onWebSearch: (() -> Unit)? = null,
 ) {
     val showFullScreen = LocalShowFullScreenImage.current
     var editing by remember(message) { mutableStateOf(false) }
+    var actionMenuOpen by remember { mutableStateOf(false) }
     var draft by remember(message) { mutableStateOf(message) }
     Column(modifier = Modifier.fillMaxWidth()) {
     SelectionContainer {
-        Row(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+        Row(Modifier.padding(horizontal = 16.dp, vertical = 8.dp).combinedClickable(onClick = {}, onLongClick = { actionMenuOpen = true })) {
             Spacer(Modifier.weight(1f))
             Column(
                 modifier = Modifier
@@ -125,15 +131,22 @@ internal fun UserMessage(
             }
         }
     }
-    if (onBranch != null || onEdit != null) {
+    if (onBranch != null || onEdit != null || onRetry != null || onThinking != null || onWebSearch != null) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(end = 16.dp),
             horizontalArrangement = Arrangement.End,
         ) {
-            if (onEdit != null) TextButton(onClick = { draft = message; editing = !editing }) {
-                Text(if (editing) "Cancel" else "Edit")
-            }
-            if (onBranch != null && !editing) TextButton(onClick = onBranch) { Text("Branch") }
+            MessageActionMenu(
+                onBranch = onBranch,
+                onEdit = if (onEdit != null) {
+                    { draft = message; editing = true }
+                } else null,
+                onRetry = onRetry,
+                onThinking = onThinking,
+                onWebSearch = onWebSearch,
+                externalOpen = actionMenuOpen,
+                onExternalDismiss = { actionMenuOpen = false },
+            )
         }
     }
     if (editing && onEdit != null) {
