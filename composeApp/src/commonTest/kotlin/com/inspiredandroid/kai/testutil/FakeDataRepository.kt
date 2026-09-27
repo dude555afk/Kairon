@@ -265,6 +265,12 @@ class FakeDataRepository : DataRepository {
         }
     }
 
+    override suspend fun renameConversation(id: String, title: String) {
+        savedConversations.update { list ->
+            list.map { if (it.id == id && it.type != Conversation.TYPE_HEARTBEAT) it.copy(title = title.trim().take(120)) else it }
+        }
+    }
+
     override suspend fun deleteConversation(id: String) {
         if (currentConversationId.value == id) {
             currentConversationId.value = null
