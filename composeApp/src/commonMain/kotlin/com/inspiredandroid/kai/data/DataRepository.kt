@@ -53,6 +53,7 @@ interface DataRepository {
         files: List<PlatformFile>,
         uiSubmission: UiSubmission? = null,
         activeSkillId: String? = null,
+        reasoningEffort: ReasoningEffort = ReasoningEffort.AUTO,
     )
     fun clearHistory()
     fun currentService(): Service
