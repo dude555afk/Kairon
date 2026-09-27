@@ -1980,6 +1980,12 @@ class RemoteDataRepository(
         appSettings.setDynamicUiEnabled(enabled)
     }
 
+    override fun getAccentPreset(): AccentPreset = appSettings.getAccentPreset()
+
+    override fun setAccentPreset(preset: AccentPreset) {
+        appSettings.setAccentPreset(preset)
+    }
+
     override fun getThemeMode(): ThemeMode = appSettings.getThemeMode()
 
     override fun setThemeMode(mode: ThemeMode) {
