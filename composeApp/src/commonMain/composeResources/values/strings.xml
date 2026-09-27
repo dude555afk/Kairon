@@ -4,6 +4,14 @@
     <string name="kairon_settings_intro">Everything in one place.</string>
     <string name="kairon_conversation_options">Conversation options</string>
     <string name="kairon_chat_more_options">More options</string>
+    <string name="kairon_add_attachment">Add attachment</string>
+    <string name="kairon_reasoning_effort">Reasoning effort</string>
+    <string name="kairon_effort_auto">Auto</string>
+    <string name="kairon_effort_low">Low</string>
+    <string name="kairon_effort_medium">Medium</string>
+    <string name="kairon_effort_high">High</string>
+    <string name="kairon_effort_xhigh">Extra high</string>
+    <string name="kairon_effort_max">Maximum</string>
     <string name="kairon_settings_workspace">Workspace</string>
     <string name="kairon_settings_capabilities">Capabilities</string>
     <string name="kairon_settings_general_desc">Appearance, privacy and application preferences</string>
