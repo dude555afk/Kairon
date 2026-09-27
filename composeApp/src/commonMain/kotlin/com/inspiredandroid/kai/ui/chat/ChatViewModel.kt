@@ -192,7 +192,7 @@ class ChatViewModel(
                         id = it.id,
                         title = if (isHeartbeat) "" else it.title.ifEmpty { getString(Res.string.conversation_untitled) },
                         searchContent = it.messages.filter { message -> message.role == "user" || message.role == "assistant" }
-                            .joinToString("\n") { message -> message.content },
+                            .map { message -> message.content }.toImmutableList(),
                         updatedAt = it.updatedAt,
                         isPinned = it.isPinned,
                         isHeartbeat = isHeartbeat,
