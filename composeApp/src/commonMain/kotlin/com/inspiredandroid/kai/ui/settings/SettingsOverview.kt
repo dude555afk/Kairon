@@ -12,6 +12,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -56,10 +59,7 @@ private fun settingsTabDescription(tab: SettingsTab): StringResource = when (tab
     SettingsTab.Sandbox -> Res.string.kairon_settings_sandbox_desc
 }
 
-/**
- * First-level settings index. The existing category contents and their actions remain
- * untouched; users enter a category rather than confronting every configuration at once.
- */
+/** Groups the existing screens into destinations without duplicating their controls or state. */
 @Composable
 internal fun SettingsOverview(
     tabs: ImmutableList<SettingsTab>,
@@ -68,68 +68,93 @@ internal fun SettingsOverview(
 ) {
     Column(
         modifier = modifier.verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp, vertical = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
         Text(
             text = stringResource(Res.string.kairon_settings_intro),
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.padding(bottom = 8.dp),
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp),
         )
-        SettingsGroupTitle(stringResource(Res.string.kairon_settings_workspace))
-        listOf(SettingsTab.General, SettingsTab.Agent).filter { it in tabs }.forEach { tab ->
-            SettingsDestination(tab, onOpen)
-        }
-        SettingsGroupTitle(stringResource(Res.string.kairon_settings_capabilities))
-        listOf(SettingsTab.Services, SettingsTab.Tools, SettingsTab.Integrations, SettingsTab.Sandbox)
-            .filter { it in tabs }
-            .forEach { tab -> SettingsDestination(tab, onOpen) }
+        SettingsGroup(
+            title = stringResource(Res.string.kairon_settings_workspace),
+            tabs = listOf(SettingsTab.General, SettingsTab.Agent).filter { it in tabs },
+            onOpen = onOpen,
+        )
+        SettingsGroup(
+            title = stringResource(Res.string.kairon_settings_capabilities),
+            tabs = listOf(SettingsTab.Services, SettingsTab.Tools, SettingsTab.Integrations, SettingsTab.Sandbox)
+                .filter { it in tabs },
+            onOpen = onOpen,
+        )
     }
 }
 
 @Composable
-private fun SettingsGroupTitle(value: String) {
-    Text(
-        text = value,
-        style = MaterialTheme.typography.labelLarge,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(start = 4.dp, top = 12.dp, bottom = 2.dp),
-    )
+private fun SettingsGroup(title: String, tabs: List<SettingsTab>, onOpen: (SettingsTab) -> Unit) {
+    if (tabs.isEmpty()) return
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 4.dp),
+        )
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+            shape = MaterialTheme.shapes.medium,
+        ) {
+            tabs.forEachIndexed { index, tab ->
+                if (index > 0) {
+                    HorizontalDivider(
+                        modifier = Modifier.padding(start = 16.dp),
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+                    )
+                }
+                SettingsDestination(tab, onOpen)
+            }
+        }
+    }
 }
 
 @Composable
 private fun SettingsDestination(tab: SettingsTab, onOpen: (SettingsTab) -> Unit) {
-    Card(
-        onClick = { onOpen(tab) },
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.medium,
-        colors = androidx.compose.material3.CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-        ),
+    Row(
+        modifier = Modifier.fillMaxWidth()
+            .then(Modifier)
+            .padding(horizontal = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
+        androidx.compose.material3.Surface(
+            onClick = { onOpen(tab) },
+            modifier = Modifier.fillMaxWidth(),
+            color = androidx.compose.ui.graphics.Color.Transparent,
         ) {
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(
-                    text = stringResource(settingsTabTitle(tab)),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Text(
-                    text = stringResource(settingsTabDescription(tab)),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Text(
+                        text = stringResource(settingsTabTitle(tab)),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    Text(
+                        text = stringResource(settingsTabDescription(tab)),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Spacer(Modifier.width(12.dp))
+                Icon(
+                    imageVector = Icons.Default.KeyboardArrowRight,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            Spacer(Modifier.width(8.dp))
-            androidx.compose.material3.Icon(
-                imageVector = Icons.Default.KeyboardArrowRight,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
         }
     }
 }
