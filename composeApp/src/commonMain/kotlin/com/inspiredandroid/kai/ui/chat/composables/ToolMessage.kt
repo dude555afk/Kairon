@@ -17,6 +17,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
@@ -35,7 +36,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.contentDescription
@@ -78,18 +78,22 @@ internal fun WaitingResponseRow(
 
     Row(
         modifier = Modifier
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-            .clipToBounds(),
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
     ) {
         Column(
             modifier = Modifier
+                .fillMaxWidth()
                 .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(20.dp))
                 .animateContentSize(animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing))
                 .then(if (executingTools.isNotEmpty()) Modifier.clickable { expanded = !expanded } else Modifier)
                 .padding(horizontal = 12.dp, vertical = 9.dp)
                 .semantics { contentDescription = waitingCd },
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 PulsingStatusIndicator(
                     toolSummary = summary,
                     isStatusOnly = effectiveStatusOnly,
@@ -97,6 +101,7 @@ internal fun WaitingResponseRow(
                     dotColor = MaterialTheme.colorScheme.onSurfaceVariant,
                     textColor = MaterialTheme.colorScheme.onSurfaceVariant,
                     textStyle = MaterialTheme.typography.labelMedium,
+                    modifier = Modifier.weight(1f),
                 )
                 if (executingTools.isNotEmpty()) {
                     Spacer(Modifier.width(8.dp))
