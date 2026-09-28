@@ -8,6 +8,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -23,6 +24,10 @@ import com.inspiredandroid.kai.github.GitHubDeviceChallenge
 import com.inspiredandroid.kai.github.GitHubSession
 import com.inspiredandroid.kai.github.RemoteGitHub
 import com.inspiredandroid.kai.github.GitHubRepository
+import com.inspiredandroid.kai.github.GitHubEntry
+import com.inspiredandroid.kai.github.GitHubWorkflowRun
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlinx.coroutines.launch
 
 /**
@@ -39,6 +44,11 @@ internal fun GitHubIntegrationSection() {
     var challenge by remember { mutableStateOf<GitHubDeviceChallenge?>(null) }
     var session by remember { mutableStateOf<GitHubSession?>(null) }
     var repositories by remember { mutableStateOf<List<GitHubRepository>>(emptyList()) }
+    var selectedRepository by remember { mutableStateOf<GitHubRepository?>(null) }
+    var path by remember { mutableStateOf("") }
+    var entries by remember { mutableStateOf<List<GitHubEntry>>(emptyList()) }
+    var preview by remember { mutableStateOf("") }
+    var runs by remember { mutableStateOf<List<GitHubWorkflowRun>>(emptyList()) }
     var busy by remember { mutableStateOf(false) }
     var status by remember { mutableStateOf("") }
     SettingsCard {
@@ -93,11 +103,115 @@ internal fun GitHubIntegrationSection() {
                 }
             } else {
                 Text("Connected for this session", color = MaterialTheme.colorScheme.primary)
-                repositories.forEach { repo ->
-                    Text("${repo.fullName} · ${repo.defaultBranch}", style = MaterialTheme.typography.bodySmall)
+                if (selectedRepository == null) {
+                    repositories.forEach { repo ->
+                        OutlinedButton(enabled = !busy, onClick = {
+                            selectedRepository = repo
+                            path = ""
+                            preview = ""
+                            busy = true
+                            scope.launch {
+                                try {
+                                    entries = github.directory(session!!.token, repo.fullName, ref = repo.defaultBranch)
+                                    runs = github.workflowRuns(session!!.token, repo.fullName, repo.defaultBranch)
+                                    status = "Opened ${repo.fullName}"
+                                } catch (e: Exception) {
+                                    status = e.message ?: "Unable to open repository"
+                                } finally { busy = false }
+                            }
+                        }, modifier = Modifier.fillMaxWidth()) { Text(repo.fullName) }
+                    }
+                } else {
+                    val repo = selectedRepository!!
+                    Text(repo.fullName, style = MaterialTheme.typography.titleMedium)
+                    Text("Branch: ${repo.defaultBranch} · Path: /${path}", style = MaterialTheme.typography.bodySmall)
+                    OutlinedButton(enabled = !busy, onClick = {
+                        selectedRepository = null
+                        entries = emptyList()
+                        preview = ""
+                        runs = emptyList()
+                    }) { Text("Back to repositories") }
+                    if (path.isNotEmpty()) OutlinedButton(enabled = !busy, onClick = {
+                        val parent = path.substringBeforeLast('/', "")
+                        busy = true
+                        scope.launch {
+                            try {
+                                entries = github.directory(session!!.token, repo.fullName, parent, repo.defaultBranch)
+                                path = parent
+                                preview = ""
+                            } catch (e: Exception) { status = e.message ?: "Cannot open parent" }
+                            finally { busy = false }
+                        }
+                    }) { Text("Up one folder") }
+                    entries.forEach { entry ->
+                        OutlinedButton(enabled = !busy, onClick = {
+                            busy = true
+                            scope.launch {
+                                try {
+                                    if (entry.type == "dir") {
+                                        entries = github.directory(session!!.token, repo.fullName, entry.path, repo.defaultBranch)
+                                        path = entry.path
+                                        preview = ""
+                                    } else if (entry.type == "file") {
+                                        val file = github.file(session!!.token, repo.fullName, entry.path, repo.defaultBranch)
+                                        @OptIn(ExperimentalEncodingApi::class)
+                                        preview = if (file.encoding == "base64") {
+                                            Base64.decode(file.encodedContent.filterNot(Char::isWhitespace)).decodeToString()
+                                                .take(12000)
+                                        } else "This file cannot be previewed."
+                                        status = "Preview: ${entry.path} (read only)"
+                                    }
+                                } catch (e: Exception) { status = e.message ?: "Cannot open file" }
+                                finally { busy = false }
+                            }
+                        }, modifier = Modifier.fillMaxWidth()) {
+                            Text("${if (entry.type == "dir") "📁" else "📄"} ${entry.name}")
+                        }
+                    }
+                    if (preview.isNotBlank()) {
+                        Text(preview, style = MaterialTheme.typography.bodySmall)
+                    }
+                    HorizontalDivider()
+                    Text("GitHub Actions", style = MaterialTheme.typography.titleSmall)
+                    OutlinedButton(enabled = !busy, onClick = {
+                        busy = true
+                        scope.launch {
+                            try {
+                                runs = github.workflowRuns(session!!.token, repo.fullName, repo.defaultBranch)
+                                status = "Build runs refreshed"
+                            } catch (e: Exception) { status = e.message ?: "Cannot load build runs" }
+                            finally { busy = false }
+                        }
+                    }) { Text("Refresh runs") }
+                    runs.take(5).forEach { run ->
+                        OutlinedButton(onClick = { uriHandler.openUri(run.url) }, modifier = Modifier.fillMaxWidth()) {
+                            Text("${run.name}: ${run.conclusion ?: run.status}")
+                        }
+                    }
+                    if (repo.fullName == "dude555afk/Kairon") {
+                        Button(enabled = !busy, onClick = {
+                            busy = true
+                            scope.launch {
+                                try {
+                                    github.dispatchWorkflow(
+                                        session!!.token,
+                                        repo.fullName,
+                                        "kairon-preview.yml",
+                                        repo.defaultBranch,
+                                    )
+                                    status = "Preview build requested. Refresh runs to see it."
+                                } catch (e: Exception) { status = e.message ?: "Build dispatch failed" }
+                                finally { busy = false }
+                            }
+                        }) { Text("Build preview APK remotely") }
+                    }
                 }
                 OutlinedButton(onClick = {
                     session = null
+                    selectedRepository = null
+                    entries = emptyList()
+                    preview = ""
+                    runs = emptyList()
                     repositories = emptyList()
                     challenge = null
                     status = "Local session disconnected. Revoke authorization on GitHub to invalidate the granted token."
