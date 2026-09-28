@@ -54,6 +54,9 @@ jobs:
           echo "JAVA_HOME: $JAVA_HOME"
           java -version
 
+      - name: Check remote coding runner syntax
+        run: python3 -m py_compile .github/scripts/remote_agent.py
+
       - name: Check formatting (no automatic edits)
         run: ./gradlew spotlessCheck --no-daemon --stacktrace
 
