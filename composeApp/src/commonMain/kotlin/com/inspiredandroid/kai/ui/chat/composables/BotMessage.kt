@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.CallSplit
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -197,6 +198,13 @@ internal fun BotMessage(
                 onClick = {
                     uriHandler.openUri("https://form.jotform.com/250014908169355")
                 },
+            )
+        }
+        if (onFork != null) {
+            SmallIconButton(
+                imageVector = Icons.AutoMirrored.Filled.CallSplit,
+                contentDescription = "Branch conversation",
+                onClick = onFork,
             )
         }
         if (onRegenerate != null) {
