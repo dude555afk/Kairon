@@ -134,10 +134,21 @@ internal fun UserMessage(
         Row(
             modifier = Modifier.fillMaxWidth().padding(end = 16.dp),
             horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
+            if (onEdit != null) {
+                IconButton(onClick = onEdit, modifier = Modifier.size(32.dp)) {
+                    Icon(
+                        Icons.Default.Edit,
+                        contentDescription = "Edit prompt",
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
             MessageActionMenu(
                 onBranch = onBranch,
-                onEdit = onEdit,
+                onEdit = null,
                 onRetry = onRetry,
                 onThinking = onThinking,
                 onWebSearch = onWebSearch,
@@ -146,17 +157,4 @@ internal fun UserMessage(
             )
         }
     }
-    if (onEdit != null) {
-        Row(modifier = Modifier.fillMaxWidth().padding(end = 16.dp), horizontalArrangement = Arrangement.End) {
-            IconButton(onClick = onEdit, modifier = Modifier.size(32.dp)) {
-                Icon(
-                    Icons.Default.Edit,
-                    contentDescription = "Edit prompt",
-                    modifier = Modifier.size(18.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-    }
-}
 }
