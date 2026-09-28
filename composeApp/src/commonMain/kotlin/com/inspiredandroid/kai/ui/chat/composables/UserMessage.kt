@@ -18,10 +18,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -52,15 +53,13 @@ internal fun UserMessage(
     message: String,
     attachments: ImmutableList<Attachment> = persistentListOf(),
     onBranch: (() -> Unit)? = null,
-    onEdit: ((String) -> Unit)? = null,
+    onEdit: (() -> Unit)? = null,
     onRetry: (() -> Unit)? = null,
     onThinking: (() -> Unit)? = null,
     onWebSearch: (() -> Unit)? = null,
 ) {
     val showFullScreen = LocalShowFullScreenImage.current
-    var editing by remember(message) { mutableStateOf(false) }
     var actionMenuOpen by remember { mutableStateOf(false) }
-    var draft by remember(message) { mutableStateOf(message) }
     Column(modifier = Modifier.fillMaxWidth()) {
     SelectionContainer {
         Row(Modifier.padding(horizontal = 16.dp, vertical = 8.dp).combinedClickable(onClick = {}, onLongClick = { actionMenuOpen = true })) {
@@ -138,9 +137,7 @@ internal fun UserMessage(
         ) {
             MessageActionMenu(
                 onBranch = onBranch,
-                onEdit = if (onEdit != null) {
-                    { draft = message; editing = true }
-                } else null,
+                onEdit = onEdit,
                 onRetry = onRetry,
                 onThinking = onThinking,
                 onWebSearch = onWebSearch,
@@ -149,21 +146,15 @@ internal fun UserMessage(
             )
         }
     }
-    if (editing && onEdit != null) {
-        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
-            OutlinedTextField(
-                value = draft,
-                onValueChange = { draft = it },
-                modifier = Modifier.fillMaxWidth(),
-                minLines = 2,
-                maxLines = 10,
-            )
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                TextButton(onClick = { editing = false }) { Text("Cancel") }
-                TextButton(
-                    onClick = { editing = false; onEdit(draft.trim()) },
-                    enabled = draft.isNotBlank() && draft.trim() != message.trim(),
-                ) { Text("Save as branch") }
+    if (onEdit != null) {
+        Row(modifier = Modifier.fillMaxWidth().padding(end = 16.dp), horizontalArrangement = Arrangement.End) {
+            IconButton(onClick = onEdit, modifier = Modifier.size(32.dp)) {
+                Icon(
+                    Icons.Default.Edit,
+                    contentDescription = "Edit prompt",
+                    modifier = Modifier.size(18.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
     }
