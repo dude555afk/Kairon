@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feature/ui-overhaul
+      - feature/remote-github-agent
   pull_request:
     branches:
       - main
