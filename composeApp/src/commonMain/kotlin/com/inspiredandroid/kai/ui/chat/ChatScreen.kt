@@ -888,7 +888,7 @@ private fun ChatModeScreen(
                                                     onClick = { uiState.actions.loadConversation(parentBranch.id) },
                                                     enabled = !uiState.isLoading,
                                                     modifier = Modifier.padding(start = 12.dp),
-                                                ) { Text("← Original conversation") }
+                                                ) { Text("Forked from · ${parentBranch.title}  ↗") }
                                             }
                                         }
                                         items(uiState.history, key = { it.id }, contentType = { it.role }) { history ->
@@ -984,15 +984,6 @@ private fun ChatModeScreen(
 
                                                 History.Role.TOOL -> {
                                                     // Don't show completed tool results in UI
-                                                }
-                                            }
-                                            if (!uiState.isLoading && history.role != History.Role.TOOL && history.role != History.Role.TOOL_EXECUTING) {
-                                                val branches = uiState.savedConversations.filter {
-                                                    it.parentConversationId == uiState.currentConversationId &&
-                                                        it.branchPointMessageId == history.id
-                                                }
-                                                if (branches.isNotEmpty()) {
-                                                    BranchLinks(branches, uiState.actions.loadConversation)
                                                 }
                                             }
                                         }
