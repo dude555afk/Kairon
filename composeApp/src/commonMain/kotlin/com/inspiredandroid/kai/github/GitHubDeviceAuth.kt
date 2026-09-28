@@ -7,6 +7,7 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.http.Parameters
 import io.ktor.http.isSuccess
 import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -44,7 +45,7 @@ class GitHubDeviceAuth {
 
     suspend fun awaitAuthorization(clientId: String, challenge: GitHubDeviceChallenge): GitHubSession {
         var interval = challenge.intervalSeconds.coerceAtLeast(5)
-        val deadline = kotlin.time.TimeSource.Monotonic.markNow() + kotlin.time.Duration.parse("${challenge.expiresInSeconds}s")
+        val deadline = kotlin.time.TimeSource.Monotonic.markNow() + challenge.expiresInSeconds.seconds
         while (deadline.hasNotPassedNow()) {
             delay(interval * 1000L)
             val response = client.submitForm(
