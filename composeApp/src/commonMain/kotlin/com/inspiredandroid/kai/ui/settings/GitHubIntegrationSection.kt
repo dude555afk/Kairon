@@ -50,6 +50,8 @@ internal fun GitHubIntegrationSection() {
     var entries by remember { mutableStateOf<List<GitHubEntry>>(emptyList()) }
     var preview by remember { mutableStateOf("") }
     var runs by remember { mutableStateOf<List<GitHubWorkflowRun>>(emptyList()) }
+    var agentTask by remember { mutableStateOf("") }
+    var agentModel by remember { mutableStateOf("minimax/minimax-m2.1:free") }
     var busy by remember { mutableStateOf(false) }
     var status by remember { mutableStateOf("") }
     SettingsCard {
@@ -187,6 +189,45 @@ internal fun GitHubIntegrationSection() {
                         OutlinedButton(onClick = { uriHandler.openUri(run.url) }, modifier = Modifier.fillMaxWidth()) {
                             Text("${run.name}: ${run.conclusion ?: run.status}")
                         }
+                    }
+                    if (repo.fullName == "dude555afk/Kairon") {
+                        HorizontalDivider()
+                        Text("Remote coding agent", style = MaterialTheme.typography.titleSmall)
+                        Text(
+                            "Runs on GitHub, proposes changes in a separate branch, builds the APK and opens a pull request. Requires the workflow on the repository's default branch and Actions write/PR permissions. No commands run on your phone.",
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                        OutlinedTextField(
+                            value = agentTask,
+                            onValueChange = { agentTask = it.take(4000) },
+                            label = { Text("Describe what the agent should change") },
+                            minLines = 3,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        OutlinedTextField(
+                            value = agentModel,
+                            onValueChange = { agentModel = it.take(120) },
+                            label = { Text("Kilo model (:free for anonymous use)") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        Button(enabled = !busy && agentTask.isNotBlank(), onClick = {
+                            busy = true
+                            scope.launch {
+                                try {
+                                    github.dispatchWorkflow(
+                                        session!!.token,
+                                        repo.fullName,
+                                        "remote-coding-agent.yml",
+                                        "feature/remote-github-agent",
+                                        mapOf("task" to agentTask, "model" to agentModel),
+                                    )
+                                    status = "Coding task dispatched. Refresh Actions and review the proposed pull request."
+                                } catch (e: Exception) {
+                                    status = e.message ?: "Agent dispatch failed"
+                                } finally { busy = false }
+                            }
+                        }) { Text("Run autonomous coding task") }
                     }
                     if (repo.fullName == "dude555afk/Kairon") {
                         Button(enabled = !busy, onClick = {
