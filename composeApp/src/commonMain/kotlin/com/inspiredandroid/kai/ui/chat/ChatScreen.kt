@@ -865,10 +865,17 @@ private fun ChatModeScreen(
                                         state = listState,
                                         horizontalAlignment = CenterHorizontally,
                                         contentPadding = PaddingValues(
-                                            top = if (needsHeaderInset) 8.dp else 76.dp,
+                                            top = 8.dp,
                                             bottom = composerHeight + 24.dp,
                                         ),
                                     ) {
+                                        // Reserve initial clearance as scrollable content, not a pinned toolbar
+                                        // inset. Once scrolled, messages travel underneath the floating pills.
+                                        if (!needsHeaderInset) {
+                                            item(key = "floating-header-clearance") {
+                                                Spacer(Modifier.height(68.dp))
+                                            }
+                                        }
                                         val parentBranch = uiState.savedConversations.firstOrNull { it.id == uiState.currentConversationId }
                                             ?.parentConversationId?.let { parentId ->
                                                 uiState.savedConversations.firstOrNull { it.id == parentId }
@@ -1060,8 +1067,8 @@ private fun ChatModeScreen(
                     }
                 }
             }
-            // Soft gradients fade the scrolling text close to the chrome, while
-            // preserving visible content beneath and around both floating surfaces.
+            // A subtle translucent scrim sits behind the actual floating controls.
+            // Never draw an opaque toolbar-sized gradient over scrolling messages.
             val canvasColor = MaterialTheme.colorScheme.background
             if (!needsHeaderInset) {
                 Box(
@@ -1069,8 +1076,8 @@ private fun ChatModeScreen(
                         .background(
                             Brush.verticalGradient(
                                 listOf(
-                                    canvasColor.copy(alpha = 0.85f),
-                                    canvasColor.copy(alpha = 0.35f),
+                                    canvasColor.copy(alpha = 0.36f),
+                                    canvasColor.copy(alpha = 0.12f),
                                     canvasColor.copy(alpha = 0f),
                                 ),
                             ),
@@ -1091,23 +1098,6 @@ private fun ChatModeScreen(
                         ),
                 )
             }
-            // A soft fade protects floating header legibility when old messages
-            // scroll behind it. No opaque toolbar or extra layout inset.
-            Box(
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .fillMaxWidth()
-                    .height(100.dp)
-                    .background(
-                        Brush.verticalGradient(
-                            listOf(
-                                MaterialTheme.colorScheme.background,
-                                MaterialTheme.colorScheme.background.copy(alpha = 0.96f),
-                                MaterialTheme.colorScheme.background.copy(alpha = 0f),
-                            ),
-                        ),
-                    ),
-            )
             // Three compact controls rather than the old full-width header.
             TopBar(
                 modifier = Modifier.align(Alignment.TopCenter),
