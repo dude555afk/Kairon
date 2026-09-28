@@ -34,6 +34,7 @@ import kotlinx.coroutines.launch
  * Explicit device authorization; token remains in this composition's memory and is discarded
  * when the section leaves composition or Disconnect is pressed. No silent persistence/export.
  */
+@OptIn(ExperimentalEncodingApi::class)
 @Composable
 internal fun GitHubIntegrationSection() {
     val auth = remember { GitHubDeviceAuth() }
@@ -154,7 +155,6 @@ internal fun GitHubIntegrationSection() {
                                         preview = ""
                                     } else if (entry.type == "file") {
                                         val file = github.file(session!!.token, repo.fullName, entry.path, repo.defaultBranch)
-                                        @OptIn(ExperimentalEncodingApi::class)
                                         preview = if (file.encoding == "base64") {
                                             Base64.decode(file.encodedContent.filterNot(Char::isWhitespace)).decodeToString()
                                                 .take(12000)
@@ -197,7 +197,7 @@ internal fun GitHubIntegrationSection() {
                                         session!!.token,
                                         repo.fullName,
                                         "kairon-preview.yml",
-                                        repo.defaultBranch,
+                                        "feature/remote-github-agent",
                                     )
                                     status = "Preview build requested. Refresh runs to see it."
                                 } catch (e: Exception) { status = e.message ?: "Build dispatch failed" }
