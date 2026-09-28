@@ -1,0 +1,85 @@
+name: Kairon Remote Coding Agent
+
+on:
+  workflow_dispatch:
+    inputs:
+      task:
+        description: 'Coding instruction (max 4000 characters)'
+        required: true
+        type: string
+      model:
+        description: 'Kilo model ID (anonymous models must end in :free)'
+        required: false
+        default: 'minimax/minimax-m2.1:free'
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kairon-agent-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  code:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      AGENT_TASK: ${{ inputs.task }}
+      KILO_MODEL: ${{ inputs.model }}
+      KILO_API_KEY: ${{ secrets.KILO_API_KEY }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate task and base
+        shell: bash
+        run: |
+          python - <<'PY'
+          import os
+          task = os.environ["AGENT_TASK"]
+          model = os.environ["KILO_MODEL"]
+          assert 0 < len(task.strip()) <= 4000, "Invalid task size"
+          assert 0 < len(model) <= 120 and all(c.isalnum() or c in '/:._-' for c in model), "Invalid model ID"
+          PY
+      - name: Run bounded coding agent
+        run: python .github/scripts/remote_agent.py
+      - name: Check restricted changes
+        shell: bash
+        run: |
+          if git status --porcelain | grep -E '(^| )((\.github|\.git|gradle|node_modules)/|\.env)' ; then
+            echo "::error::Agent attempted restricted repository changes"
+            exit 1
+          fi
+          if git diff --name-only | grep -E '(^\.github/|^gradle/|(^|/)\.env)' ; then
+            echo "::error::Restricted changes detected"
+            exit 1
+          fi
+      - name: Check Kotlin formatting
+        run: |
+          chmod +x gradlew
+          ./gradlew spotlessCheck --no-daemon
+      - name: Verify Android APK
+        run: ./gradlew :androidApp:assemblePlayStoreDebug --no-daemon
+      - name: Publish isolated branch and pull request
+        shell: bash
+        run: |
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "No source changes generated."
+            exit 0
+          fi
+          git config user.name "Kairon Remote Agent"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          branch="agent/run-${GITHUB_RUN_ID}"
+          git checkout -b "$branch"
+          git add --all
+          git commit -m "Agent: proposed remote coding changes"
+          git -c http.extraheader="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)" push "https://github.com/${GITHUB_REPOSITORY}.git" "HEAD:refs/heads/$branch"
+          gh pr create --head "$branch" --base "${GITHUB_REF_NAME}" --title "Agent proposal #${GITHUB_RUN_ID}" --body "Automated coding proposal. Review the diff before merging. Task and verification logs are available in the associated workflow run."
