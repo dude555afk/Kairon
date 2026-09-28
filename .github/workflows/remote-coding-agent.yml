@@ -30,8 +30,6 @@ jobs:
     env:
       AGENT_TASK: ${{ inputs.task }}
       KILO_MODEL: ${{ inputs.model }}
-      KILO_API_KEY: ${{ secrets.KILO_API_KEY }}
-      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -50,6 +48,8 @@ jobs:
           assert 0 < len(model) <= 120 and all(c.isalnum() or c in '/:._-' for c in model), "Invalid model ID"
           PY
       - name: Run bounded coding agent
+        env:
+          KILO_API_KEY: ${{ secrets.KILO_API_KEY }}
         run: python .github/scripts/remote_agent.py
       - name: Check restricted changes
         shell: bash
@@ -69,6 +69,8 @@ jobs:
       - name: Verify Android APK
         run: ./gradlew :androidApp:assemblePlayStoreDebug --no-daemon
       - name: Publish isolated branch and pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           if [ -z "$(git status --porcelain)" ]; then
