@@ -90,10 +90,11 @@ class RemoteGitHub {
     }
 
     /** Dispatches an existing workflow; does not change source code or execute arbitrary commands. */
-    suspend fun dispatchWorkflow(token: String, repository: String, workflow: String, ref: String) {
+    suspend fun dispatchWorkflow(token: String, repository: String, workflow: String, ref: String, inputs: Map<String, String> = emptyMap()) {
         val (owner, repo) = splitRepository(repository)
         require(workflow.matches(Regex("[A-Za-z0-9_.-]+\\.ya?ml"))) { "Choose an existing workflow YAML filename" }
         require(ref.isNotBlank() && ref.length <= 255 && !ref.any { it.isWhitespace() }) { "Invalid Git ref" }
+        require(inputs.size <= 5 && inputs.all { (key, value) -> key.matches(Regex("[a-z_]+")) && value.length <= 4000 }) { "Invalid workflow inputs" }
         require(token.isNotBlank()) { "GitHub authorization is required" }
         val response = client.post("https://api.github.com/repos/$owner/$repo/actions/workflows/${encodePathSegment(workflow)}/dispatches") {
             bearerAuth(token)
@@ -101,7 +102,10 @@ class RemoteGitHub {
             header("X-GitHub-Api-Version", "2022-11-28")
             header("User-Agent", "Kairon-Remote-Agent")
             contentType(ContentType.Application.Json)
-            setBody(buildJsonObject { put("ref", ref) }.toString())
+            setBody(buildJsonObject {
+                put("ref", ref)
+                put("inputs", buildJsonObject { inputs.forEach { (key, value) -> put(key, value) } })
+            }.toString())
         }
         if (!response.status.isSuccess()) throw GitHubRequestException(response.status.value)
     }
