@@ -32,6 +32,7 @@ internal fun IntegrationsContent(
 
     val uriHandler = LocalUriHandler.current
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        GitHubIntegrationSection()
         if (splinterlandsState.showSplinterlandsSection) {
             SettingsCard {
                 SplinterlandsSection(
