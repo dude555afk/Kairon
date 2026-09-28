@@ -4,6 +4,10 @@ import com.inspiredandroid.kai.httpClient
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.get
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.http.ContentType
+import io.ktor.http.contentType
 import io.ktor.client.request.header
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.isSuccess
@@ -11,6 +15,8 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonArray
@@ -21,8 +27,7 @@ import kotlinx.serialization.json.jsonPrimitive
  * Remote-only GitHub data source. Does not clone, execute commands, write local files, or retain
  * credentials. A trusted auth component supplies a short-lived token only for the API call.
  *
- * This read-only foundation is intentionally NOT an OAuth implementation. An OAuth/GitHub App
- * authorization broker must be wired before exposing authenticated access in Kairon's UI.
+ * Its workflow dispatcher triggers only an existing YAML workflow and requires explicit user action.
  */
 class RemoteGitHub {
     private val client = httpClient {
@@ -82,6 +87,23 @@ class RemoteGitHub {
                 url = run.string("html_url"),
             )
         }
+    }
+
+    /** Dispatches an existing workflow; does not change source code or execute arbitrary commands. */
+    suspend fun dispatchWorkflow(token: String, repository: String, workflow: String, ref: String) {
+        val (owner, repo) = splitRepository(repository)
+        require(workflow.matches(Regex("[A-Za-z0-9_.-]+\\.ya?ml"))) { "Choose an existing workflow YAML filename" }
+        require(ref.isNotBlank() && ref.length <= 255 && !ref.any { it.isWhitespace() }) { "Invalid Git ref" }
+        require(token.isNotBlank()) { "GitHub authorization is required" }
+        val response = client.post("https://api.github.com/repos/$owner/$repo/actions/workflows/${encodePathSegment(workflow)}/dispatches") {
+            bearerAuth(token)
+            header("Accept", "application/vnd.github+json")
+            header("X-GitHub-Api-Version", "2022-11-28")
+            header("User-Agent", "Kairon-Remote-Agent")
+            contentType(ContentType.Application.Json)
+            setBody(buildJsonObject { put("ref", ref) }.toString())
+        }
+        if (!response.status.isSuccess()) throw GitHubRequestException(response.status.value)
     }
 
     private suspend fun getJson(token: String, route: String): kotlinx.serialization.json.JsonElement {
