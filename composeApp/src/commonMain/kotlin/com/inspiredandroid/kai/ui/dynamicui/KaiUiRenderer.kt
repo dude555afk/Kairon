@@ -286,6 +286,7 @@ fun KaiUiRenderer(
                 modifier = modifier.fillMaxWidth().wrapContentHeight(),
                 colors = kaiAdaptiveCardColors(),
                 border = kaiAdaptiveCardBorder(),
+                shape = MaterialTheme.shapes.medium,
             ) {
                 Column(Modifier.padding(12.dp).wrapContentHeight()) {
                     RenderNode(
@@ -443,9 +444,10 @@ private fun RenderCard(
         modifier = Modifier.fillMaxWidth().wrapContentHeight(),
         colors = kaiAdaptiveCardColors(),
         border = kaiAdaptiveCardBorder(),
+        shape = MaterialTheme.shapes.medium,
     ) {
         Column(
-            modifier = Modifier.padding(16.dp).wrapContentHeight(),
+            modifier = Modifier.padding(14.dp).wrapContentHeight(),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             RenderChildren(node.children, isInteractive, formState, toggleState, onCallback, depth)
