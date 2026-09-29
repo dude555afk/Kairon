@@ -67,10 +67,10 @@ internal fun UserMessage(
             Column(
                 modifier = Modifier
                     .background(
-                        MaterialTheme.colorScheme.surfaceContainerHigh,
-                        RoundedCornerShape(20.dp),
+                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.66f),
+                        RoundedCornerShape(17.dp),
                     )
-                    .padding(horizontal = 14.dp, vertical = 12.dp),
+                    .padding(horizontal = 14.dp, vertical = 11.dp),
                 horizontalAlignment = Alignment.End,
             ) {
                 val images = attachments.filter { it.mimeType.startsWith("image/") }
@@ -124,7 +124,7 @@ internal fun UserMessage(
                 if (message.isNotEmpty()) {
                     Text(
                         text = message,
-                        color = MaterialTheme.colorScheme.onBackground,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
                     )
                 }
             }
