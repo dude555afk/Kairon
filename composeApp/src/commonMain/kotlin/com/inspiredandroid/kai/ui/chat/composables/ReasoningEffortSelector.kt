@@ -47,7 +47,7 @@ internal fun ReasoningEffortSelector(
             color = MaterialTheme.colorScheme.surfaceContainerHighest,
         ) {
             Text(
-                text = if (supported) "Effort · ${effortLabel(safeSelected)}" else "Effort · Auto",
+                text = if (supported) "Effort · ${effortLabel(safeSelected)}" else "Effort · Unavailable",
                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -75,7 +75,7 @@ internal fun ReasoningEffortSelector(
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
                 } else {
                     Text(
-                        "This provider route does not currently send a verified reasoning-effort parameter. Auto uses the model's default.",
+                        "This model/provider has no verified effort control. Its normal reasoning behavior remains available, but Kairon will not send an unsupported effort setting.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
