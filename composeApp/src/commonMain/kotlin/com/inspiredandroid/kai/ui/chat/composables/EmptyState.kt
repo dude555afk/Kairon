@@ -2,6 +2,7 @@ package com.inspiredandroid.kai.ui.chat.composables
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,6 +18,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -33,8 +35,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withLink
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
-import com.inspiredandroid.kai.ui.components.LogoAnimation
-import com.inspiredandroid.kai.ui.components.animatedGradientBorder
 import com.inspiredandroid.kai.ui.handCursor
 import kai.composeapp.generated.resources.Res
 import kai.composeapp.generated.resources.kai_build_open
@@ -65,12 +65,20 @@ internal fun EmptyState(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        LogoAnimation()
-        Spacer(Modifier.height(20.dp))
+        Surface(
+            modifier = Modifier.size(56.dp),
+            shape = RoundedCornerShape(17.dp),
+            color = MaterialTheme.colorScheme.primaryContainer,
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Text("K", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
+            }
+        }
+        Spacer(Modifier.height(16.dp))
         Text(
             text = "Kairon",
             modifier = Modifier.padding(horizontal = 16.dp),
-            style = MaterialTheme.typography.titleMedium,
+            style = MaterialTheme.typography.labelLarge,
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -78,7 +86,7 @@ internal fun EmptyState(
         Text(
             text = stringResource(Res.string.kairon_welcome),
             modifier = Modifier.padding(horizontal = 16.dp),
-            style = MaterialTheme.typography.headlineSmall,
+            style = MaterialTheme.typography.headlineMedium,
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onBackground,
         )
@@ -147,16 +155,13 @@ private fun AnimatedBorderButton(
             .handCursor()
             .clip(RoundedCornerShape(50))
             .clickable(onClick = onClick)
-            .animatedGradientBorder(
-                cornerRadius = 50.dp,
-                borderWidth = 3.dp,
-                backgroundColor = MaterialTheme.colorScheme.background,
-            ),
+            .background(MaterialTheme.colorScheme.primaryContainer)
+            .border(0.6.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.30f), RoundedCornerShape(50)),
     ) {
         Text(
             text = text,
             style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onBackground,
+            color = MaterialTheme.colorScheme.onPrimaryContainer,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
         )
     }
