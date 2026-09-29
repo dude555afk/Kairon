@@ -49,13 +49,25 @@ val gradientMagenta = Color(0xFFE040FB)
 
 fun Modifier.handCursor() = pointerHoverIcon(PointerIcon.Hand, overrideDescendants = true)
 
+// Calm, layered surfaces inspired by Kelivo's visual philosophy, built in Compose.
 val DarkColorScheme = darkColorScheme(
-    primary = Color(0xFFBB86FC),
-    onPrimary = Color(0xFF000000),
-    surface = Color(0xFF1E1E1E),
-    background = Color(0xFF121212),
-    onBackground = Color(0xFFFFFFFF),
-    onSurface = Color(0xFFFFFFFF),
+    primary = Color(0xFFB7C6FF),
+    onPrimary = Color(0xFF17234A),
+    primaryContainer = Color(0xFF303D61),
+    onPrimaryContainer = Color(0xFFE1E7FF),
+    secondary = Color(0xFFA8C9C5),
+    onSecondary = Color(0xFF15312E),
+    background = Color(0xFF101216),
+    onBackground = Color(0xFFE9EAEE),
+    surface = Color(0xFF13161B),
+    onSurface = Color(0xFFE9EAEE),
+    onSurfaceVariant = Color(0xFFB5B8C2),
+    surfaceContainerLowest = Color(0xFF0D0F13),
+    surfaceContainerLow = Color(0xFF191C22),
+    surfaceContainer = Color(0xFF20242B),
+    surfaceContainerHigh = Color(0xFF292D35),
+    surfaceContainerHighest = Color(0xFF343841),
+    outlineVariant = Color(0xFF414650),
 )
 
 fun ColorScheme.withAccent(preset: AccentPreset): ColorScheme {
@@ -114,7 +126,10 @@ fun kaiAdaptiveCardColors(): CardColors = CardDefaults.cardColors(
 )
 
 @Composable
-fun kaiAdaptiveCardBorder(): BorderStroke? = null
+fun kaiAdaptiveCardBorder(): BorderStroke? = BorderStroke(
+    0.6.dp,
+    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.60f),
+)
 
 @Composable
 fun Modifier.kaiAdaptiveCardSurface(shape: Shape = CardDefaults.shape): Modifier = this
@@ -122,12 +137,23 @@ fun Modifier.kaiAdaptiveCardSurface(shape: Shape = CardDefaults.shape): Modifier
     .background(MaterialTheme.colorScheme.surfaceContainerLow)
 
 val LightColorScheme = lightColorScheme(
-    primary = darkPurple,
-    onPrimary = Color(0xFFFFFFFF),
-    surface = Color(0xFFF2F2F2),
-    background = Color(0xFFFFFFFF),
-    onBackground = Color(0xFF000000),
-    onSurface = Color(0xFF000000),
+    primary = Color(0xFF4B609E),
+    onPrimary = Color.White,
+    primaryContainer = Color(0xFFDCE5FF),
+    onPrimaryContainer = Color(0xFF20355F),
+    secondary = Color(0xFF426D69),
+    onSecondary = Color.White,
+    background = Color(0xFFF6F7F9),
+    onBackground = Color(0xFF202329),
+    surface = Color(0xFFF6F7F9),
+    onSurface = Color(0xFF202329),
+    onSurfaceVariant = Color(0xFF626873),
+    surfaceContainerLowest = Color.White,
+    surfaceContainerLow = Color(0xFFFFFFFF),
+    surfaceContainer = Color(0xFFF0F2F5),
+    surfaceContainerHigh = Color(0xFFE9ECF1),
+    surfaceContainerHighest = Color(0xFFDFE4EA),
+    outlineVariant = Color(0xFFD0D5DC),
 )
 
 @Composable
@@ -161,7 +187,7 @@ fun KaiOutlinedTextField(
         singleLine = singleLine,
         minLines = minLines,
         maxLines = maxLines,
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(13.dp),
         colors = outlineTextFieldColors(),
     )
 }
@@ -199,11 +225,11 @@ fun KaiClearableTextField(
 }
 
 private val KaironShapes = Shapes(
-    extraSmall = RoundedCornerShape(8.dp),
-    small = RoundedCornerShape(12.dp),
-    medium = RoundedCornerShape(18.dp),
-    large = RoundedCornerShape(24.dp),
-    extraLarge = RoundedCornerShape(28.dp),
+    extraSmall = RoundedCornerShape(6.dp),
+    small = RoundedCornerShape(10.dp),
+    medium = RoundedCornerShape(14.dp),
+    large = RoundedCornerShape(18.dp),
+    extraLarge = RoundedCornerShape(24.dp),
 )
 
 @Composable
