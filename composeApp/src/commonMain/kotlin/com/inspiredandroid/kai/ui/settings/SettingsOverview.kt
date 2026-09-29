@@ -68,14 +68,14 @@ internal fun SettingsOverview(
 ) {
     Column(
         modifier = modifier.verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(20.dp),
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(18.dp),
     ) {
         Text(
             text = stringResource(Res.string.kairon_settings_intro),
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp),
+            modifier = Modifier.padding(horizontal = 4.dp, vertical = 6.dp),
         )
         SettingsGroup(
             title = stringResource(Res.string.kairon_settings_workspace),
@@ -94,7 +94,7 @@ internal fun SettingsOverview(
 @Composable
 private fun SettingsGroup(title: String, tabs: List<SettingsTab>, onOpen: (SettingsTab) -> Unit) {
     if (tabs.isEmpty()) return
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
         Text(
             text = title,
             style = MaterialTheme.typography.labelLarge,
@@ -105,12 +105,16 @@ private fun SettingsGroup(title: String, tabs: List<SettingsTab>, onOpen: (Setti
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
             shape = MaterialTheme.shapes.medium,
+            border = androidx.compose.foundation.BorderStroke(
+                0.6.dp,
+                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f),
+            ),
         ) {
             tabs.forEachIndexed { index, tab ->
                 if (index > 0) {
                     HorizontalDivider(
                         modifier = Modifier.padding(start = 16.dp),
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
                     )
                 }
                 SettingsDestination(tab, onOpen)
@@ -131,7 +135,7 @@ private fun SettingsDestination(tab: SettingsTab, onOpen: (SettingsTab) -> Unit)
             color = androidx.compose.ui.graphics.Color.Transparent,
         ) {
             Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 14.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
