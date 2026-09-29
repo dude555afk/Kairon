@@ -129,7 +129,7 @@ internal fun BotMessage(
                         onUiCallback = kaiUiCallback,
                         frozen = effectiveFrozen,
                         modifier = Modifier.fillMaxWidth()
-                            .padding(start = 16.dp, top = answerTopPadding, end = 16.dp, bottom = 8.dp),
+                            .padding(start = 18.dp, top = answerTopPadding, end = 18.dp, bottom = 8.dp),
                     )
                 }
             }
@@ -288,7 +288,7 @@ private fun ReasoningBlockquote(
                     Row(modifier = Modifier.height(IntrinsicSize.Min)) {
                         VerticalDivider(
                             thickness = 2.dp,
-                            color = MaterialTheme.colorScheme.outlineVariant,
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.42f),
                             modifier = Modifier.fillMaxHeight(),
                         )
                         SelectionContainer(modifier = Modifier.padding(start = 10.dp)) {
