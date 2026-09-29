@@ -44,7 +44,7 @@ internal fun ReasoningEffortSelector(
         Surface(
             onClick = { expanded = true },
             shape = MaterialTheme.shapes.extraLarge,
-            color = MaterialTheme.colorScheme.surfaceContainerHighest,
+            color = MaterialTheme.colorScheme.surfaceContainer,
         ) {
             Text(
                 text = if (supported) "Effort · ${effortLabel(safeSelected)}" else "Effort · Unavailable",
@@ -54,7 +54,7 @@ internal fun ReasoningEffortSelector(
             )
         }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            Column(Modifier.width(260.dp).padding(horizontal = 16.dp, vertical = 10.dp)) {
+            Column(Modifier.width(260.dp).padding(horizontal = 14.dp, vertical = 10.dp)) {
                 Text(stringResource(Res.string.kairon_reasoning_effort), style = MaterialTheme.typography.titleSmall)
                 if (supported) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
