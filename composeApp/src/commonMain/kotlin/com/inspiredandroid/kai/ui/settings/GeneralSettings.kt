@@ -159,7 +159,7 @@ internal fun GeneralContent(uiState: SettingsUiState, actions: SettingsActions) 
 private fun GeneralDivider() {
     androidx.compose.material3.HorizontalDivider(
         modifier = Modifier.padding(start = 16.dp),
-        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
     )
 }
 
