@@ -22,6 +22,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalUriHandler
 import com.inspiredandroid.kai.data.AccentPreset
 import com.inspiredandroid.kai.data.ThemeMode
 import com.inspiredandroid.kai.ui.KaiOutlinedTextField
@@ -123,6 +124,25 @@ internal fun GeneralContent(uiState: SettingsUiState, actions: SettingsActions) 
                         onChangeUiScale = actions.onChangeUiScale,
                     )
                 }
+            }
+        }
+        SettingsCard {
+            val uriHandler = LocalUriHandler.current
+            Column(Modifier.fillMaxWidth().padding(16.dp)) {
+                Text("Experimental online voices (Android)", style = MaterialTheme.typography.titleMedium)
+                Text(
+                    "Kairon uses your phone's selected Android TTS engine. For keyless Edge Neural voices, install the third-party Edge TTS Android engine, select it in Android Settings > Text-to-speech output, then reopen Kairon. Online requests go to Microsoft's service, which can see your IP; availability and unlimited use are not guaranteed.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    "Open Edge TTS engine project ↗",
+                    modifier = Modifier.padding(top = 8.dp).clickable {
+                        uriHandler.openUri("https://github.com/Initsnow/edge-tts-android")
+                    },
+                    color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.labelLarge,
+                )
             }
         }
         SettingsCard {
