@@ -2,6 +2,7 @@ package com.inspiredandroid.kai.ui.chat.composables
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
@@ -70,7 +71,8 @@ internal fun ServiceSelector(
             modifier = Modifier
                 .size(42.dp)
                 .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape)
+                .background(MaterialTheme.colorScheme.surfaceContainer, CircleShape)
+                .border(0.6.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f), CircleShape)
                 .combinedClickable(
                     onClick = { expanded = true },
                     onLongClick = {
@@ -102,9 +104,9 @@ internal fun ServiceSelector(
                     val maxMenuHeight = maxHeight - 24.dp // keep a margin from screen edges
                     Surface(
                         shape = RoundedCornerShape(16.dp),
-                        color = MaterialTheme.colorScheme.surface,
-                        tonalElevation = 3.dp,
-                        shadowElevation = 8.dp,
+                        color = MaterialTheme.colorScheme.surfaceContainerLow,
+                        tonalElevation = 1.dp,
+                        shadowElevation = 3.dp,
                     ) {
                         Column(
                             modifier = Modifier
@@ -140,7 +142,7 @@ private fun ServiceMenuItem(
     onClick: () -> Unit,
 ) {
     val rowBackground = if (isCurrent) {
-        MaterialTheme.colorScheme.primaryContainer
+        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f)
     } else {
         Color.Transparent
     }
