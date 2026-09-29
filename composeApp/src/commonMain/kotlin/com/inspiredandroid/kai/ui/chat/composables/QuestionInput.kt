@@ -189,11 +189,11 @@ fun QuestionInput(
         Column(
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
                 .fillMaxWidth()
-                .shadow(elevation = 8.dp, shape = RoundedCornerShape(28.dp))
-                .clip(RoundedCornerShape(28.dp))
-                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(28.dp))
-                .animateContentSize(animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing)),
+                .shadow(elevation = 3.dp, shape = RoundedCornerShape(23.dp))
+                .clip(RoundedCornerShape(23.dp))
+                .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                .border(0.6.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.60f), RoundedCornerShape(23.dp))
+                .animateContentSize(animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing)),
         ) {
         if (files.isNotEmpty()) {
             FlowRow(
@@ -295,7 +295,7 @@ fun QuestionInput(
                         }
                         return@onPreviewKeyEvent false
                     },
-                shape = RoundedCornerShape(28.dp),
+                shape = RoundedCornerShape(23.dp),
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = Color.Transparent,
                     unfocusedContainerColor = Color.Transparent,
@@ -318,7 +318,7 @@ fun QuestionInput(
                 ),
             )
             Row(
-                modifier = Modifier.fillMaxWidth().padding(start = 6.dp, end = 10.dp, bottom = 6.dp),
+                modifier = Modifier.fillMaxWidth().padding(start = 6.dp, end = 10.dp, bottom = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(2.dp),
             ) {
@@ -334,9 +334,9 @@ fun QuestionInput(
                         DropdownMenu(
                             expanded = attachmentMenuExpanded,
                             onDismissRequest = { attachmentMenuExpanded = false },
-                            shape = RoundedCornerShape(22.dp),
-                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                            shadowElevation = 8.dp,
+                            shape = RoundedCornerShape(16.dp),
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                            shadowElevation = 3.dp,
                         ) {
                             if (imagePickerLauncher != null) {
                                 DropdownMenuItem(
