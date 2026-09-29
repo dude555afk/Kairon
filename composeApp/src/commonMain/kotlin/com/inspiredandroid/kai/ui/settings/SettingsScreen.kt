@@ -262,7 +262,7 @@ fun SettingsScreenContent(
                         Modifier.fillMaxWidth().verticalScroll(settingsScrollState),
                         horizontalAlignment = CenterHorizontally,
                     ) {
-                        Spacer(Modifier.height(16.dp))
+                        Spacer(Modifier.height(8.dp))
 
                         val maxContentWidth = when (filteredUiState.currentTab) {
                             SettingsTab.Services -> 620.dp
@@ -373,7 +373,7 @@ private fun TopBar(title: String, onNavigateBack: () -> Unit) {
         }
         Text(
             text = title,
-            style = MaterialTheme.typography.titleLarge,
+            style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.padding(start = 8.dp),
         )
@@ -448,12 +448,13 @@ internal fun SettingsCard(
         modifier = modifier,
         colors = kaiAdaptiveCardColors(),
         border = kaiAdaptiveCardBorder(),
+        shape = MaterialTheme.shapes.medium,
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .then(if (onClick != null) Modifier.clickable(onClick = onClick).handCursor() else Modifier)
-                .then(if (innerPadding) Modifier.padding(16.dp) else Modifier),
+                .then(if (innerPadding) Modifier.padding(14.dp) else Modifier),
         ) {
             content()
         }
