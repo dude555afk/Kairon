@@ -41,7 +41,7 @@ class ReasoningEffortTest {
         assertTrue(ReasoningEffort.MAX !in levels)
         assertEquals(
             levels,
-            supportedReasoningEfforts(Service.OpenAI.id, "gpt-5.4-mini"),
+            supportedReasoningEfforts(Service.OpenAI.id, "gpt-5.4"),
         )
     }
 }
