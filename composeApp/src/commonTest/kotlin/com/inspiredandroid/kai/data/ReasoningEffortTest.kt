@@ -30,4 +30,18 @@ class ReasoningEffortTest {
         assertEquals(null, ReasoningEffort.AUTO.wireValue)
         assertEquals("high", ReasoningEffort.HIGH.wireValue)
     }
+
+    @Test
+    fun `other known OpenAI reasoning families expose their supported subset`() {
+        val levels = supportedReasoningEfforts(Service.OpenAI.id, "gpt-5.5")
+        assertEquals(
+            listOf(ReasoningEffort.AUTO, ReasoningEffort.LOW, ReasoningEffort.MEDIUM, ReasoningEffort.HIGH, ReasoningEffort.XHIGH),
+            levels,
+        )
+        assertTrue(ReasoningEffort.MAX !in levels)
+        assertEquals(
+            levels,
+            supportedReasoningEfforts(Service.OpenAI.id, "gpt-5.4-mini"),
+        )
+    }
 }
