@@ -2,6 +2,7 @@ package com.inspiredandroid.kai.ui.chat.composables
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -33,6 +34,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
@@ -56,7 +58,6 @@ import androidx.compose.ui.unit.dp
 import com.inspiredandroid.kai.ui.chat.ChatActions
 import com.inspiredandroid.kai.ui.chat.ConversationSummary
 import com.inspiredandroid.kai.ui.components.VerticalScrollbarForList
-import com.inspiredandroid.kai.ui.components.animatedGradientBorder
 import com.inspiredandroid.kai.ui.handCursor
 import kai.composeapp.generated.resources.Res
 import kai.composeapp.generated.resources.chat_history_delete_content_description
@@ -103,8 +104,8 @@ internal fun ChatHistorySheet(
         modifier = Modifier.fillMaxWidth(0.62f).widthIn(max = 252.dp)
             .padding(start = 10.dp, top = 12.dp, bottom = 12.dp)
             .fillMaxHeight(),
-        drawerShape = RoundedCornerShape(22.dp),
-        drawerContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        drawerShape = RoundedCornerShape(18.dp),
+        drawerContainerColor = MaterialTheme.colorScheme.surface,
     ) {
         val snackbarHostState = remember { SnackbarHostState() }
         var renamingId by remember { mutableStateOf<String?>(null) }
@@ -144,7 +145,7 @@ internal fun ChatHistorySheet(
                 ) {
                     Text(
                         text = stringResource(Res.string.chat_history_title),
-                        style = MaterialTheme.typography.titleLarge,
+                        style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onBackground,
                         modifier = Modifier.weight(1f),
                     )
@@ -167,7 +168,11 @@ internal fun ChatHistorySheet(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp),
                     singleLine = true,
                     placeholder = { Text("Search chats") },
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                    ),
                 )
                 Spacer(Modifier.height(8.dp))
 
@@ -190,21 +195,20 @@ internal fun ChatHistorySheet(
                             items(matchingConversations, key = { it.id }) { conversation ->
                                 val isActive = conversation.id == currentConversationId
                                 val animatedRowColor by animateColorAsState(
-                                    if (isActive) MaterialTheme.colorScheme.surfaceContainerHigh else Color.Transparent,
+                                    if (isActive) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.50f) else Color.Transparent,
                                     label = "historySelection",
                                 )
-                                val borderModifier = if (conversation.isInteractive) {
-                                    Modifier.animatedGradientBorder(
-                                        cornerRadius = 12.dp,
-                                        backgroundColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                                val shape = RoundedCornerShape(12.dp)
+                                val borderModifier = Modifier
+                                    .clip(shape)
+                                    .background(animatedRowColor)
+                                    .then(
+                                        if (conversation.isInteractive) Modifier.border(
+                                            0.6.dp,
+                                            MaterialTheme.colorScheme.primary.copy(alpha = 0.55f),
+                                            shape,
+                                        ) else Modifier,
                                     )
-                                } else {
-                                    Modifier
-                                        .clip(RoundedCornerShape(12.dp))
-                                        .background(
-                                            animatedRowColor,
-                                        )
-                                }
                                 Row(
                                     modifier = borderModifier
                                         .fillMaxWidth()
