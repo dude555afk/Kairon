@@ -27,16 +27,19 @@ fun supportedReasoningEfforts(serviceId: String, modelId: String): List<Reasonin
     // requiring one of four exact display IDs. Only the native OpenAI Responses route
     // currently forwards the effort field, so other providers must not claim support.
     val id = modelId.trim().lowercase()
-    return if (id == "gpt-5.6" || id.startsWith("gpt-5.6-")) {
-        listOf(
-            ReasoningEffort.AUTO,
-            ReasoningEffort.LOW,
-            ReasoningEffort.MEDIUM,
-            ReasoningEffort.HIGH,
-            ReasoningEffort.XHIGH,
-            ReasoningEffort.MAX,
-        )
-    } else {
-        emptyList()
+    val family = when {
+        id == "gpt-5.6" || id.startsWith("gpt-5.6-") -> "5.6"
+        id == "gpt-5.5" || id.startsWith("gpt-5.5-") -> "5.5"
+        id == "gpt-5.4" || id.startsWith("gpt-5.4-") -> "5.4"
+        else -> return emptyList()
     }
+    val levels = mutableListOf(
+        ReasoningEffort.AUTO,
+        ReasoningEffort.LOW,
+        ReasoningEffort.MEDIUM,
+        ReasoningEffort.HIGH,
+        ReasoningEffort.XHIGH,
+    )
+    if (family == "5.6") levels.add(ReasoningEffort.MAX)
+    return levels
 }
