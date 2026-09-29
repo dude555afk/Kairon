@@ -92,14 +92,15 @@ internal fun TopBar(
     }
 
     Row(
-        modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+        modifier = modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Surface(
             shape = CircleShape,
-            color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.94f),
-            shadowElevation = 3.dp,
+            color = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.97f),
+            border = BorderStroke(0.6.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)),
+            shadowElevation = 1.dp,
         ) {
             IconButton(
                 modifier = Modifier.size(48.dp).handCursor(),
@@ -116,9 +117,10 @@ internal fun TopBar(
         // One small floating action capsule. Settings, sandbox and speech live in
         // the overflow rather than consuming permanent space in the header.
         Surface(
-            shape = RoundedCornerShape(26.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.94f),
-            shadowElevation = 3.dp,
+            shape = RoundedCornerShape(24.dp),
+            color = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.97f),
+            border = BorderStroke(0.6.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)),
+            shadowElevation = 1.dp,
         ) {
             Row(
                 modifier = Modifier.padding(horizontal = 2.dp),
@@ -218,7 +220,7 @@ private fun NewChatAction(
             Surface(
                 modifier = Modifier.size(22.dp),
                 shape = RoundedCornerShape(5.dp),
-                border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.onSurface),
+                border = BorderStroke(1.2.dp, MaterialTheme.colorScheme.onSurface),
                 color = androidx.compose.ui.graphics.Color.Transparent,
             ) {}
             Icon(
