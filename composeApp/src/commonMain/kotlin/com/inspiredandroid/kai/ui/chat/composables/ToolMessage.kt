@@ -16,6 +16,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.Row
@@ -87,7 +88,7 @@ internal fun WaitingResponseRow(
                 .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(20.dp))
                 .animateContentSize(animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing))
                 .then(if (executingTools.isNotEmpty()) Modifier.clickable { expanded = !expanded } else Modifier)
-                .padding(horizontal = 12.dp, vertical = 9.dp)
+                .padding(start = 14.dp, end = 18.dp, top = 9.dp, bottom = 9.dp)
                 .semantics { contentDescription = waitingCd },
         ) {
             Row(
@@ -104,9 +105,11 @@ internal fun WaitingResponseRow(
                     modifier = Modifier.weight(1f),
                 )
                 if (executingTools.isNotEmpty()) {
-                    Spacer(Modifier.width(8.dp))
+                    Spacer(Modifier.width(12.dp))
                     Text(
                         if (expanded) "⌃" else "⌄",
+                        modifier = Modifier.widthIn(min = 20.dp),
+                        textAlign = TextAlign.Center,
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
