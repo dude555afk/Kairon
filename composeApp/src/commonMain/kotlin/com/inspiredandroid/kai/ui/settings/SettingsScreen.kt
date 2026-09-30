@@ -358,24 +358,24 @@ fun SettingsScreenContent(
 @Composable
 private fun TopBar(title: String, onNavigateBack: () -> Unit) {
     Row(
-        modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 64.dp),
+        modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 56.dp).padding(horizontal = 4.dp),
         verticalAlignment = CenterVertically,
     ) {
         IconButton(
-            modifier = Modifier.handCursor(),
+            modifier = Modifier.size(44.dp).handCursor(),
             onClick = onNavigateBack,
         ) {
             Icon(
                 imageVector = BackIcon,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onBackground,
+                tint = MaterialTheme.colorScheme.onSurface,
             )
         }
         Text(
             text = title,
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.padding(start = 8.dp),
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(start = 4.dp),
         )
         Spacer(Modifier.weight(1f))
     }
@@ -448,13 +448,13 @@ internal fun SettingsCard(
         modifier = modifier,
         colors = kaiAdaptiveCardColors(),
         border = kaiAdaptiveCardBorder(),
-        shape = MaterialTheme.shapes.medium,
+        shape = RoundedCornerShape(16.dp),
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .then(if (onClick != null) Modifier.clickable(onClick = onClick).handCursor() else Modifier)
-                .then(if (innerPadding) Modifier.padding(14.dp) else Modifier),
+                .then(if (innerPadding) Modifier.padding(12.dp) else Modifier),
         ) {
             content()
         }
@@ -482,17 +482,17 @@ internal fun StaggeredSettingsColumns(
             ) {
                 Column(
                     modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                     content = start,
                 )
                 Column(
                     modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                     content = end,
                 )
             }
         } else {
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 start()
                 end()
             }
@@ -526,7 +526,7 @@ internal fun ToggleableHeadline(
         ) {
             Text(
                 text = title,
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onBackground,
             )
             Text(
