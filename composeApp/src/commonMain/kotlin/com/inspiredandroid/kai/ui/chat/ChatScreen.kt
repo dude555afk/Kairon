@@ -1136,6 +1136,7 @@ private fun ChatModeScreen(
                     installedSkills = uiState.installedSkills,
                     reasoningEffort = uiState.reasoningEffort,
                     onSelectReasoningEffort = uiState.actions.selectReasoningEffort,
+                    appearance = uiState.chatAppearance,
                 )
             }
             editingMessageId?.let { messageId ->
