@@ -83,6 +83,7 @@ class SettingsProvider extends ChangeNotifier {
     'SiliconFlow',
     'Gemini',
     'OpenRouter',
+    'Kilo',
     'KelivoIN',
     'Tensdaq',
     'DeepSeek',
@@ -1449,6 +1450,7 @@ class SettingsProvider extends ChangeNotifier {
     if (_providerConfigs.isEmpty) {
       // Seed a couple of sensible defaults on first launch, but do not recreate
       // providers implicitly during later reads (e.g., when switching chats).
+      ensureProviderConfig('Kilo', defaultName: 'Kilo');
       ensureProviderConfig('KelivoIN', defaultName: 'KelivoIN');
       ensureProviderConfig('Tensdaq', defaultName: 'Tensdaq');
       ensureProviderConfig('SiliconFlow', defaultName: 'SiliconFlow');
@@ -6415,6 +6417,9 @@ class ProviderConfig {
     final k = key.toLowerCase();
     if (k.contains('tensdaq')) return 'https://tensdaq-api.x-aio.com/v1';
     if (k.contains('kelivoin')) return 'https://text.pollinations.ai/openai';
+    if (k == 'kilo' || k.contains('kilocode')) {
+      return 'https://api.kilo.ai/api/gateway';
+    }
     if (k.contains('openrouter')) return 'https://openrouter.ai/api/v1';
     if (k.contains('aihubmix')) return 'https://aihubmix.com/v1';
     if (k.contains('随想')) return 'https://sui-xiang.com/v1';
@@ -6455,6 +6460,7 @@ class ProviderConfig {
       if (s.contains('gemini') || s.contains('google')) return true;
       if (s.contains('silicon')) return true;
       if (s.contains('openrouter')) return true;
+      if (s == 'kilo' || s.contains('kilocode')) return true;
       if (s.contains('kelivoin')) return true;
       return false; // others disabled by default
     }
@@ -6515,6 +6521,41 @@ class ProviderConfig {
           claudePromptCachingEnabled: false,
         );
       case ProviderKind.openai:
+        // Kilo AI Gateway: anonymous access is supported for free models.
+        if (lowerKey == 'kilo' || lowerKey.contains('kilocode')) {
+          return ProviderConfig(
+            id: key,
+            enabled: defaultEnabled(key),
+            name: displayName ?? key,
+            apiKey: '',
+            baseUrl: _defaultBase(key),
+            providerType: ProviderKind.openai,
+            chatPath: '/chat/completions',
+            useResponseApi: false,
+            models: const ['kilo-auto/free'],
+            modelOverrides: const {
+              'kilo-auto/free': {
+                'type': 'chat',
+                'input': ['text'],
+                'output': ['text'],
+                'abilities': ['tool'],
+              },
+            },
+            proxyEnabled: false,
+            proxyHost: '',
+            proxyPort: '8080',
+            proxyUsername: '',
+            proxyPassword: '',
+            multiKeyEnabled: false,
+            apiKeys: const [],
+            keyManagement: const KeyManagementConfig(),
+            aihubmixAppCodeEnabled: false,
+            balanceEnabled: false,
+            balanceApiPath: '/credits',
+            balanceResultPath: 'data.total_usage',
+            claudePromptCachingEnabled: false,
+          );
+        }
         // Special-case KelivoIN default models and overrides
         if (lowerKey.contains('kelivoin')) {
           return ProviderConfig(

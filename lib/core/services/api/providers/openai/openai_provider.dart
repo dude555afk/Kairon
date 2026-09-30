@@ -570,11 +570,12 @@ Stream<StreamChunk> sendOpenAIStream(
   }
 
   final request = http.Request('POST', url);
+  final requestApiKey = apiKeyForRequest(config, modelId).trim();
   final headers = customHeaders(
     config,
     modelId,
     baseHeaders: <String, String>{
-      'Authorization': 'Bearer ${apiKeyForRequest(config, modelId)}',
+      if (requestApiKey.isNotEmpty) 'Authorization': 'Bearer $requestApiKey',
       'Content-Type': 'application/json',
       'Accept': stream ? 'text/event-stream' : 'application/json',
     },
