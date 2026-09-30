@@ -32,6 +32,26 @@ class ReasoningEffortTest {
     }
 
     @Test
+    fun `resolver recognizes reasoning even when a route has no verified effort transport`() {
+        val gemini = ModelSpecResolver.resolve(Service.Gemini.id, "gemini-2.5-pro")
+        assertTrue(gemini.supportsReasoning)
+        assertTrue(gemini.reasoning.supportsCustomBudget)
+        assertTrue(gemini.reasoning.adjustableEfforts.isEmpty())
+
+        val qwen = ModelSpecResolver.resolve(Service.OpenRouter.id, "qwen/qwen3-235b-a22b")
+        assertTrue(qwen.supportsReasoning)
+        assertTrue(qwen.reasoning.canDisable)
+        assertTrue(qwen.reasoning.adjustableEfforts.isEmpty())
+    }
+
+    @Test
+    fun `plain chat models do not pretend to support reasoning`() {
+        val spec = ModelSpecResolver.resolve(Service.OpenAI.id, "gpt-4o")
+        assertTrue(!spec.supportsReasoning)
+        assertTrue(spec.reasoning.adjustableEfforts.isEmpty())
+    }
+
+    @Test
     fun `other known OpenAI reasoning families expose their supported subset`() {
         val levels = supportedReasoningEfforts(Service.OpenAI.id, "gpt-5.5")
         assertEquals(
