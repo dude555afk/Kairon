@@ -6,6 +6,7 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,6 +20,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.CallSplit
@@ -44,6 +46,9 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.inspiredandroid.kai.getBackgroundDispatcher
+import com.inspiredandroid.kai.data.ChatAppearance
+import com.inspiredandroid.kai.data.ChatMessageLayout
+import com.inspiredandroid.kai.data.ChatSurfaceStyle
 import com.inspiredandroid.kai.ui.dynamicui.FrozenSubmission
 import com.inspiredandroid.kai.ui.dynamicui.toSpeakableText
 import com.inspiredandroid.kai.ui.handCursor
@@ -91,6 +96,7 @@ internal fun BotMessage(
     onResubmit: ((event: String, data: Map<String, String>) -> Unit)? = null,
     reasoningSegments: ImmutableList<String> = persistentListOf(),
     showThinkingHeader: Boolean = true,
+    appearance: ChatAppearance = ChatAppearance(),
 ) {
     val document = remember(message) { parseMarkdown(message) }
     var actionMenuOpen by remember { mutableStateOf(false) }
@@ -106,8 +112,30 @@ internal fun BotMessage(
         onUiCallback ?: { _, _ -> }
     }
 
+    val bubbleShape = RoundedCornerShape(appearance.bubbleRadiusDp.dp)
+    val bubbleAlpha = if (appearance.surfaceStyle == ChatSurfaceStyle.SOLID) 1f else appearance.bubbleOpacity
+    val verticalSpacing = if (appearance.compactSpacing) 3.dp else 6.dp
+    val messageSurface = if (appearance.messageLayout == ChatMessageLayout.BUBBLES) {
+        Modifier
+            .padding(horizontal = 12.dp, vertical = verticalSpacing)
+            .background(MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = bubbleAlpha), bubbleShape)
+            .then(
+                if (appearance.borderWidthDp > 0f) {
+                    Modifier.border(
+                        appearance.borderWidthDp.dp,
+                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.50f),
+                        bubbleShape,
+                    )
+                } else {
+                    Modifier
+                },
+            )
+    } else {
+        Modifier.padding(vertical = verticalSpacing)
+    }
+
     Box(modifier = Modifier.fillMaxWidth().combinedClickable(onClick = {}, onLongClick = { actionMenuOpen = true })) {
-        Column(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.fillMaxWidth().then(messageSurface)) {
             val nonBlankSegments = remember(reasoningSegments) {
                 reasoningSegments.filter { it.isNotBlank() }.toImmutableList()
             }
