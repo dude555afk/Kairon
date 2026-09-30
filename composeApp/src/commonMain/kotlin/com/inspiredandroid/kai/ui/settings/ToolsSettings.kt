@@ -62,8 +62,11 @@ internal fun ToolsContent(
     isSandboxInstalled: Boolean,
     onNavigateToSandbox: () -> Unit,
 ) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        // MCP Servers section
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        ToolsSectionLabel("MCP servers")
         McpServersSection(
             mcpServers = mcpServers,
             onAddMcpServer = onAddMcpServer,
@@ -76,9 +79,8 @@ internal fun ToolsContent(
             onAddPopularMcpServer = onAddPopularMcpServer,
         )
 
-        // Skills section — sandbox-backed, so Android only.
         if (showSkills) {
-            Spacer(Modifier.height(24.dp))
+            ToolsSectionLabel("Skills")
             SkillsSection(
                 skills = skills,
                 onUninstallSkill = onUninstallSkill,
@@ -96,54 +98,42 @@ internal fun ToolsContent(
             )
         }
 
-        Spacer(Modifier.height(24.dp))
-
-        // Native tools section
-        Text(
-            text = stringResource(Res.string.settings_tools_description),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-
-        Spacer(Modifier.height(16.dp))
-
+        ToolsSectionLabel("Built-in tools")
         if (tools.isEmpty()) {
             Text(
                 text = stringResource(Res.string.settings_tools_none_available),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 4.dp, vertical = 10.dp),
             )
         } else {
-            BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-                val columns = when {
-                    maxWidth >= 800.dp -> 3
-                    maxWidth >= 500.dp -> 2
-                    else -> 1
-                }
-                val rows = tools.chunked(columns)
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    rows.forEach { rowTools ->
-                        Row(
-                            modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            rowTools.forEach { tool ->
-                                ToolItem(
-                                    modifier = Modifier.weight(1f).fillMaxHeight(),
-                                    tool = tool,
-                                    onToggle = { enabled -> onToggleTool(tool.id, enabled) },
-                                )
-                            }
-                            // Fill empty slots so last row items don't stretch
-                            repeat(columns - rowTools.size) {
-                                Spacer(modifier = Modifier.weight(1f))
-                            }
-                        }
+            SettingsCard(innerPadding = false) {
+                tools.forEachIndexed { index, tool ->
+                    if (index > 0) {
+                        HorizontalDivider(
+                            modifier = Modifier.padding(start = 14.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.38f),
+                        )
                     }
+                    ToolItem(
+                        modifier = Modifier.fillMaxWidth(),
+                        tool = tool,
+                        onToggle = { enabled -> onToggleTool(tool.id, enabled) },
+                    )
                 }
             }
         }
     }
+}
+
+@Composable
+private fun ToolsSectionLabel(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(start = 4.dp, top = 2.dp),
+    )
 }
 
 @Composable
@@ -152,37 +142,29 @@ private fun ToolItem(
     onToggle: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Card(
+    Row(
         modifier = modifier
-            .clip(CardDefaults.shape)
             .clickable { onToggle(!tool.isEnabled) }
-            .handCursor(),
-        colors = kaiAdaptiveCardColors(),
-        border = kaiAdaptiveCardBorder(),
+            .handCursor()
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = tool.nameRes?.let { stringResource(it) } ?: tool.name,
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onBackground,
-                )
-                Text(
-                    text = tool.descriptionRes?.let { stringResource(it) } ?: tool.description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-
-            Spacer(Modifier.width(16.dp))
-
-            Switch(
-                checked = tool.isEnabled,
-                onCheckedChange = onToggle,
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = tool.nameRes?.let { stringResource(it) } ?: tool.name,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                text = tool.descriptionRes?.let { stringResource(it) } ?: tool.description,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+        Spacer(Modifier.width(12.dp))
+        Switch(
+            checked = tool.isEnabled,
+            onCheckedChange = onToggle,
+        )
     }
 }
