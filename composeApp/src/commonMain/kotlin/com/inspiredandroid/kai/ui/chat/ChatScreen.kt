@@ -1185,6 +1185,11 @@ private fun ChatModeScreen(
                     onSave = { edited ->
                         editingMessageId = null
                         editingMessageContent = ""
+                        uiState.actions.editPromptOnly(messageId, edited)
+                    },
+                    onSaveAndSend = { edited ->
+                        editingMessageId = null
+                        editingMessageContent = ""
                         uiState.actions.editPrompt(messageId, edited)
                     },
                 )
