@@ -166,6 +166,5 @@ object ModelSpecResolver {
         return ReasoningSpec()
     }
 
-    private fun normalize(modelId: String): String =
-        modelId.trim().substringAfterLast('/').lowercase()
+    private fun normalize(modelId: String): String = modelId.trim().substringAfterLast('/').lowercase()
 }
