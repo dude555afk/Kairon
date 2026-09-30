@@ -4,6 +4,8 @@ env:
   FLUTTER_VERSION: '3.44.9'
 
 on:
+  push:
+    branches: [feature/remote-github-agent]
   pull_request:
     branches: [main]
 
