@@ -4,6 +4,7 @@ package com.inspiredandroid.kai.ui.chat
 
 import androidx.compose.runtime.Immutable
 import com.inspiredandroid.kai.data.Attachment
+import com.inspiredandroid.kai.data.ChatAppearance
 import com.inspiredandroid.kai.data.FallbackStatus
 import com.inspiredandroid.kai.data.ReasoningEffort
 import com.inspiredandroid.kai.data.ReasoningRequestMode
@@ -80,6 +81,7 @@ data class ChatUiState(
     val isLoading: Boolean = false,
     val streamingText: String = "",
     val showThinkingHeader: Boolean = true,
+    val chatAppearance: ChatAppearance = ChatAppearance(),
     val error: UiError? = null,
     val showFreeProviderSuggestions: Boolean = false,
     val warning: StringResource? = null,
