@@ -72,6 +72,7 @@ interface DataRepository {
     fun regenerate()
     fun popLastExchange()
     fun truncateFrom(messageId: String)
+
     /** Create a separate chat at this message. Editing replaces a user prompt in the new branch. */
     suspend fun branchConversation(messageId: String, editedContent: String? = null): Boolean
     fun restoreCurrentConversation()
