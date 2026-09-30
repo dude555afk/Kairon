@@ -24,6 +24,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalUriHandler
 import com.inspiredandroid.kai.data.AccentPreset
+import com.inspiredandroid.kai.data.ChatAppearance
+import com.inspiredandroid.kai.data.ChatMessageLayout
+import com.inspiredandroid.kai.data.ChatSurfaceStyle
 import com.inspiredandroid.kai.data.ThemeMode
 import com.inspiredandroid.kai.ui.KaiOutlinedTextField
 import com.inspiredandroid.kai.ui.components.KaiSlider
@@ -125,6 +128,12 @@ internal fun GeneralContent(uiState: SettingsUiState, actions: SettingsActions) 
                     )
                 }
             }
+        }
+        SettingsCard {
+            ChatAppearanceSection(
+                appearance = uiState.chatAppearance,
+                onChange = actions.onChangeChatAppearance,
+            )
         }
         SettingsCard {
             val uriHandler = LocalUriHandler.current
@@ -316,6 +325,111 @@ private fun UiScaleSection(
             onValueChangeFinished = { onChangeUiScale(sliderValue) },
             valueRange = 0.5f..2.0f,
             steps = steps,
+        )
+    }
+}
+
+
+@Composable
+private fun ChatAppearanceSection(
+    appearance: ChatAppearance,
+    onChange: (ChatAppearance) -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        Text("Chat appearance", style = MaterialTheme.typography.titleMedium)
+        Text(
+            "Kelivo-style presentation controls. Dynamic UI and message data are unchanged.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+
+        var layoutExpanded by remember { mutableStateOf(false) }
+        Box {
+            KaiOutlinedTextField(
+                modifier = Modifier.fillMaxWidth(),
+                value = when (appearance.messageLayout) {
+                    ChatMessageLayout.BUBBLES -> "Bubbles"
+                    ChatMessageLayout.FLAT -> "Flat"
+                },
+                onValueChange = {},
+                label = { Text("Message layout") },
+                readOnly = true,
+            )
+            Box(Modifier.matchParentSize().clickable { layoutExpanded = true })
+            DropdownMenu(expanded = layoutExpanded, onDismissRequest = { layoutExpanded = false }) {
+                ChatMessageLayout.entries.forEach { option ->
+                    DropdownMenuItem(
+                        text = { Text(option.name.lowercase().replaceFirstChar { it.uppercaseChar() }) },
+                        onClick = {
+                            layoutExpanded = false
+                            onChange(appearance.copy(messageLayout = option))
+                        },
+                    )
+                }
+            }
+        }
+
+        var surfaceExpanded by remember { mutableStateOf(false) }
+        Box {
+            KaiOutlinedTextField(
+                modifier = Modifier.fillMaxWidth(),
+                value = when (appearance.surfaceStyle) {
+                    ChatSurfaceStyle.SOLID -> "Solid"
+                    ChatSurfaceStyle.TRANSLUCENT -> "Translucent"
+                },
+                onValueChange = {},
+                label = { Text("Bubble surface") },
+                readOnly = true,
+            )
+            Box(Modifier.matchParentSize().clickable { surfaceExpanded = true })
+            DropdownMenu(expanded = surfaceExpanded, onDismissRequest = { surfaceExpanded = false }) {
+                ChatSurfaceStyle.entries.forEach { option ->
+                    DropdownMenuItem(
+                        text = { Text(option.name.lowercase().replaceFirstChar { it.uppercaseChar() }) },
+                        onClick = {
+                            surfaceExpanded = false
+                            onChange(appearance.copy(surfaceStyle = option))
+                        },
+                    )
+                }
+            }
+        }
+
+        var radius by remember(appearance.bubbleRadiusDp) { mutableStateOf(appearance.bubbleRadiusDp) }
+        Text("Bubble radius · ${radius.roundToInt()} dp", style = MaterialTheme.typography.labelLarge)
+        KaiSlider(
+            value = radius,
+            onValueChange = { radius = it },
+            onValueChangeFinished = { onChange(appearance.copy(bubbleRadiusDp = radius)) },
+            valueRange = 6f..32f,
+            steps = 12,
+        )
+
+        var opacity by remember(appearance.bubbleOpacity) { mutableStateOf(appearance.bubbleOpacity) }
+        Text("Bubble opacity · ${(opacity * 100).roundToInt()}%", style = MaterialTheme.typography.labelLarge)
+        KaiSlider(
+            value = opacity,
+            onValueChange = { opacity = it },
+            onValueChangeFinished = { onChange(appearance.copy(bubbleOpacity = opacity)) },
+            valueRange = 0.35f..1f,
+            steps = 12,
+        )
+
+        var composerRadius by remember(appearance.composerRadiusDp) { mutableStateOf(appearance.composerRadiusDp) }
+        Text("Composer radius · ${composerRadius.roundToInt()} dp", style = MaterialTheme.typography.labelLarge)
+        KaiSlider(
+            value = composerRadius,
+            onValueChange = { composerRadius = it },
+            onValueChangeFinished = { onChange(appearance.copy(composerRadiusDp = composerRadius)) },
+            valueRange = 12f..32f,
+            steps = 9,
+        )
+
+        ToggleableHeadline(
+            title = "Compact spacing",
+            description = "Reduce vertical space between messages and chat controls.",
+            checked = appearance.compactSpacing,
+            onCheckedChange = { onChange(appearance.copy(compactSpacing = it)) },
         )
     }
 }
