@@ -1,6 +1,7 @@
 package com.inspiredandroid.kai.testutil
 
 import com.inspiredandroid.kai.data.AccentPreset
+import com.inspiredandroid.kai.data.ChatAppearance
 import com.inspiredandroid.kai.data.Conversation
 import com.inspiredandroid.kai.data.DataRepository
 import com.inspiredandroid.kai.data.EmailAccount
@@ -468,6 +469,12 @@ class FakeDataRepository : DataRepository {
 
     override fun setThemeMode(mode: ThemeMode) {
         themeMode = mode
+    }
+
+    override val chatAppearance: MutableStateFlow<ChatAppearance> = MutableStateFlow(ChatAppearance())
+
+    override fun setChatAppearance(appearance: ChatAppearance) {
+        chatAppearance.value = appearance.normalized()
     }
 
     private var interactiveMode = false
