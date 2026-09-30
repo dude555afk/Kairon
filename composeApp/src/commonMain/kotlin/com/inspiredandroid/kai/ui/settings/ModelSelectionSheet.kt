@@ -41,6 +41,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.inspiredandroid.kai.formatContextWindow
 import com.inspiredandroid.kai.formatReleaseDate
+import com.inspiredandroid.kai.data.ModelSpecResolver
 import com.inspiredandroid.kai.ui.KaiOutlinedTextField
 import com.inspiredandroid.kai.ui.components.KaiSearchField
 import com.inspiredandroid.kai.ui.components.VerticalScrollbarForGrid
@@ -230,6 +231,7 @@ private fun ModelCard(model: SettingsModel, isSelected: Boolean, onClick: () -> 
     val releaseText = model.releaseDate?.let { formatReleaseDate(it) }
     val detailText = listOfNotNull(releaseText, model.parameterCount, contextText)
         .joinToString("  ·  ").ifEmpty { null }
+    val modelSpec = remember(model.id) { ModelSpecResolver.resolve("", model.id) }
 
     val primaryColor = if (isSelected) {
         MaterialTheme.colorScheme.onPrimaryContainer
@@ -267,6 +269,24 @@ private fun ModelCard(model: SettingsModel, isSelected: Boolean, onClick: () -> 
                 if (model.isFreeTier) {
                     Spacer(Modifier.width(8.dp))
                     FreeTierBadge(isSelected = isSelected)
+                }
+                if (modelSpec.supportsReasoning) {
+                    Spacer(Modifier.width(8.dp))
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = if (isSelected) {
+                            MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.12f)
+                        } else {
+                            MaterialTheme.colorScheme.secondaryContainer
+                        },
+                    ) {
+                        Text(
+                            text = "Reasoning",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = secondaryColor,
+                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
+                        )
+                    }
                 }
                 model.arenaScore?.let { score ->
                     Spacer(Modifier.width(8.dp))
