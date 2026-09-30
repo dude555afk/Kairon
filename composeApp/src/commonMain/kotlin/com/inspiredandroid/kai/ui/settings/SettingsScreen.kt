@@ -415,7 +415,7 @@ private fun BottomInfo() {
                 .clip(CircleShape)
                 .size(24.dp)
                 .clickable(onClick = {
-                    uriHandler.openUri("https://github.com/SimonSchubert/Kai")
+                    uriHandler.openUri("https://github.com/dude555afk/Kairon")
                 })
                 .handCursor(),
             painter = painterResource(Res.drawable.github_mark),
@@ -429,7 +429,7 @@ private fun BottomInfo() {
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier
                 .align(Alignment.CenterVertically)
-                .clickable { uriHandler.openUri("https://kai9000.com/docs/") }
+                .clickable { uriHandler.openUri("https://github.com/dude555afk/Kairon") }
                 .handCursor(),
         )
     }
