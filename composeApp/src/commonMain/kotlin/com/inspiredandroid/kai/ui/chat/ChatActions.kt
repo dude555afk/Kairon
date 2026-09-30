@@ -19,6 +19,7 @@ data class ChatActions(
     val regenerate: () -> Unit,
     val branchConversation: (String) -> Unit = {},
     val editPrompt: (String, String) -> Unit = { _, _ -> },
+    val editPromptOnly: (String, String) -> Unit = { _, _ -> },
     val rerunFromMessage: (String, MessageRerunMode) -> Unit = { _, _ -> },
     val cancel: () -> Unit,
     val selectService: (String) -> Unit,
