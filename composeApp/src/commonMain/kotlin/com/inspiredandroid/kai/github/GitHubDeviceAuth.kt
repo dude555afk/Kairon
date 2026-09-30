@@ -80,9 +80,8 @@ class GitHubDeviceAuth {
     }
 }
 
-private fun kotlinx.serialization.json.JsonObject.required(name: String): String =
-    this[name]?.jsonPrimitive?.contentOrNull?.takeIf { it.isNotBlank() }
-        ?: error("GitHub authorization response is missing $name")
+private fun kotlinx.serialization.json.JsonObject.required(name: String): String = this[name]?.jsonPrimitive?.contentOrNull?.takeIf { it.isNotBlank() }
+    ?: error("GitHub authorization response is missing $name")
 
 data class GitHubDeviceChallenge(
     val deviceCode: String,
