@@ -311,6 +311,7 @@ private fun InteractiveModeScreen(
                         installedSkills = uiState.installedSkills,
                         reasoningEffort = uiState.reasoningEffort,
                         onSelectReasoningEffort = uiState.actions.selectReasoningEffort,
+                        appearance = uiState.chatAppearance,
                     )
                 }
             }
@@ -900,6 +901,7 @@ private fun ChatModeScreen(
                                                         UserMessage(
                                                             message = history.content,
                                                             attachments = history.attachments,
+                                                            appearance = uiState.chatAppearance,
                                                             onBranch = if (!uiState.isLoading) { { uiState.actions.branchConversation(history.id) } } else null,
                                                             onEdit = if (!uiState.isLoading) { {
                                                                 editingMessageId = history.id
@@ -950,6 +952,7 @@ private fun ChatModeScreen(
                                                             },
                                                             reasoningSegments = reasoningSegmentsByAssistantId[history.id] ?: persistentListOf(),
                                                             showThinkingHeader = uiState.showThinkingHeader,
+                                                            appearance = uiState.chatAppearance,
                                                         )
                                                         if (history.fallbackServiceName != null) {
                                                             androidx.compose.material3.Text(
@@ -974,6 +977,7 @@ private fun ChatModeScreen(
                                                             reasoningSegments = reasoningSegmentsByAssistantId[history.id]
                                                                 ?: persistentListOf(history.content),
                                                             showThinkingHeader = uiState.showThinkingHeader,
+                                                            appearance = uiState.chatAppearance,
                                                         )
                                                     }
                                                 }
