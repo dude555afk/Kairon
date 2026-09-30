@@ -127,8 +127,6 @@ internal fun supportsAgenticFlows(serviceId: String, modelId: String): Boolean =
  */
 internal val RESPONSES_API_MODELS = listOf(
     "gpt-5.6",
-    "gpt-5.5",
-    "gpt-5.4",
 )
 
 /**
