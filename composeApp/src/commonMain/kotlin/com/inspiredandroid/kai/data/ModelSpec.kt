@@ -73,36 +73,45 @@ object ModelSpecResolver {
     }
 
     private fun reasoningSpec(serviceId: String, id: String): ReasoningSpec {
-        // Direct OpenAI Responses is the first route where Kairon currently verifies
-        // and forwards an explicit effort value. Other families are recognized below
-        // but don't expose a fake slider until their provider adapter exists.
-        if (serviceId == Service.OpenAI.id) {
-            when {
-                id == "gpt-5.6" || id.startsWith("gpt-5.6-") -> return ReasoningSpec(
-                    supported = true,
-                    dialect = ReasoningDialect.OPENAI_RESPONSES,
-                    adjustableEfforts = listOf(
+        // GPT-5 families are recognized even through aggregators, but only native
+        // OpenAI currently gets an adjustable slider because that is the route Kairon
+        // has verified and actually forwards effort on.
+        if (id == "gpt-5.6" || id.startsWith("gpt-5.6-")) {
+            return ReasoningSpec(
+                supported = true,
+                dialect = if (serviceId == Service.OpenAI.id) ReasoningDialect.OPENAI_RESPONSES else ReasoningDialect.OPENAI_EFFORT,
+                adjustableEfforts = if (serviceId == Service.OpenAI.id) {
+                    listOf(
                         ReasoningEffort.AUTO,
                         ReasoningEffort.LOW,
                         ReasoningEffort.MEDIUM,
                         ReasoningEffort.HIGH,
                         ReasoningEffort.XHIGH,
                         ReasoningEffort.MAX,
-                    ),
-                )
-                id == "gpt-5.5" || id.startsWith("gpt-5.5-") ||
-                    id == "gpt-5.4" || id.startsWith("gpt-5.4-") -> return ReasoningSpec(
-                    supported = true,
-                    dialect = ReasoningDialect.OPENAI_RESPONSES,
-                    adjustableEfforts = listOf(
+                    )
+                } else {
+                    emptyList()
+                },
+            )
+        }
+        if (id == "gpt-5.5" || id.startsWith("gpt-5.5-") ||
+            id == "gpt-5.4" || id.startsWith("gpt-5.4-")
+        ) {
+            return ReasoningSpec(
+                supported = true,
+                dialect = if (serviceId == Service.OpenAI.id) ReasoningDialect.OPENAI_RESPONSES else ReasoningDialect.OPENAI_EFFORT,
+                adjustableEfforts = if (serviceId == Service.OpenAI.id) {
+                    listOf(
                         ReasoningEffort.AUTO,
                         ReasoningEffort.LOW,
                         ReasoningEffort.MEDIUM,
                         ReasoningEffort.HIGH,
                         ReasoningEffort.XHIGH,
-                    ),
-                )
-            }
+                    )
+                } else {
+                    emptyList()
+                },
+            )
         }
 
         if (id.matches(Regex("""o[134](?:$|[-.].*)"""))) {
