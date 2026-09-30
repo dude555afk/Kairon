@@ -9,18 +9,17 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -35,7 +34,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -44,7 +42,7 @@ import com.inspiredandroid.kai.formatContextWindow
 import com.inspiredandroid.kai.formatReleaseDate
 import com.inspiredandroid.kai.ui.KaiOutlinedTextField
 import com.inspiredandroid.kai.ui.components.KaiSearchField
-import com.inspiredandroid.kai.ui.components.VerticalScrollbarForGrid
+import com.inspiredandroid.kai.ui.components.VerticalScrollbarForList
 import com.inspiredandroid.kai.ui.handCursor
 import kai.composeapp.generated.resources.Res
 import kai.composeapp.generated.resources.ic_arrow_drop_down
@@ -69,144 +67,132 @@ internal fun ModelSelection(
     onClick: (String) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
-    // Provider list only — synthetic manual entries stay out of the picker grid.
     val pickerModels = remember(models) { models.filter { !it.isManualEntry } }
-    if (pickerModels.isNotEmpty()) {
-        Box(
+    if (pickerModels.isEmpty()) return
+
+    Box(modifier = Modifier.fillMaxWidth()) {
+        KaiOutlinedTextField(
             modifier = Modifier.fillMaxWidth(),
-        ) {
-            KaiOutlinedTextField(
-                modifier = Modifier.fillMaxWidth(),
-                value = currentSelectedModel?.let { it.displayName ?: it.id } ?: "",
-                onValueChange = {},
-                readOnly = true,
-                label = {
-                    Text(
-                        stringResource(Res.string.settings_model_label),
-                        color = MaterialTheme.colorScheme.onBackground,
-                    )
-                },
-                trailingIcon = {
-                    Icon(
-                        modifier = Modifier.handCursor(),
-                        imageVector = vectorResource(Res.drawable.ic_arrow_drop_down),
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onBackground,
-                    )
-                },
-            )
-            // Transparent overlay to capture clicks reliably on all platforms
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .handCursor()
-                    .clickable { expanded = true },
-            )
+            value = currentSelectedModel?.let { it.displayName ?: it.id } ?: "",
+            onValueChange = {},
+            readOnly = true,
+            label = {
+                Text(
+                    stringResource(Res.string.settings_model_label),
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+            },
+            trailingIcon = {
+                Icon(
+                    modifier = Modifier.handCursor(),
+                    imageVector = vectorResource(Res.drawable.ic_arrow_drop_down),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            },
+        )
+        Box(
+            modifier = Modifier.matchParentSize().handCursor().clickable { expanded = true },
+        )
+    }
+
+    if (!expanded) return
+
+    ModalBottomSheet(
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        onDismissRequest = { expanded = false },
+        shape = RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp),
+    ) {
+        var searchQuery by remember { mutableStateOf("") }
+        val hasFreeModels = remember(pickerModels) { pickerModels.any { it.isFreeTier } }
+        var freeFilterOnly by remember { mutableStateOf(false) }
+        var sortOption by remember { mutableStateOf(ModelSortOption.Score) }
+
+        LaunchedEffect(hasFreeModels) {
+            if (!hasFreeModels) freeFilterOnly = false
         }
-        if (expanded) {
-            ModalBottomSheet(
-                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-                onDismissRequest = {
-                    expanded = false
-                },
+
+        val filteredModels = remember(pickerModels, searchQuery, freeFilterOnly, sortOption) {
+            pickerModels
+                .filter { model ->
+                    val matchesFree = !freeFilterOnly || model.isFreeTier
+                    val matchesSearch = searchQuery.isBlank() ||
+                        model.id.contains(searchQuery, ignoreCase = true) ||
+                        model.subtitle.contains(searchQuery, ignoreCase = true) ||
+                        model.displayName?.contains(searchQuery, ignoreCase = true) == true
+                    matchesFree && matchesSearch
+                }
+                .sortedWith(sortOption.comparator)
+        }
+
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Text(
+                text = "Select model",
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(horizontal = 18.dp, vertical = 8.dp),
+            )
+            KaiSearchField(
+                query = searchQuery,
+                onQueryChange = { searchQuery = it },
+                placeholder = stringResource(Res.string.settings_model_search),
+            )
+            Row(
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                var searchQuery by remember { mutableStateOf("") }
-                val hasFreeModels = remember(pickerModels) { pickerModels.any { it.isFreeTier } }
-                var freeFilterOnly by remember { mutableStateOf(false) }
-                // Reset free filter when the service has no free models.
-                LaunchedEffect(hasFreeModels) {
-                    if (!hasFreeModels) freeFilterOnly = false
-                }
-                val filteredModels = remember(pickerModels, searchQuery, freeFilterOnly) {
-                    pickerModels.filter { model ->
-                        val matchesFree = !freeFilterOnly || model.isFreeTier
-                        val matchesSearch = searchQuery.isBlank() ||
-                            model.id.contains(searchQuery, ignoreCase = true) ||
-                            model.subtitle.contains(searchQuery, ignoreCase = true) ||
-                            model.displayName?.contains(searchQuery, ignoreCase = true) == true
-                        matchesFree && matchesSearch
-                    }
-                }
-                if (pickerModels.size > 6) {
-                    KaiSearchField(
-                        query = searchQuery,
-                        onQueryChange = { searchQuery = it },
-                        placeholder = stringResource(Res.string.settings_model_search),
+                ModelSortOption.entries.forEach { option ->
+                    FilterChip(
+                        selected = sortOption == option,
+                        onClick = { sortOption = option },
+                        label = { Text(stringResource(option.labelRes)) },
+                        modifier = Modifier.handCursor(),
                     )
                 }
-                var sortOption by remember { mutableStateOf(ModelSortOption.Score) }
-                val sortedModels = remember(filteredModels, sortOption, searchQuery) {
-                    val base = filteredModels.sortedWith(sortOption.comparator)
-                    if (searchQuery.isBlank()) {
-                        base
-                    } else {
-                        base.sortedBy { model ->
-                            val name = model.displayName ?: model.id
-                            when {
-                                name.contains(searchQuery, ignoreCase = true) -> 0
-                                model.subtitle.contains(searchQuery, ignoreCase = true) -> 1
-                                else -> 2
-                            }
-                        }
-                    }
-                }
-                Row(
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    ModelSortOption.entries.forEach { option ->
-                        FilterChip(
-                            selected = sortOption == option,
-                            onClick = { sortOption = option },
-                            label = { Text(stringResource(option.labelRes)) },
-                            modifier = Modifier.handCursor(),
-                        )
-                    }
-                    if (hasFreeModels) {
-                        FilterChip(
-                            selected = freeFilterOnly,
-                            onClick = { freeFilterOnly = !freeFilterOnly },
-                            label = { Text(stringResource(Res.string.model_filter_free)) },
-                            modifier = Modifier.handCursor(),
-                        )
-                    }
-                }
-                val gridState = rememberLazyGridState()
-                LaunchedEffect(sortOption, freeFilterOnly) {
-                    gridState.requestScrollToItem(0)
-                }
-                if (sortedModels.isEmpty() && freeFilterOnly) {
-                    Text(
-                        text = stringResource(Res.string.model_free_empty),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(24.dp),
+                if (hasFreeModels) {
+                    FilterChip(
+                        selected = freeFilterOnly,
+                        onClick = { freeFilterOnly = !freeFilterOnly },
+                        label = { Text(stringResource(Res.string.model_filter_free)) },
+                        modifier = Modifier.handCursor(),
                     )
-                } else {
-                    Box {
-                        LazyVerticalGrid(
-                            GridCells.Adaptive(300.dp),
-                            state = gridState,
-                            contentPadding = PaddingValues(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            items(sortedModels, key = { it.id }) { model ->
-                                ModelCard(
-                                    model = model,
-                                    isSelected = currentSelectedModel?.id == model.id,
-                                    onClick = {
-                                        onClick(model.id)
-                                        expanded = false
-                                    },
-                                )
-                            }
+                }
+            }
+
+            if (filteredModels.isEmpty()) {
+                Text(
+                    text = stringResource(Res.string.model_free_empty),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(24.dp),
+                )
+            } else {
+                val listState = rememberLazyListState()
+                Box(modifier = Modifier.fillMaxHeight(0.74f)) {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxWidth(),
+                        state = listState,
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                    ) {
+                        items(filteredModels, key = { it.id }) { model ->
+                            ModelRow(
+                                model = model,
+                                isSelected = currentSelectedModel?.id == model.id,
+                                onClick = {
+                                    onClick(model.id)
+                                    expanded = false
+                                },
+                            )
+                            HorizontalDivider(
+                                modifier = Modifier.padding(start = 12.dp),
+                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.32f),
+                            )
                         }
-                        VerticalScrollbarForGrid(
-                            gridState = gridState,
-                            modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
-                        )
                     }
+                    VerticalScrollbarForList(
+                        listState = listState,
+                        modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
+                    )
                 }
             }
         }
@@ -223,131 +209,101 @@ private enum class ModelSortOption(
 }
 
 @Composable
-private fun ModelCard(model: SettingsModel, isSelected: Boolean, onClick: () -> Unit) {
+private fun ModelRow(
+    model: SettingsModel,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+) {
     val displayName = model.displayName?.takeIf { it.isNotBlank() && it != model.id }
     val title = displayName ?: model.id
-    val secondary = if (displayName == null && model.subtitle.isNotBlank()) model.subtitle else null
     val contextText = model.contextWindow?.let { formatContextWindow(it) }
     val releaseText = model.releaseDate?.let { formatReleaseDate(it) }
     val detailText = listOfNotNull(releaseText, model.parameterCount, contextText)
-        .joinToString("  ·  ").ifEmpty { null }
+        .joinToString(" · ")
+        .ifEmpty { null }
     val modelSpec = remember(model.id) { ModelSpecResolver.resolve("", model.id) }
 
-    val primaryColor = if (isSelected) {
-        MaterialTheme.colorScheme.onPrimaryContainer
-    } else {
-        MaterialTheme.colorScheme.onSurface
-    }
-    val secondaryColor = if (isSelected) {
-        MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-    } else {
-        MaterialTheme.colorScheme.onSurfaceVariant
-    }
-    Card(
-        modifier = Modifier.handCursor().clip(CardDefaults.shape).clickable { onClick() },
-        shape = CardDefaults.shape,
-        colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) {
-                MaterialTheme.colorScheme.primaryContainer
-            } else {
-                MaterialTheme.colorScheme.surfaceContainerHigh
-            },
-        ),
+    Surface(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth().handCursor(),
+        color = if (isSelected) {
+            MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.72f)
+        } else {
+            Color.Transparent
+        },
+        shape = RoundedCornerShape(12.dp),
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    color = primaryColor,
-                    modifier = Modifier.weight(1f),
-                )
-                if (model.isFreeTier) {
-                    Spacer(Modifier.width(8.dp))
-                    FreeTierBadge(isSelected = isSelected)
-                }
-                if (modelSpec.supportsReasoning) {
-                    Spacer(Modifier.width(8.dp))
-                    Surface(
-                        shape = RoundedCornerShape(6.dp),
-                        color = if (isSelected) {
-                            MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.12f)
-                        } else {
-                            MaterialTheme.colorScheme.secondaryContainer
-                        },
-                    ) {
-                        Text(
-                            text = "Reasoning",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = secondaryColor,
-                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
-                        )
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f),
+                    )
+                    if (model.isFreeTier) {
+                        Spacer(Modifier.width(6.dp))
+                        Badge(text = stringResource(Res.string.model_free_badge))
+                    }
+                    if (modelSpec.supportsReasoning) {
+                        Spacer(Modifier.width(6.dp))
+                        Badge(text = "Reasoning")
                     }
                 }
-                model.arenaScore?.let { score ->
-                    Spacer(Modifier.width(8.dp))
+                if (displayName != null && model.id != displayName) {
                     Text(
-                        text = "$score",
+                        text = model.id,
                         style = MaterialTheme.typography.labelSmall,
-                        color = arenaScoreColor(score),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                } else if (model.subtitle.isNotBlank()) {
+                    Text(
+                        text = model.subtitle,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                detailText?.let {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f),
                     )
                 }
             }
-            secondary?.let {
-                Text(
-                    text = it,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = secondaryColor,
-                )
-            }
-            detailText?.let {
-                Spacer(Modifier.height(6.dp))
-                Text(
-                    text = it,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = secondaryColor,
+            if (isSelected) {
+                Spacer(Modifier.width(10.dp))
+                Icon(
+                    imageVector = Icons.Default.Check,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
                 )
             }
         }
     }
 }
 
-private fun arenaScoreColor(score: Int): Color = when {
-    score >= 1400 -> Color(0xFF2E7D32)
-    score >= 1350 -> Color(0xFF558B2F)
-    score >= 1300 -> Color(0xFF9E9D24)
-    score >= 1250 -> Color(0xFFF9A825)
-    else -> Color(0xFFEF6C00)
-}
-
 @Composable
-private fun FreeTierBadge(isSelected: Boolean) {
-    val background = if (isSelected) {
-        MaterialTheme.colorScheme.onPrimaryContainer
-    } else {
-        Color(0xFF1B5E20)
-    }
-    val content = if (isSelected) {
-        MaterialTheme.colorScheme.primaryContainer
-    } else {
-        Color.White
-    }
+private fun Badge(text: String) {
     Surface(
-        shape = RoundedCornerShape(4.dp),
-        color = background,
+        shape = RoundedCornerShape(999.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
     ) {
         Text(
-            text = stringResource(Res.string.model_free_badge),
-            style = MaterialTheme.typography.labelMedium,
-            color = content,
-            maxLines = 1,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+            text = text,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
         )
     }
 }
