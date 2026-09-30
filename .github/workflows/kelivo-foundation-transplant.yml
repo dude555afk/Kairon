@@ -1,0 +1,63 @@
+name: Replace Kairon with Kelivo foundation
+
+on:
+  push:
+    branches:
+      - feature/remote-github-agent
+    paths:
+      - ".github/workflows/kelivo-foundation-transplant.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  transplant:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Kairon branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: feature/remote-github-agent
+
+      - name: Clone Kelivo
+        run: |
+          git clone --depth=1 --branch master https://github.com/chevey339/kelivo.git /tmp/kelivo
+          rm -rf /tmp/kelivo/.git
+
+      - name: Replace repository working tree with Kelivo
+        run: |
+          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp -a /tmp/kelivo/. .
+
+      - name: Add Kairon migration manifest
+        run: |
+          cat > KAIRON_MIGRATION.md <<'EOF'
+          # Kairon on Kelivo
+
+          This branch intentionally uses Kelivo as the application foundation.
+          The former Kotlin/Compose Kairon implementation is preserved at:
+          `backup/pre-kelivo-rebase-20260930`.
+
+          Kairon-only capabilities to port onto this Flutter base:
+          - Dynamic UI rendering
+          - Remote GitHub coding agent
+          - Linux sandbox / workspace execution
+          - Heartbeat / proactive agent flows
+          - Kilo anonymous/free routing
+          - Kairon MCP and skills additions
+          - Android device integrations
+
+          Kelivo UI, settings, navigation, providers, model management, memory,
+          voice, branching/editing/versioning, assistants/profiles, MCP UX,
+          customization, and other Kelivo behavior are the new baseline.
+          EOF
+
+      - name: Commit replacement
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Replace Kairon foundation with Kelivo [skip ci]"
+          git push origin HEAD:feature/remote-github-agent
