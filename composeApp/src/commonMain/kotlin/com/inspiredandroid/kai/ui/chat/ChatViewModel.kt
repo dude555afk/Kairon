@@ -95,6 +95,7 @@ class ChatViewModel(
         ChatUiState(
             actions = actions,
             showPrivacyInfo = dataRepository.isUsingSharedKey(),
+            chatAppearance = dataRepository.chatAppearance.value,
         ),
     )
 
@@ -124,6 +125,11 @@ class ChatViewModel(
         viewModelScope.launch {
             dataRepository.streamingText.collect { text ->
                 _state.update { it.copy(streamingText = text) }
+            }
+        }
+        viewModelScope.launch {
+            dataRepository.chatAppearance.collect { appearance ->
+                _state.update { it.copy(chatAppearance = appearance) }
             }
         }
         viewModelScope.launch {
