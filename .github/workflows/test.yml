@@ -60,27 +60,8 @@ jobs:
       - name: Check formatting (no automatic edits)
         run: ./gradlew spotlessCheck --no-daemon --stacktrace
 
-      - name: Run updateScreenshots
-        run: ./gradlew :screenshotTests:updateScreenshots --no-daemon --stacktrace
-
-      - name: Install cwebp
-        run: sudo apt-get update && sudo apt-get install -y webp
-
-      - name: Convert site images to WebP
-        run: ./scripts/convert-site-images-to-webp.sh
+      - name: Verify screenshots
+        run: ./gradlew :screenshotTests:verifyPaparazziDebug --no-daemon --stacktrace
 
       - name: Run desktop tests
         run: ./gradlew :composeApp:desktopTest --no-daemon --stacktrace
-
-      # Screenshot/image generation is checked for reproducibility, never committed by CI.
-      - name: Check generated assets are committed
-        run: |
-          if [ -n "$(git status --porcelain)" ]; then
-            echo "::error::Generated screenshots or images differ from the committed files."
-            echo "Run these commands locally, review the changes, and commit them:"
-            echo "  ./gradlew spotlessApply"
-            echo "  ./gradlew :screenshotTests:updateScreenshots"
-            echo "  ./scripts/convert-site-images-to-webp.sh"
-            git status --short
-            exit 1
-          fi
