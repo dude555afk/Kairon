@@ -159,105 +159,28 @@ internal fun FreeSettings(
     currentSponsors: ImmutableList<SponsorsResponseDto.Sponsor> = persistentListOf(),
     pastSponsors: ImmutableList<SponsorsResponseDto.Sponsor> = persistentListOf(),
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = kaiAdaptiveCardColors(),
-        border = kaiAdaptiveCardBorder(),
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = stringResource(Res.string.settings_free_tier_title),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.primary,
-            )
-
-            if (showFallbackToggle) {
-                Spacer(Modifier.height(6.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth()
-                        .clip(RoundedCornerShape(8.dp))
-                        .clickable { onToggleFreeFallback(!isFreeFallbackEnabled) }
-                        .handCursor(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = stringResource(Res.string.settings_free_fallback),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.weight(1f),
-                    )
-                    Switch(
-                        checked = isFreeFallbackEnabled,
-                        onCheckedChange = onToggleFreeFallback,
-                    )
-                }
-                Spacer(Modifier.height(6.dp))
-            }
-
-            Spacer(Modifier.height(6.dp))
-
-            Text(
-                text = stringResource(Res.string.settings_free_tier_description),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-
-            Spacer(Modifier.height(12.dp))
-
-            val uriHandler = LocalUriHandler.current
-            Button(
-                onClick = {
-                    uriHandler.openUri("https://github.com/sponsors/SimonSchubert")
-                },
-                Modifier
-                    .align(CenterHorizontally)
-                    .handCursor(),
-            ) {
-                Icon(Icons.Default.Favorite, contentDescription = null)
-                Spacer(Modifier.width(8.dp))
-                Text(stringResource(Res.string.settings_become_sponsor))
-            }
-
-            val allSponsors = remember(currentSponsors, pastSponsors) {
-                val activeUsernames = currentSponsors.map { it.username }.toSet()
-                (currentSponsors + pastSponsors.filter { it.username !in activeUsernames })
-                    .toImmutableList()
-            }
-
-            if (allSponsors.isNotEmpty()) {
-                Spacer(Modifier.height(16.dp))
-                HorizontalDivider(thickness = 0.5.dp)
-                Spacer(Modifier.height(16.dp))
-                SponsorList(
-                    title = stringResource(Res.string.settings_sponsors),
-                    sponsors = allSponsors,
+    SettingsCard(innerPadding = false) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 13.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Kairon Free",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    text = stringResource(Res.string.settings_free_tier_description),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-
-            Spacer(Modifier.height(16.dp))
-            HorizontalDivider(thickness = 0.5.dp)
-            Spacer(Modifier.height(16.dp))
-
-            Text(
-                text = stringResource(Res.string.settings_business_partnerships),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Spacer(Modifier.height(6.dp))
-            Text(
-                text = stringResource(Res.string.settings_business_partnerships_description),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-
-            TextButton(
-                onClick = {
-                    uriHandler.openUri("https://schubert-simon.de")
-                },
-                Modifier
-                    .handCursor(),
-            ) {
-                Text(stringResource(Res.string.settings_contact_sponsorship))
+            if (showFallbackToggle) {
+                Switch(
+                    checked = isFreeFallbackEnabled,
+                    onCheckedChange = onToggleFreeFallback,
+                )
             }
         }
     }
@@ -317,74 +240,128 @@ private fun SponsorList(
 @Composable
 internal fun ServicesContent(uiState: SettingsUiState, actions: SettingsActions) {
     var showAddServiceSheet by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
 
-    // Configured services list
-    val entries = uiState.configuredServices
-    ReorderableColumn(
-        list = entries,
-        onSettle = { fromIndex, toIndex ->
-            val ids = entries.map { it.instanceId }.toMutableList()
-            ids.add(toIndex, ids.removeAt(fromIndex))
-            actions.onReorderServices(ids)
-        },
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) { _, entry, isDragging ->
-        key(entry.instanceId) {
-            ReorderableItem {
-                ConfiguredServiceCardContent(
-                    entry = entry,
-                    isExpanded = uiState.expandedServiceId == entry.instanceId,
-                    onExpand = { actions.onExpandService(if (uiState.expandedServiceId == entry.instanceId) null else entry.instanceId) },
-                    onChangeApiKey = { apiKey -> actions.onChangeApiKey(entry.instanceId, apiKey) },
-                    onChangeBaseUrl = { baseUrl -> actions.onChangeBaseUrl(entry.instanceId, baseUrl) },
-                    onSelectModel = { modelId -> actions.onSelectModel(entry.instanceId, modelId) },
-                    onToggleUseCustomModel = { use -> actions.onToggleUseCustomModel(entry.instanceId, use) },
-                    onChangeCustomModelId = { id -> actions.onChangeCustomModelId(entry.instanceId, id) },
-                    onRemove = { actions.onRemoveService(entry.instanceId) },
-                    isDragging = isDragging,
-                    dragHandleModifier = if (entries.size >= 2) Modifier.draggableHandle() else null,
-                    localAvailableModels = uiState.localAvailableModels,
-                    localImportedModels = uiState.localImportedModels,
-                    totalDeviceMemoryBytes = uiState.totalDeviceMemoryBytes,
-                    localFreeSpaceBytes = uiState.localFreeSpaceBytes,
-                    localDownloadingModelId = uiState.localDownloadingModelId,
-                    localDownloadProgress = uiState.localDownloadProgress,
-                    localDownloadError = uiState.localDownloadError,
-                    localImportingFileName = uiState.localImportingFileName,
-                    localImportProgress = uiState.localImportProgress,
-                    localImportError = uiState.localImportError,
-                    onDownloadLocalModel = actions.onDownloadLocalModel,
-                    onCancelLocalModelDownload = actions.onCancelLocalModelDownload,
-                    onImportLocalModel = actions.onImportLocalModel,
-                    onCancelLocalModelImport = actions.onCancelLocalModelImport,
-                    onDeleteLocalModel = actions.onDeleteLocalModel,
-                    onChangeModelContextTokens = actions.onChangeModelContextTokens,
-                    modelContextTokens = uiState.modelContextTokens,
-                    onOpenAppPermissionSettings = actions.onOpenAppPermissionSettings,
-                    onRecheckLocalNetworkPermission = { actions.onRecheckLocalNetworkPermission(entry.instanceId) },
+    val allEntries = uiState.configuredServices
+    val entries = remember(allEntries, searchQuery) {
+        val q = searchQuery.trim()
+        if (q.isEmpty()) {
+            allEntries
+        } else {
+            allEntries.filter { entry ->
+                entry.service.displayName.contains(q, ignoreCase = true) ||
+                    entry.selectedModel?.id?.contains(q, ignoreCase = true) == true ||
+                    entry.customModelId.contains(q, ignoreCase = true)
+            }.toImmutableList()
+        }
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Providers & models",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    text = "Configure providers, endpoints and the model each provider uses.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+            if (uiState.availableServicesToAdd.isNotEmpty()) {
+                OutlinedButton(
+                    onClick = { showAddServiceSheet = true },
+                    modifier = Modifier.handCursor(),
+                ) {
+                    Text("Add")
+                }
+            }
         }
+
+        KaiClearableTextField(
+            value = searchQuery,
+            onValueChange = { searchQuery = it },
+            label = { Text("Search providers") },
+            singleLine = true,
+        )
+
+        if (entries.isEmpty()) {
+            Text(
+                text = "No providers found",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 4.dp, vertical = 14.dp),
+            )
+        } else {
+            ReorderableColumn(
+                list = entries,
+                onSettle = { fromIndex, toIndex ->
+                    if (searchQuery.isNotBlank()) return@ReorderableColumn
+                    val ids = allEntries.map { it.instanceId }.toMutableList()
+                    ids.add(toIndex, ids.removeAt(fromIndex))
+                    actions.onReorderServices(ids)
+                },
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) { _, entry, isDragging ->
+                key(entry.instanceId) {
+                    ReorderableItem {
+                        ConfiguredServiceCardContent(
+                            entry = entry,
+                            isExpanded = uiState.expandedServiceId == entry.instanceId,
+                            onExpand = {
+                                actions.onExpandService(
+                                    if (uiState.expandedServiceId == entry.instanceId) null else entry.instanceId,
+                                )
+                            },
+                            onChangeApiKey = { apiKey -> actions.onChangeApiKey(entry.instanceId, apiKey) },
+                            onChangeBaseUrl = { baseUrl -> actions.onChangeBaseUrl(entry.instanceId, baseUrl) },
+                            onSelectModel = { modelId -> actions.onSelectModel(entry.instanceId, modelId) },
+                            onToggleUseCustomModel = { use -> actions.onToggleUseCustomModel(entry.instanceId, use) },
+                            onChangeCustomModelId = { id -> actions.onChangeCustomModelId(entry.instanceId, id) },
+                            onRemove = { actions.onRemoveService(entry.instanceId) },
+                            isDragging = isDragging,
+                            dragHandleModifier = if (allEntries.size >= 2 && searchQuery.isBlank()) Modifier.draggableHandle() else null,
+                            localAvailableModels = uiState.localAvailableModels,
+                            localImportedModels = uiState.localImportedModels,
+                            totalDeviceMemoryBytes = uiState.totalDeviceMemoryBytes,
+                            localFreeSpaceBytes = uiState.localFreeSpaceBytes,
+                            localDownloadingModelId = uiState.localDownloadingModelId,
+                            localDownloadProgress = uiState.localDownloadProgress,
+                            localDownloadError = uiState.localDownloadError,
+                            localImportingFileName = uiState.localImportingFileName,
+                            localImportProgress = uiState.localImportProgress,
+                            localImportError = uiState.localImportError,
+                            onDownloadLocalModel = actions.onDownloadLocalModel,
+                            onCancelLocalModelDownload = actions.onCancelLocalModelDownload,
+                            onImportLocalModel = actions.onImportLocalModel,
+                            onCancelLocalModelImport = actions.onCancelLocalModelImport,
+                            onDeleteLocalModel = actions.onDeleteLocalModel,
+                            onChangeModelContextTokens = actions.onChangeModelContextTokens,
+                            modelContextTokens = uiState.modelContextTokens,
+                            onOpenAppPermissionSettings = actions.onOpenAppPermissionSettings,
+                            onRecheckLocalNetworkPermission = {
+                                actions.onRecheckLocalNetworkPermission(entry.instanceId)
+                            },
+                        )
+                    }
+                }
+            }
+        }
+
+        FreeSettings(
+            showFallbackToggle = allEntries.isNotEmpty(),
+            isFreeFallbackEnabled = uiState.isFreeFallbackEnabled,
+            onToggleFreeFallback = actions.onToggleFreeFallback,
+            currentSponsors = uiState.currentSponsors,
+            pastSponsors = uiState.pastSponsors,
+        )
     }
 
-    if (uiState.availableServicesToAdd.isNotEmpty()) {
-        Spacer(Modifier.height(12.dp))
-        OutlinedButton(onClick = { showAddServiceSheet = true }, modifier = Modifier.handCursor()) {
-            Text(stringResource(Res.string.settings_add_service))
-        }
-    }
-
-    // Free tier card (always at bottom)
-    Spacer(Modifier.height(16.dp))
-    FreeSettings(
-        showFallbackToggle = entries.isNotEmpty(),
-        isFreeFallbackEnabled = uiState.isFreeFallbackEnabled,
-        onToggleFreeFallback = actions.onToggleFreeFallback,
-        currentSponsors = uiState.currentSponsors,
-        pastSponsors = uiState.pastSponsors,
-    )
-
-    // Add service bottom sheet
     if (showAddServiceSheet) {
         ModalBottomSheet(
             onDismissRequest = { showAddServiceSheet = false },
@@ -393,58 +370,55 @@ internal fun ServicesContent(uiState: SettingsUiState, actions: SettingsActions)
             val addServiceScrollState = rememberScrollState()
             Box {
                 Column(modifier = Modifier.verticalScroll(addServiceScrollState).padding(16.dp)) {
+                    Text(
+                        text = "Add provider",
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp),
+                    )
                     val services = uiState.availableServicesToAdd
-                    services.forEachIndexed { index, service ->
-                        val isFirst = index == 0
-                        val isLast = index == services.lastIndex
-                        val itemShape = RoundedCornerShape(
-                            topStart = if (isFirst) 12.dp else 0.dp,
-                            topEnd = if (isFirst) 12.dp else 0.dp,
-                            bottomStart = if (isLast) 12.dp else 0.dp,
-                            bottomEnd = if (isLast) 12.dp else 0.dp,
-                        )
-                        val isSpecial = service.isOnDevice || service is Service.OpenAICompatible || service is Service.AtlasCloud
-                        Surface(
-                            onClick = {
-                                actions.onAddService(service)
-                                showAddServiceSheet = false
-                            },
-                            modifier = Modifier.fillMaxWidth().handCursor(),
-                            shape = itemShape,
-                            color = MaterialTheme.colorScheme.surfaceContainer,
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                                verticalAlignment = Alignment.CenterVertically,
+                    SettingsCard(innerPadding = false) {
+                        services.forEachIndexed { index, service ->
+                            if (index > 0) {
+                                HorizontalDivider(
+                                    modifier = Modifier.padding(start = 58.dp),
+                                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.38f),
+                                )
+                            }
+                            Surface(
+                                onClick = {
+                                    actions.onAddService(service)
+                                    showAddServiceSheet = false
+                                },
+                                modifier = Modifier.fillMaxWidth().handCursor(),
+                                color = Color.Transparent,
                             ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(36.dp)
-                                        .then(
-                                            if (isSpecial) {
-                                                Modifier.background(
-                                                    color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                                                    shape = RoundedCornerShape(8.dp),
-                                                )
-                                            } else {
-                                                Modifier
-                                            },
-                                        ),
-                                    contentAlignment = Alignment.Center,
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
                                 ) {
-                                    Icon(
-                                        imageVector = vectorResource(service.icon),
-                                        contentDescription = null,
-                                        modifier = Modifier.size(20.dp),
-                                        tint = MaterialTheme.colorScheme.onBackground,
+                                    Box(
+                                        modifier = Modifier
+                                            .size(34.dp)
+                                            .background(
+                                                color = MaterialTheme.colorScheme.secondaryContainer,
+                                                shape = RoundedCornerShape(10.dp),
+                                            ),
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        Icon(
+                                            imageVector = vectorResource(service.icon),
+                                            contentDescription = null,
+                                            modifier = Modifier.size(19.dp),
+                                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                        )
+                                    }
+                                    Spacer(Modifier.width(12.dp))
+                                    Text(
+                                        text = service.displayName,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = MaterialTheme.colorScheme.onSurface,
                                     )
                                 }
-                                Spacer(Modifier.width(12.dp))
-                                Text(
-                                    text = service.displayName,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onBackground,
-                                )
                             }
                         }
                     }
