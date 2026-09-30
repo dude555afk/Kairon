@@ -2,6 +2,7 @@ package com.inspiredandroid.kai.ui.settings
 
 import androidx.compose.runtime.Immutable
 import com.inspiredandroid.kai.data.AccentPreset
+import com.inspiredandroid.kai.data.ChatAppearance
 import com.inspiredandroid.kai.data.ImportSection
 import com.inspiredandroid.kai.data.Service
 import com.inspiredandroid.kai.data.ThemeMode
@@ -27,6 +28,7 @@ data class SettingsActions(
     val onToggleThinkingHeader: (Boolean) -> Unit,
     val onChangeThemeMode: (ThemeMode) -> Unit,
     val onChangeAccentPreset: (AccentPreset) -> Unit,
+    val onChangeChatAppearance: (ChatAppearance) -> Unit,
     val onToggleMemory: (Boolean) -> Unit,
     val onDeleteMemory: (String) -> Unit,
     val onUpdateMemory: (String, String) -> Unit,
@@ -93,6 +95,7 @@ data class SettingsActions(
             onToggleThinkingHeader = {},
             onChangeThemeMode = {},
             onChangeAccentPreset = {},
+            onChangeChatAppearance = {},
             onToggleMemory = {},
             onDeleteMemory = {},
             onUpdateMemory = { _, _ -> },
