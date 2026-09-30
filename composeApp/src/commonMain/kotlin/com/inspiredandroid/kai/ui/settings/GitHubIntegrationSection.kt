@@ -42,6 +42,7 @@ internal fun GitHubIntegrationSection() {
     val scope = rememberCoroutineScope()
     val uriHandler = LocalUriHandler.current
     var clientId by remember { mutableStateOf("") }
+    var showAdvancedAuth by remember { mutableStateOf(false) }
     var challenge by remember { mutableStateOf<GitHubDeviceChallenge?>(null) }
     var session by remember { mutableStateOf<GitHubSession?>(null) }
     var repositories by remember { mutableStateOf<List<GitHubRepository>>(emptyList()) }
@@ -56,57 +57,88 @@ internal fun GitHubIntegrationSection() {
     var status by remember { mutableStateOf("") }
     SettingsCard {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-            Text("GitHub · Remote access", style = MaterialTheme.typography.titleMedium)
+            Text("GitHub", style = MaterialTheme.typography.titleMedium)
             Text(
-                "Connect through GitHub's official device flow. Register a GitHub OAuth App with Device Flow enabled and enter its public client ID. This preview keeps access only until you leave this screen.",
+                if (session == null) {
+                    "Connect Kairon to GitHub to browse repositories and use remote coding features."
+                } else {
+                    "Kairon is connected to GitHub for this session."
+                },
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             if (session == null) {
-                OutlinedTextField(
-                    value = clientId,
-                    onValueChange = { clientId = it.trim() },
-                    label = { Text("OAuth App client ID") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Button(enabled = !busy && clientId.isNotBlank(), onClick = {
-                    busy = true
-                    status = "Requesting authorization..."
-                    scope.launch {
-                        try {
-                            challenge = auth.start(clientId)
-                            status = "Enter the displayed code on GitHub, then return here."
-                        } catch (e: Exception) {
-                            status = e.message ?: "Could not start GitHub authorization"
-                        } finally {
-                            busy = false
-                        }
-                    }
-                }) { Text("Connect GitHub") }
-                challenge?.let { current ->
-                    Text("Code: ${current.userCode}", style = MaterialTheme.typography.titleLarge)
-                    OutlinedButton(onClick = { uriHandler.openUri(current.verificationUri) }) {
-                        Text("Open GitHub verification")
-                    }
-                    Button(enabled = !busy, onClick = {
-                        busy = true
-                        status = "Waiting for authorization..."
-                        scope.launch {
-                            try {
-                                val connected = auth.awaitAuthorization(clientId, current)
-                                val repos = github.repositories(connected.token)
-                                session = connected
-                                repositories = repos
-                                challenge = null
-                                status = "Connected. Showing up to 30 recently updated repositories."
-                            } catch (e: Exception) {
-                                status = e.message ?: "Authorization failed"
-                            } finally {
-                                busy = false
+                Button(
+                    enabled = !busy,
+                    onClick = {
+                        if (clientId.isBlank()) {
+                            showAdvancedAuth = true
+                            status = "This build needs a GitHub OAuth App client ID before it can connect."
+                        } else {
+                            busy = true
+                            status = "Opening GitHub..."
+                            scope.launch {
+                                try {
+                                    val current = auth.start(clientId)
+                                    challenge = current
+                                    uriHandler.openUri(current.verificationUri)
+                                    status = "GitHub opened. Enter code ${current.userCode}; Kairon will finish connecting automatically."
+                                    val connected = auth.awaitAuthorization(clientId, current)
+                                    val repos = github.repositories(connected.token)
+                                    session = connected
+                                    repositories = repos
+                                    challenge = null
+                                    status = "Connected. Showing up to 30 recently updated repositories."
+                                } catch (e: Exception) {
+                                    status = e.message ?: "Authorization failed"
+                                } finally {
+                                    busy = false
+                                }
                             }
                         }
-                    }) { Text("I've entered the code") }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(if (busy) "Connecting..." else "Connect GitHub")
+                }
+
+                challenge?.let { current ->
+                    Text(
+                        "Code: ${current.userCode}",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                    OutlinedButton(
+                        onClick = { uriHandler.openUri(current.verificationUri) },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text("Open GitHub again")
+                    }
+                }
+
+                OutlinedButton(
+                    onClick = { showAdvancedAuth = !showAdvancedAuth },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(if (showAdvancedAuth) "Hide advanced setup" else "Advanced connection setup")
+                }
+
+                if (showAdvancedAuth) {
+                    OutlinedTextField(
+                        value = clientId,
+                        onValueChange = { clientId = it.trim() },
+                        label = { Text("GitHub OAuth App client ID") },
+                        supportingText = {
+                            Text("Temporary self-hosted/dev fallback. A normal Kairon build should provide this automatically.")
+                        },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Text(
+                        "Current fallback uses GitHub device authorization. The target UX is browser OAuth: Connect GitHub → GitHub authorization page → return to Kairon.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             } else {
                 Text("Connected for this session", color = MaterialTheme.colorScheme.primary)
