@@ -187,22 +187,20 @@ fun QuestionInput(
         val activeService = availableServices.firstOrNull()
         val effortLevels = activeService?.let { supportedReasoningEfforts(it.serviceId, it.modelId) }.orEmpty()
 
-        // The entire composer is one floating surface, not a TextField with actions
-        // squeezed into its trailing slot. Provider selection sits immediately by +.
         val composerShape = RoundedCornerShape(appearance.composerRadiusDp.dp)
         val composerAlpha = if (appearance.surfaceStyle == ChatSurfaceStyle.SOLID) 1f else appearance.bubbleOpacity
         val composerVerticalPadding = if (appearance.compactSpacing) 4.dp else 8.dp
         Column(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = composerVerticalPadding)
+            modifier = Modifier
+                .padding(horizontal = 10.dp, vertical = composerVerticalPadding)
                 .fillMaxWidth()
-                .shadow(elevation = 2.dp, shape = composerShape)
                 .clip(composerShape)
-                .background(MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = composerAlpha))
+                .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = composerAlpha))
                 .then(
                     if (appearance.borderWidthDp > 0f) {
                         Modifier.border(
                             appearance.borderWidthDp.dp,
-                            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.60f),
+                            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.42f),
                             composerShape,
                         )
                     } else {
@@ -311,7 +309,7 @@ fun QuestionInput(
                         }
                         return@onPreviewKeyEvent false
                     },
-                shape = RoundedCornerShape(23.dp),
+                shape = RoundedCornerShape(appearance.composerRadiusDp.dp),
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = Color.Transparent,
                     unfocusedContainerColor = Color.Transparent,
@@ -334,13 +332,16 @@ fun QuestionInput(
                 ),
             )
             Row(
-                modifier = Modifier.fillMaxWidth().padding(start = 6.dp, end = 10.dp, bottom = 8.dp),
+                modifier = Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, bottom = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(2.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 if (filePickerLauncher != null || imagePickerLauncher != null) {
                     Box {
-                        IconButton(onClick = { attachmentMenuExpanded = true }) {
+                        IconButton(
+                            onClick = { attachmentMenuExpanded = true },
+                            modifier = Modifier.size(40.dp),
+                        ) {
                             Icon(
                                 Icons.Default.Add,
                                 contentDescription = stringResource(Res.string.kairon_add_attachment),
@@ -475,7 +476,7 @@ internal fun TrailingIcon(
     }
     Box(
         modifier = modifier
-            .size(42.dp)
+            .size(38.dp)
             .clip(CircleShape)
             .background(MaterialTheme.colorScheme.primary, CircleShape)
             .handCursor()
@@ -486,7 +487,7 @@ internal fun TrailingIcon(
     ) {
         Icon(
             vectorResource(icon),
-            modifier = Modifier.size(32.dp).then(pulseModifier),
+            modifier = Modifier.size(24.dp).then(pulseModifier),
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onPrimary,
         )
