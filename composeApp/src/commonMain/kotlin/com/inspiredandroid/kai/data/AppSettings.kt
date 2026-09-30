@@ -296,6 +296,37 @@ class AppSettings(internal val settings: Settings) {
         _accentPresetFlow.value = preset
     }
 
+    private val _chatAppearanceFlow = MutableStateFlow(loadChatAppearance())
+    val chatAppearanceFlow: StateFlow<ChatAppearance> = _chatAppearanceFlow
+
+    fun getChatAppearance(): ChatAppearance = _chatAppearanceFlow.value
+
+    fun setChatAppearance(appearance: ChatAppearance) {
+        val value = appearance.normalized()
+        settings.putString(KEY_CHAT_MESSAGE_LAYOUT, value.messageLayout.name)
+        settings.putString(KEY_CHAT_SURFACE_STYLE, value.surfaceStyle.name)
+        settings.putFloat(KEY_CHAT_BUBBLE_RADIUS, value.bubbleRadiusDp)
+        settings.putFloat(KEY_CHAT_BUBBLE_OPACITY, value.bubbleOpacity)
+        settings.putFloat(KEY_CHAT_BORDER_WIDTH, value.borderWidthDp)
+        settings.putBoolean(KEY_CHAT_COMPACT_SPACING, value.compactSpacing)
+        settings.putFloat(KEY_CHAT_COMPOSER_RADIUS, value.composerRadiusDp)
+        _chatAppearanceFlow.value = value
+    }
+
+    private fun loadChatAppearance(): ChatAppearance = ChatAppearance(
+        messageLayout = runCatching {
+            ChatMessageLayout.valueOf(settings.getString(KEY_CHAT_MESSAGE_LAYOUT, ChatMessageLayout.BUBBLES.name))
+        }.getOrDefault(ChatMessageLayout.BUBBLES),
+        surfaceStyle = runCatching {
+            ChatSurfaceStyle.valueOf(settings.getString(KEY_CHAT_SURFACE_STYLE, ChatSurfaceStyle.TRANSLUCENT.name))
+        }.getOrDefault(ChatSurfaceStyle.TRANSLUCENT),
+        bubbleRadiusDp = settings.getFloat(KEY_CHAT_BUBBLE_RADIUS, 18f),
+        bubbleOpacity = settings.getFloat(KEY_CHAT_BUBBLE_OPACITY, 0.88f),
+        borderWidthDp = settings.getFloat(KEY_CHAT_BORDER_WIDTH, 0.6f),
+        compactSpacing = settings.getBoolean(KEY_CHAT_COMPACT_SPACING, false),
+        composerRadiusDp = settings.getFloat(KEY_CHAT_COMPOSER_RADIUS, 24f),
+    ).normalized()
+
     // Dynamic UI
     fun isDynamicUiEnabled(): Boolean = settings.getBoolean(KEY_DYNAMIC_UI_ENABLED, true)
 
@@ -618,6 +649,13 @@ class AppSettings(internal val settings: Settings) {
         const val KEY_FREE_SERVICE_PRIMARY = "free_service_primary"
         const val KEY_SERVICES_MIGRATION_COMPLETE = "services_migration_complete_v1"
         const val KEY_UI_SCALE = "ui_scale"
+        const val KEY_CHAT_MESSAGE_LAYOUT = "chat_message_layout"
+        const val KEY_CHAT_SURFACE_STYLE = "chat_surface_style"
+        const val KEY_CHAT_BUBBLE_RADIUS = "chat_bubble_radius"
+        const val KEY_CHAT_BUBBLE_OPACITY = "chat_bubble_opacity"
+        const val KEY_CHAT_BORDER_WIDTH = "chat_border_width"
+        const val KEY_CHAT_COMPACT_SPACING = "chat_compact_spacing"
+        const val KEY_CHAT_COMPOSER_RADIUS = "chat_composer_radius"
         const val KEY_MCP_SERVERS = "mcp_servers"
         const val KEY_INSTANCE_MIGRATION_COMPLETE = "instance_migration_complete_v1"
         const val KEY_BASE_URL_V1_MIGRATION_COMPLETE = "base_url_v1_migration_complete"
