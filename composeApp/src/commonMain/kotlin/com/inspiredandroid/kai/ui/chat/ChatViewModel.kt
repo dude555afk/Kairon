@@ -68,6 +68,7 @@ class ChatViewModel(
         regenerate = ::regenerate,
         branchConversation = ::branchConversation,
         editPrompt = ::editPrompt,
+        editPromptOnly = ::editPromptOnly,
         rerunFromMessage = ::rerunFromMessage,
         cancel = ::cancel,
         selectService = ::selectService,
@@ -575,6 +576,22 @@ class ChatViewModel(
                 _state.update { it.copy(error = null, composerPrefill = null, isInteractiveMode = false) }
                 dataRepository.setInteractiveMode(false)
                 ask(null)
+            }
+        }
+    }
+
+    private fun editPromptOnly(messageId: String, content: String) {
+        if (_state.value.isLoading || content.isBlank()) return
+        viewModelScope.launch(backgroundDispatcher) {
+            if (dataRepository.branchConversation(messageId, content)) {
+                _state.update {
+                    it.copy(
+                        error = null,
+                        composerPrefill = null,
+                        isInteractiveMode = false,
+                    )
+                }
+                dataRepository.setInteractiveMode(false)
             }
         }
     }
