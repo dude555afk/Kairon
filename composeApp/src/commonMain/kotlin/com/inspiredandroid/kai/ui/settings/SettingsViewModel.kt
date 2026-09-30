@@ -6,6 +6,7 @@ import com.inspiredandroid.kai.DaemonController
 import com.inspiredandroid.kai.Platform
 import com.inspiredandroid.kai.currentPlatform
 import com.inspiredandroid.kai.data.AccentPreset
+import com.inspiredandroid.kai.data.ChatAppearance
 import com.inspiredandroid.kai.data.DataRepository
 import com.inspiredandroid.kai.data.ImportSection
 import com.inspiredandroid.kai.data.Service
@@ -86,6 +87,7 @@ class SettingsViewModel(
         isThinkingHeaderVisible = dataRepository.isThinkingHeaderVisible(),
         themeMode = dataRepository.getThemeMode(),
         accentPreset = dataRepository.getAccentPreset(),
+        chatAppearance = dataRepository.chatAppearance.value,
         isMemoryEnabled = dataRepository.isMemoryEnabled(),
         memories = dataRepository.getMemories().toImmutableList(),
         isSchedulingEnabled = dataRepository.isSchedulingEnabled(),
@@ -161,6 +163,7 @@ class SettingsViewModel(
         onToggleThinkingHeader = ::onToggleThinkingHeader,
         onChangeThemeMode = ::onChangeThemeMode,
         onChangeAccentPreset = ::onChangeAccentPreset,
+        onChangeChatAppearance = ::onChangeChatAppearance,
         onToggleMemory = ::onToggleMemory,
         onDeleteMemory = ::onDeleteMemory,
         onUpdateMemory = ::onUpdateMemory,
@@ -501,6 +504,12 @@ class SettingsViewModel(
     private fun onChangeAccentPreset(preset: AccentPreset) {
         dataRepository.setAccentPreset(preset)
         _state.update { it.copy(accentPreset = preset) }
+    }
+
+    private fun onChangeChatAppearance(appearance: ChatAppearance) {
+        val value = appearance.normalized()
+        dataRepository.setChatAppearance(value)
+        _state.update { it.copy(chatAppearance = value) }
     }
 
     private fun onToggleThinkingHeader(visible: Boolean) {
