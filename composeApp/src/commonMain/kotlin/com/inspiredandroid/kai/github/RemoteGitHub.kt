@@ -8,20 +8,20 @@ import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
-import io.ktor.http.contentType
 import io.ktor.http.ContentType
+import io.ktor.http.contentType
 import io.ktor.http.isSuccess
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
-import kotlinx.serialization.Serializable
 
 /**
  * Remote-only GitHub data source. Does not clone, execute commands, write local files, or retain
@@ -102,10 +102,12 @@ class RemoteGitHub {
             header("X-GitHub-Api-Version", "2022-11-28")
             header("User-Agent", "Kairon-Remote-Agent")
             contentType(ContentType.Application.Json)
-            setBody(buildJsonObject {
-                put("ref", ref)
-                put("inputs", buildJsonObject { inputs.forEach { (key, value) -> put(key, value) } })
-            }.toString())
+            setBody(
+                buildJsonObject {
+                    put("ref", ref)
+                    put("inputs", buildJsonObject { inputs.forEach { (key, value) -> put(key, value) } })
+                }.toString(),
+            )
         }
         if (!response.status.isSuccess()) throw GitHubRequestException(response.status.value)
     }
