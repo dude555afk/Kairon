@@ -2064,6 +2064,13 @@ class RemoteDataRepository(
         appSettings.setThemeMode(mode)
     }
 
+    override val chatAppearance: StateFlow<ChatAppearance>
+        get() = appSettings.chatAppearanceFlow
+
+    override fun setChatAppearance(appearance: ChatAppearance) {
+        appSettings.setChatAppearance(appearance)
+    }
+
     private var interactiveModeFlag = appSettings.getCurrentInteractiveMode()
 
     override fun setInteractiveMode(enabled: Boolean) {
