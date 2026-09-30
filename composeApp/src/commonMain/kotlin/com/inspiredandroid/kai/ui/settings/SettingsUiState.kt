@@ -2,6 +2,7 @@ package com.inspiredandroid.kai.ui.settings
 
 import androidx.compose.runtime.Immutable
 import com.inspiredandroid.kai.data.AccentPreset
+import com.inspiredandroid.kai.data.ChatAppearance
 import com.inspiredandroid.kai.data.EmailAccount
 import com.inspiredandroid.kai.data.EmailSyncState
 import com.inspiredandroid.kai.data.HeartbeatLogEntry
@@ -73,6 +74,7 @@ data class SettingsUiState(
     val isThinkingHeaderVisible: Boolean = true,
     val themeMode: ThemeMode = ThemeMode.System,
     val accentPreset: AccentPreset = AccentPreset.Default,
+    val chatAppearance: ChatAppearance = ChatAppearance(),
     val isMemoryEnabled: Boolean = true,
     val memories: ImmutableList<MemoryEntry> = persistentListOf(),
     val isSchedulingEnabled: Boolean = true,
