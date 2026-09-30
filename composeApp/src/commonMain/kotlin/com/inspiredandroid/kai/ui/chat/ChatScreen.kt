@@ -1126,9 +1126,17 @@ private fun ChatModeScreen(
                         ),
                 )
             }
-            // Three compact controls rather than the old full-width header.
+            val currentConversationTitle = filteredConversations
+                .firstOrNull { it.id == uiState.currentConversationId }
+                ?.title
+                ?.takeIf { it.isNotBlank() }
+                ?: "Kairon"
+            val currentModelLabel = uiState.availableServices.firstOrNull()?.modelId
+
             TopBar(
                 modifier = Modifier.align(Alignment.TopCenter),
+                title = currentConversationTitle,
+                modelLabel = currentModelLabel,
                 textToSpeech = textToSpeech,
                 isSpeechOutputEnabled = uiState.isSpeechOutputEnabled,
                 isSpeaking = uiState.isSpeaking,
