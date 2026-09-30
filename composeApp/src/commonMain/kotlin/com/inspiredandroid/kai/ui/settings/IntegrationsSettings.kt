@@ -31,9 +31,23 @@ internal fun IntegrationsContent(
     LaunchedEffect(Unit) { splinterlandsViewModel.onScreenVisible() }
 
     val uriHandler = LocalUriHandler.current
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Text(
+            text = "Connected apps",
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
         GitHubIntegrationSection()
+
         if (splinterlandsState.showSplinterlandsSection) {
+            Text(
+                text = "Other integrations",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
             SettingsCard {
                 SplinterlandsSection(
                     isEnabled = splinterlandsState.isSplinterlandsEnabled,
@@ -54,12 +68,18 @@ internal fun IntegrationsContent(
                 )
             }
         }
+
+        Text(
+            text = "More",
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
         SettingsCard {
             Column(modifier = Modifier.fillMaxWidth()) {
                 Text(
                     text = stringResource(Res.string.settings_request_integration_title),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onBackground,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
@@ -69,7 +89,7 @@ internal fun IntegrationsContent(
                 )
                 Spacer(Modifier.height(8.dp))
                 OutlinedButton(
-                    onClick = { uriHandler.openUri("https://github.com/SimonSchubert/Kai/issues/new?template=integration_request.yml") },
+                    onClick = { uriHandler.openUri("https://github.com/dude555afk/Kairon/issues/new") },
                     modifier = Modifier.handCursor(),
                 ) {
                     Text(stringResource(Res.string.settings_open_github_issue))
