@@ -28,8 +28,12 @@ jobs:
 
       - name: Replace repository working tree with Kelivo
         run: |
+          cp -a .github/workflows /tmp/kairon-workflows
           find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
           cp -a /tmp/kelivo/. .
+          rm -rf .github/workflows
+          mkdir -p .github
+          cp -a /tmp/kairon-workflows .github/workflows
 
       - name: Add Kairon migration manifest
         run: |
