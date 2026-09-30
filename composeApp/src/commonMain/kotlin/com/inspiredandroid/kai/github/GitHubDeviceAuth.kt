@@ -7,11 +7,11 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.http.Parameters
 import io.ktor.http.isSuccess
 import kotlinx.coroutines.delay
-import kotlin.time.Duration.Companion.seconds
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.json.contentOrNull
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * GitHub OAuth device authorization. No client secret, embedded browser credentials, or
@@ -66,9 +66,13 @@ class GitHubDeviceAuth {
                     }
                     return GitHubSession(token, result["scope"]?.jsonPrimitive?.contentOrNull.orEmpty())
                 }
+
                 "authorization_pending" -> Unit
+
                 "slow_down" -> interval += 5
+
                 "expired_token", "access_denied" -> error("GitHub authorization expired or was denied")
+
                 else -> error("GitHub authorization failed")
             }
         }
