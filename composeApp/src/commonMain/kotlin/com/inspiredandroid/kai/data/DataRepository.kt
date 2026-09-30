@@ -127,6 +127,10 @@ interface DataRepository {
     fun setAccentPreset(preset: AccentPreset)
     fun setThemeMode(mode: ThemeMode)
 
+    // Chat appearance
+    val chatAppearance: StateFlow<ChatAppearance>
+    fun setChatAppearance(appearance: ChatAppearance)
+
     // Interactive mode
     fun setInteractiveMode(enabled: Boolean)
     fun isInteractiveModeActive(): Boolean
