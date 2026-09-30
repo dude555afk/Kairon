@@ -902,18 +902,34 @@ private fun ChatModeScreen(
                                                             message = history.content,
                                                             attachments = history.attachments,
                                                             appearance = uiState.chatAppearance,
-                                                            onBranch = if (!uiState.isLoading) { { uiState.actions.branchConversation(history.id) } } else null,
-                                                            onEdit = if (!uiState.isLoading) { {
-                                                                editingMessageId = history.id
-                                                                editingMessageContent = history.content
-                                                            } } else null,
-                                                            onRetry = if (!uiState.isLoading) { { uiState.actions.rerunFromMessage(history.id, MessageRerunMode.RETRY) } } else null,
+                                                            onBranch = if (!uiState.isLoading) {
+                                                                { uiState.actions.branchConversation(history.id) }
+                                                            } else {
+                                                                null
+                                                            },
+                                                            onEdit = if (!uiState.isLoading) {
+                                                                {
+                                                                    editingMessageId = history.id
+                                                                    editingMessageContent = history.content
+                                                                }
+                                                            } else {
+                                                                null
+                                                            },
+                                                            onRetry = if (!uiState.isLoading) {
+                                                                { uiState.actions.rerunFromMessage(history.id, MessageRerunMode.RETRY) }
+                                                            } else {
+                                                                null
+                                                            },
                                                             onThinking = if (!uiState.isLoading && uiState.availableServices.firstOrNull()?.let { supportedReasoningEfforts(it.serviceId, it.modelId).size >= 2 } == true) {
                                                                 { uiState.actions.rerunFromMessage(history.id, MessageRerunMode.THINKING) }
-                                                            } else null,
+                                                            } else {
+                                                                null
+                                                            },
                                                             onWebSearch = if (!uiState.isLoading && uiState.webSearchAvailable) {
                                                                 { uiState.actions.rerunFromMessage(history.id, MessageRerunMode.WEB_SEARCH) }
-                                                            } else null,
+                                                            } else {
+                                                                null
+                                                            },
                                                         )
                                                     }
                                                 }
@@ -931,14 +947,26 @@ private fun ChatModeScreen(
                                                                 uiState.actions.setIsSpeaking(it, history.id)
                                                             },
                                                             onRegenerate = if (isLastAssistant) uiState.actions.regenerate else null,
-                                                            onFork = if (!uiState.isLoading) { { uiState.actions.branchConversation(history.id) } } else null,
-                                                            onRetry = if (!uiState.isLoading) { { uiState.actions.rerunFromMessage(history.id, MessageRerunMode.RETRY) } } else null,
+                                                            onFork = if (!uiState.isLoading) {
+                                                                { uiState.actions.branchConversation(history.id) }
+                                                            } else {
+                                                                null
+                                                            },
+                                                            onRetry = if (!uiState.isLoading) {
+                                                                { uiState.actions.rerunFromMessage(history.id, MessageRerunMode.RETRY) }
+                                                            } else {
+                                                                null
+                                                            },
                                                             onThinking = if (!uiState.isLoading && uiState.availableServices.firstOrNull()?.let { supportedReasoningEfforts(it.serviceId, it.modelId).size >= 2 } == true) {
                                                                 { uiState.actions.rerunFromMessage(history.id, MessageRerunMode.THINKING) }
-                                                            } else null,
+                                                            } else {
+                                                                null
+                                                            },
                                                             onWebSearch = if (!uiState.isLoading && uiState.webSearchAvailable) {
                                                                 { uiState.actions.rerunFromMessage(history.id, MessageRerunMode.WEB_SEARCH) }
-                                                            } else null,
+                                                            } else {
+                                                                null
+                                                            },
                                                             modelId = history.modelId,
                                                             isInteractive = isLastAssistant && !uiState.isLoading && frozen == null,
                                                             onUiCallback = { event, data ->
@@ -1200,7 +1228,10 @@ private fun BranchLinks(
             branches.forEachIndexed { index, branch ->
                 DropdownMenuItem(
                     text = { Text("${index + 1}. ${branch.title}") },
-                    onClick = { expanded = false; onOpen(branch.id) },
+                    onClick = {
+                        expanded = false
+                        onOpen(branch.id)
+                    },
                 )
             }
         }

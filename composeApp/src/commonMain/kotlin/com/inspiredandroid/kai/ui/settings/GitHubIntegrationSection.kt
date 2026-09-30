@@ -5,11 +5,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Button
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -21,14 +21,14 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import com.inspiredandroid.kai.github.GitHubDeviceAuth
 import com.inspiredandroid.kai.github.GitHubDeviceChallenge
-import com.inspiredandroid.kai.github.GitHubSession
-import com.inspiredandroid.kai.github.RemoteGitHub
-import com.inspiredandroid.kai.github.GitHubRepository
 import com.inspiredandroid.kai.github.GitHubEntry
+import com.inspiredandroid.kai.github.GitHubRepository
+import com.inspiredandroid.kai.github.GitHubSession
 import com.inspiredandroid.kai.github.GitHubWorkflowRun
+import com.inspiredandroid.kai.github.RemoteGitHub
+import kotlinx.coroutines.launch
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
-import kotlinx.coroutines.launch
 
 /**
  * Explicit device authorization; token remains in this composition's memory and is discarded
@@ -79,7 +79,9 @@ internal fun GitHubIntegrationSection() {
                             status = "Enter the displayed code on GitHub, then return here."
                         } catch (e: Exception) {
                             status = e.message ?: "Could not start GitHub authorization"
-                        } finally { busy = false }
+                        } finally {
+                            busy = false
+                        }
                     }
                 }) { Text("Connect GitHub") }
                 challenge?.let { current ->
@@ -100,7 +102,9 @@ internal fun GitHubIntegrationSection() {
                                 status = "Connected. Showing up to 30 recently updated repositories."
                             } catch (e: Exception) {
                                 status = e.message ?: "Authorization failed"
-                            } finally { busy = false }
+                            } finally {
+                                busy = false
+                            }
                         }
                     }) { Text("I've entered the code") }
                 }
@@ -120,32 +124,39 @@ internal fun GitHubIntegrationSection() {
                                     status = "Opened ${repo.fullName}"
                                 } catch (e: Exception) {
                                     status = e.message ?: "Unable to open repository"
-                                } finally { busy = false }
+                                } finally {
+                                    busy = false
+                                }
                             }
                         }, modifier = Modifier.fillMaxWidth()) { Text(repo.fullName) }
                     }
                 } else {
                     val repo = selectedRepository!!
                     Text(repo.fullName, style = MaterialTheme.typography.titleMedium)
-                    Text("Branch: ${repo.defaultBranch} · Path: /${path}", style = MaterialTheme.typography.bodySmall)
+                    Text("Branch: ${repo.defaultBranch} · Path: /$path", style = MaterialTheme.typography.bodySmall)
                     OutlinedButton(enabled = !busy, onClick = {
                         selectedRepository = null
                         entries = emptyList()
                         preview = ""
                         runs = emptyList()
                     }) { Text("Back to repositories") }
-                    if (path.isNotEmpty()) OutlinedButton(enabled = !busy, onClick = {
-                        val parent = path.substringBeforeLast('/', "")
-                        busy = true
-                        scope.launch {
-                            try {
-                                entries = github.directory(session!!.token, repo.fullName, parent, repo.defaultBranch)
-                                path = parent
-                                preview = ""
-                            } catch (e: Exception) { status = e.message ?: "Cannot open parent" }
-                            finally { busy = false }
-                        }
-                    }) { Text("Up one folder") }
+                    if (path.isNotEmpty()) {
+                        OutlinedButton(enabled = !busy, onClick = {
+                            val parent = path.substringBeforeLast('/', "")
+                            busy = true
+                            scope.launch {
+                                try {
+                                    entries = github.directory(session!!.token, repo.fullName, parent, repo.defaultBranch)
+                                    path = parent
+                                    preview = ""
+                                } catch (e: Exception) {
+                                    status = e.message ?: "Cannot open parent"
+                                } finally {
+                                    busy = false
+                                }
+                            }
+                        }) { Text("Up one folder") }
+                    }
                     entries.forEach { entry ->
                         OutlinedButton(enabled = !busy, onClick = {
                             busy = true
@@ -160,11 +171,16 @@ internal fun GitHubIntegrationSection() {
                                         preview = if (file.encoding == "base64") {
                                             Base64.decode(file.encodedContent.filterNot(Char::isWhitespace)).decodeToString()
                                                 .take(12000)
-                                        } else "This file cannot be previewed."
+                                        } else {
+                                            "This file cannot be previewed."
+                                        }
                                         status = "Preview: ${entry.path} (read only)"
                                     }
-                                } catch (e: Exception) { status = e.message ?: "Cannot open file" }
-                                finally { busy = false }
+                                } catch (e: Exception) {
+                                    status = e.message ?: "Cannot open file"
+                                } finally {
+                                    busy = false
+                                }
                             }
                         }, modifier = Modifier.fillMaxWidth()) {
                             Text("${if (entry.type == "dir") "📁" else "📄"} ${entry.name}")
@@ -181,8 +197,11 @@ internal fun GitHubIntegrationSection() {
                             try {
                                 runs = github.workflowRuns(session!!.token, repo.fullName, repo.defaultBranch)
                                 status = "Build runs refreshed"
-                            } catch (e: Exception) { status = e.message ?: "Cannot load build runs" }
-                            finally { busy = false }
+                            } catch (e: Exception) {
+                                status = e.message ?: "Cannot load build runs"
+                            } finally {
+                                busy = false
+                            }
                         }
                     }) { Text("Refresh runs") }
                     runs.take(5).forEach { run ->
@@ -225,7 +244,9 @@ internal fun GitHubIntegrationSection() {
                                     status = "Coding task dispatched. Refresh Actions and review the proposed pull request."
                                 } catch (e: Exception) {
                                     status = e.message ?: "Agent dispatch failed"
-                                } finally { busy = false }
+                                } finally {
+                                    busy = false
+                                }
                             }
                         }) { Text("Run autonomous coding task") }
                     }
@@ -241,8 +262,11 @@ internal fun GitHubIntegrationSection() {
                                         "feature/remote-github-agent",
                                     )
                                     status = "Preview build requested. Refresh runs to see it."
-                                } catch (e: Exception) { status = e.message ?: "Build dispatch failed" }
-                                finally { busy = false }
+                                } catch (e: Exception) {
+                                    status = e.message ?: "Build dispatch failed"
+                                } finally {
+                                    busy = false
+                                }
                             }
                         }) { Text("Build preview APK remotely") }
                     }

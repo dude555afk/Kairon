@@ -470,7 +470,7 @@ class ConversationSerializationTest {
         assertEquals("parent", decoded.parentConversationId)
         assertEquals("original-message", decoded.branchPointMessageId)
         val legacy = json.decodeFromString<Conversation>(
-            """{"id":"legacy","messages":[],"createdAt":1,"updatedAt":2}"""
+            """{"id":"legacy","messages":[],"createdAt":1,"updatedAt":2}""",
         )
         assertNull(legacy.parentConversationId)
         assertNull(legacy.branchPointMessageId)

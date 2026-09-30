@@ -34,15 +34,35 @@ internal fun MessageActionMenu(
         IconButton(onClick = { expanded = true }) {
             Icon(Icons.Default.MoreVert, contentDescription = "Message actions")
         }
-        DropdownMenu(expanded = expanded || externalOpen, onDismissRequest = { expanded = false; onExternalDismiss() }) {
-            funActionItem("Branch in new chat", onBranch) { expanded = false; onExternalDismiss() }
-            if (onEdit != null) funActionItem("Edit prompt", onEdit) { expanded = false; onExternalDismiss() }
+        DropdownMenu(expanded = expanded || externalOpen, onDismissRequest = {
+            expanded = false
+            onExternalDismiss()
+        }) {
+            funActionItem("Branch in new chat", onBranch) {
+                expanded = false
+                onExternalDismiss()
+            }
+            if (onEdit != null) {
+                funActionItem("Edit prompt", onEdit) {
+                    expanded = false
+                    onExternalDismiss()
+                }
+            }
             modelId?.takeIf { it.isNotBlank() }?.let { id ->
                 DropdownMenuItem(text = { Text("Used $id") }, onClick = {}, enabled = false)
             }
-            funActionItem("Retry", onRetry) { expanded = false; onExternalDismiss() }
-            funActionItem("Use Thinking", onThinking) { expanded = false; onExternalDismiss() }
-            funActionItem("Search the web", onWebSearch) { expanded = false; onExternalDismiss() }
+            funActionItem("Retry", onRetry) {
+                expanded = false
+                onExternalDismiss()
+            }
+            funActionItem("Use Thinking", onThinking) {
+                expanded = false
+                onExternalDismiss()
+            }
+            funActionItem("Search the web", onWebSearch) {
+                expanded = false
+                onExternalDismiss()
+            }
         }
     }
 }

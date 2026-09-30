@@ -21,8 +21,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.unit.dp
 import com.inspiredandroid.kai.data.AccentPreset
 import com.inspiredandroid.kai.data.ChatAppearance
 import com.inspiredandroid.kai.data.ChatMessageLayout
@@ -328,7 +328,6 @@ private fun UiScaleSection(
         )
     }
 }
-
 
 @Composable
 private fun ChatAppearanceSection(

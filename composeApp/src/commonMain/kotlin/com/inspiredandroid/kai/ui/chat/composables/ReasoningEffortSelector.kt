@@ -70,9 +70,11 @@ internal fun ReasoningEffortSelector(
                         valueRange = 0f..levels.lastIndex.toFloat(),
                         steps = (levels.size - 2).coerceAtLeast(0),
                     )
-                    Text(levels.joinToString(" · ") { it.name.lowercase().replaceFirstChar { c -> c.uppercaseChar() } },
+                    Text(
+                        levels.joinToString(" · ") { it.name.lowercase().replaceFirstChar { c -> c.uppercaseChar() } },
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 } else {
                     Text(
                         "This model/provider has no verified effort control. Its normal reasoning behavior remains available, but Kairon will not send an unsupported effort setting.",

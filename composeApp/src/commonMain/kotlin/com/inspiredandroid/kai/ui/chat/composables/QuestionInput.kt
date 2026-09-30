@@ -58,7 +58,6 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
@@ -66,6 +65,7 @@ import androidx.compose.ui.input.key.isShiftPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.text.TextRange
@@ -74,13 +74,13 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import com.inspiredandroid.kai.Platform
 import com.inspiredandroid.kai.currentPlatform
-import com.inspiredandroid.kai.decodeToImageBitmap
 import com.inspiredandroid.kai.data.ChatAppearance
 import com.inspiredandroid.kai.data.ChatSurfaceStyle
 import com.inspiredandroid.kai.data.ReasoningEffort
 import com.inspiredandroid.kai.data.ServiceEntry
 import com.inspiredandroid.kai.data.imageExtensions
 import com.inspiredandroid.kai.data.supportedReasoningEfforts
+import com.inspiredandroid.kai.decodeToImageBitmap
 import com.inspiredandroid.kai.skills.SkillManifest
 import com.inspiredandroid.kai.ui.handCursor
 import io.github.vinceglb.filekit.PlatformFile
@@ -211,72 +211,72 @@ fun QuestionInput(
                 )
                 .animateContentSize(animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing)),
         ) {
-        if (files.isNotEmpty()) {
-            FlowRow(
-                modifier = Modifier
-                    .padding(start = 16.dp, end = 16.dp, top = 12.dp)
-                    .fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                for (file in files) {
-                    if (file.extension.lowercase() in imageExtensions) {
-                        val thumbnail by produceState<ImageBitmap?>(null, file) {
-                            value = try {
-                                decodeToImageBitmap(file.readBytes())
-                            } catch (_: Exception) {
-                                null
-                            }
-                        }
-                        Box(
-                            modifier = Modifier.size(76.dp)
-                                .clip(RoundedCornerShape(14.dp))
-                                .background(MaterialTheme.colorScheme.surfaceContainerHighest),
-                        ) {
-                            if (thumbnail != null) {
-                                Image(
-                                    bitmap = thumbnail!!,
-                                    contentDescription = file.name,
-                                    modifier = Modifier.size(76.dp),
-                                    contentScale = ContentScale.Crop,
-                                )
-                            } else {
-                                Icon(
-                                    painter = painterResource(Res.drawable.ic_image),
-                                    contentDescription = file.name,
-                                    modifier = Modifier.align(Alignment.Center),
-                                )
-                            }
-                            IconButton(
-                                onClick = { removeFile(file) },
-                                modifier = Modifier.align(Alignment.TopEnd).size(28.dp)
-                                    .background(MaterialTheme.colorScheme.surface, CircleShape),
-                            ) {
-                                Icon(Icons.Default.Close, contentDescription = "Remove ${file.name}", modifier = Modifier.size(16.dp))
-                            }
-                        }
-                    } else {
-                        SuggestionChip(
-                            modifier = Modifier.handCursor(),
-                            onClick = { removeFile(file) },
-                            icon = {
-                                Icon(
-                                    modifier = Modifier.size(16.dp),
-                                    painter = painterResource(Res.drawable.ic_file),
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onBackground,
-                                )
-                            },
-                            label = {
-                                DisableSelection {
-                                    Text(truncateFileName(file.name) + " ×")
+            if (files.isNotEmpty()) {
+                FlowRow(
+                    modifier = Modifier
+                        .padding(start = 16.dp, end = 16.dp, top = 12.dp)
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    for (file in files) {
+                        if (file.extension.lowercase() in imageExtensions) {
+                            val thumbnail by produceState<ImageBitmap?>(null, file) {
+                                value = try {
+                                    decodeToImageBitmap(file.readBytes())
+                                } catch (_: Exception) {
+                                    null
                                 }
-                            },
-                        )
+                            }
+                            Box(
+                                modifier = Modifier.size(76.dp)
+                                    .clip(RoundedCornerShape(14.dp))
+                                    .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+                            ) {
+                                if (thumbnail != null) {
+                                    Image(
+                                        bitmap = thumbnail!!,
+                                        contentDescription = file.name,
+                                        modifier = Modifier.size(76.dp),
+                                        contentScale = ContentScale.Crop,
+                                    )
+                                } else {
+                                    Icon(
+                                        painter = painterResource(Res.drawable.ic_image),
+                                        contentDescription = file.name,
+                                        modifier = Modifier.align(Alignment.Center),
+                                    )
+                                }
+                                IconButton(
+                                    onClick = { removeFile(file) },
+                                    modifier = Modifier.align(Alignment.TopEnd).size(28.dp)
+                                        .background(MaterialTheme.colorScheme.surface, CircleShape),
+                                ) {
+                                    Icon(Icons.Default.Close, contentDescription = "Remove ${file.name}", modifier = Modifier.size(16.dp))
+                                }
+                            }
+                        } else {
+                            SuggestionChip(
+                                modifier = Modifier.handCursor(),
+                                onClick = { removeFile(file) },
+                                icon = {
+                                    Icon(
+                                        modifier = Modifier.size(16.dp),
+                                        painter = painterResource(Res.drawable.ic_file),
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onBackground,
+                                    )
+                                },
+                                label = {
+                                    DisableSelection {
+                                        Text(truncateFileName(file.name) + " ×")
+                                    }
+                                },
+                            )
+                        }
                     }
                 }
             }
-        }
 
             TextField(
                 value = textState,

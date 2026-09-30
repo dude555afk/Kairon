@@ -325,7 +325,9 @@ class FakeDataRepository : DataRepository {
         if (index < 0) return false
         val target = source[index]
         if (editedContent != null && (target.role != History.Role.USER || editedContent.isBlank())) return false
-        val prefix = if (editedContent == null) source.take(index + 1) else {
+        val prefix = if (editedContent == null) {
+            source.take(index + 1)
+        } else {
             source.take(index) + History(
                 role = History.Role.USER,
                 content = editedContent.trim(),
@@ -334,25 +336,27 @@ class FakeDataRepository : DataRepository {
         }
         val parent = currentConversationId.value ?: "unsaved-parent"
         val id = "test-branch-${++nextBranchId}"
-        savedConversations.update { it + Conversation(
-            id = id,
-            messages = prefix.map { h ->
-                Conversation.Message(
-                    id = h.id,
-                    role = when (h.role) {
-                        History.Role.USER -> "user"
-                        History.Role.TOOL, History.Role.TOOL_EXECUTING -> "tool"
-                        History.Role.ASSISTANT -> "assistant"
-                    },
-                    content = h.content,
-                    attachments = h.attachments,
-                )
-            },
-            createdAt = 0L,
-            updatedAt = 0L,
-            parentConversationId = parent,
-            branchPointMessageId = messageId,
-        ) }
+        savedConversations.update {
+            it + Conversation(
+                id = id,
+                messages = prefix.map { h ->
+                    Conversation.Message(
+                        id = h.id,
+                        role = when (h.role) {
+                            History.Role.USER -> "user"
+                            History.Role.TOOL, History.Role.TOOL_EXECUTING -> "tool"
+                            History.Role.ASSISTANT -> "assistant"
+                        },
+                        content = h.content,
+                        attachments = h.attachments,
+                    )
+                },
+                createdAt = 0L,
+                updatedAt = 0L,
+                parentConversationId = parent,
+                branchPointMessageId = messageId,
+            )
+        }
         currentConversationId.value = id
         chatHistory.value = prefix
         return true

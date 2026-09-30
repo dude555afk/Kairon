@@ -203,11 +203,15 @@ internal fun ChatHistorySheet(
                                     .clip(shape)
                                     .background(animatedRowColor)
                                     .then(
-                                        if (conversation.isInteractive) Modifier.border(
-                                            0.6.dp,
-                                            MaterialTheme.colorScheme.primary.copy(alpha = 0.55f),
-                                            shape,
-                                        ) else Modifier,
+                                        if (conversation.isInteractive) {
+                                            Modifier.border(
+                                                0.6.dp,
+                                                MaterialTheme.colorScheme.primary.copy(alpha = 0.55f),
+                                                shape,
+                                            )
+                                        } else {
+                                            Modifier
+                                        },
                                     )
                                 Row(
                                     modifier = borderModifier

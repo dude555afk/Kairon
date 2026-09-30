@@ -528,7 +528,9 @@ class ChatViewModel(
         if (mode == MessageRerunMode.THINKING && allowed.size < 2) return
         if (mode == MessageRerunMode.WEB_SEARCH &&
             dataRepository.getToolDefinitions().none { it.id == "web_search" && it.isEnabled }
-        ) return
+        ) {
+            return
+        }
 
         viewModelScope.launch(backgroundDispatcher) {
             if (!dataRepository.branchConversation(question.id)) return@launch
@@ -547,6 +549,7 @@ class ChatViewModel(
             dataRepository.setInteractiveMode(false)
             when (mode) {
                 MessageRerunMode.RETRY, MessageRerunMode.THINKING -> ask(null)
+
                 MessageRerunMode.WEB_SEARCH -> {
                     // Actually run the web tool instead of hoping the model decides to call it.
                     val result = WebSearchTool.execute(mapOf("query" to question.content.take(400))) as? Map<*, *>
