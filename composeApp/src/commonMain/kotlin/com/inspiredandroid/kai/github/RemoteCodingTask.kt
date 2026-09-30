@@ -60,6 +60,5 @@ enum class RemoteApprovalKind {
 }
 
 /** Check both intent and a fixed commit SHA to reject approvals against a moving branch. */
-fun RemoteApproval.isValidFor(kind: RemoteApprovalKind, currentHeadSha: String): Boolean =
-    this.kind == kind && currentHeadSha.isNotBlank() && expectedBranchHeadSha == currentHeadSha &&
-        id.isNotBlank() && filesChanged.isNotEmpty()
+fun RemoteApproval.isValidFor(kind: RemoteApprovalKind, currentHeadSha: String): Boolean = this.kind == kind && currentHeadSha.isNotBlank() && expectedBranchHeadSha == currentHeadSha &&
+    id.isNotBlank() && filesChanged.isNotEmpty()
