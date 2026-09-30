@@ -4,6 +4,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -36,6 +37,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import com.inspiredandroid.kai.data.Attachment
+import com.inspiredandroid.kai.data.ChatAppearance
+import com.inspiredandroid.kai.data.ChatMessageLayout
+import com.inspiredandroid.kai.data.ChatSurfaceStyle
 import com.inspiredandroid.kai.decodeToImageBitmap
 import com.inspiredandroid.kai.ui.components.LocalShowFullScreenImage
 import com.inspiredandroid.kai.ui.handCursor
@@ -52,6 +56,7 @@ import kotlin.io.encoding.ExperimentalEncodingApi
 internal fun UserMessage(
     message: String,
     attachments: ImmutableList<Attachment> = persistentListOf(),
+    appearance: ChatAppearance = ChatAppearance(),
     onBranch: (() -> Unit)? = null,
     onEdit: (() -> Unit)? = null,
     onRetry: (() -> Unit)? = null,
@@ -60,17 +65,33 @@ internal fun UserMessage(
 ) {
     val showFullScreen = LocalShowFullScreenImage.current
     var actionMenuOpen by remember { mutableStateOf(false) }
+    val bubbleShape = RoundedCornerShape(appearance.bubbleRadiusDp.dp)
+    val bubbleAlpha = if (appearance.surfaceStyle == ChatSurfaceStyle.SOLID) 1f else appearance.bubbleOpacity
+    val verticalSpacing = if (appearance.compactSpacing) 4.dp else 8.dp
+    val bubbleModifier = if (appearance.messageLayout == ChatMessageLayout.BUBBLES) {
+        Modifier
+            .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = bubbleAlpha), bubbleShape)
+            .then(
+                if (appearance.borderWidthDp > 0f) {
+                    Modifier.border(
+                        appearance.borderWidthDp.dp,
+                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f),
+                        bubbleShape,
+                    )
+                } else {
+                    Modifier
+                },
+            )
+    } else {
+        Modifier
+    }
+
     Column(modifier = Modifier.fillMaxWidth()) {
     SelectionContainer {
-        Row(Modifier.padding(horizontal = 16.dp, vertical = 8.dp).combinedClickable(onClick = {}, onLongClick = { actionMenuOpen = true })) {
+        Row(Modifier.padding(horizontal = 16.dp, vertical = verticalSpacing).combinedClickable(onClick = {}, onLongClick = { actionMenuOpen = true })) {
             Spacer(Modifier.weight(1f))
             Column(
-                modifier = Modifier
-                    .background(
-                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.66f),
-                        RoundedCornerShape(17.dp),
-                    )
-                    .padding(horizontal = 14.dp, vertical = 11.dp),
+                modifier = bubbleModifier.padding(horizontal = 14.dp, vertical = 11.dp),
                 horizontalAlignment = Alignment.End,
             ) {
                 val images = attachments.filter { it.mimeType.startsWith("image/") }
@@ -124,7 +145,7 @@ internal fun UserMessage(
                 if (message.isNotEmpty()) {
                     Text(
                         text = message,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        color = if (appearance.messageLayout == ChatMessageLayout.BUBBLES) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onBackground,
                     )
                 }
             }
