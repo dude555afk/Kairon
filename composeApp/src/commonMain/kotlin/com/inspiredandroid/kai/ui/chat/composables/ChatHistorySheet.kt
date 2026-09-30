@@ -2,7 +2,6 @@ package com.inspiredandroid.kai.ui.chat.composables
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,12 +22,15 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PushPin
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -40,6 +42,7 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -63,11 +66,7 @@ import kai.composeapp.generated.resources.Res
 import kai.composeapp.generated.resources.chat_history_delete_content_description
 import kai.composeapp.generated.resources.chat_history_empty
 import kai.composeapp.generated.resources.chat_history_heartbeat_label
-import kai.composeapp.generated.resources.chat_history_title
-import kai.composeapp.generated.resources.ic_add
-import kai.composeapp.generated.resources.ic_history
 import kai.composeapp.generated.resources.kairon_conversation_options
-import kai.composeapp.generated.resources.new_chat_content_description
 import kai.composeapp.generated.resources.snackbar_conversation_deleted
 import kai.composeapp.generated.resources.snackbar_undo
 import kotlinx.collections.immutable.ImmutableList
@@ -76,14 +75,11 @@ import kotlinx.datetime.format.DateTimeComponents.Companion.Format
 import kotlinx.datetime.format.MonthNames
 import kotlinx.datetime.format.char
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.resources.vectorResource
 
 private val dateFormat = Format {
     day()
     char(' ')
     monthName(MonthNames.ENGLISH_ABBREVIATED)
-    char(' ')
-    year()
 }
 
 @Composable
@@ -96,31 +92,31 @@ internal fun ChatHistorySheet(
     onNavigateToSettings: () -> Unit = {},
     onConversationSelected: () -> Unit = {},
 ) {
-    // Material 3 owns drag tracking, dismissal, scrim and drawer animation.
-    // This composable supplies content only, so the chat shell controls gestures.
     ModalDrawerSheet(
-        // About 30% narrower than the old 88%-width sheet. Inset the entire
-        // surface to evoke Zen's detached vertical-tabs panel.
-        modifier = Modifier.fillMaxWidth(0.62f).widthIn(max = 252.dp)
-            .padding(start = 10.dp, top = 12.dp, bottom = 12.dp)
+        modifier = Modifier
+            .fillMaxWidth(0.78f)
+            .widthIn(max = 360.dp)
             .fillMaxHeight(),
-        drawerShape = RoundedCornerShape(18.dp),
-        drawerContainerColor = MaterialTheme.colorScheme.surface,
+        drawerShape = RoundedCornerShape(topEnd = 24.dp, bottomEnd = 24.dp),
+        drawerContainerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
     ) {
         val snackbarHostState = remember { SnackbarHostState() }
         var renamingId by remember { mutableStateOf<String?>(null) }
         var renameText by remember { mutableStateOf("") }
         var searchText by remember { mutableStateOf("") }
+
         val matchingConversations = remember(conversations, searchText) {
             val query = searchText.trim()
             if (query.isEmpty()) {
                 conversations
             } else {
                 conversations.filter {
-                    it.title.contains(query, ignoreCase = true) || it.searchContent.any { message -> message.contains(query, ignoreCase = true) }
+                    it.title.contains(query, ignoreCase = true) ||
+                        it.searchContent.any { message -> message.contains(query, ignoreCase = true) }
                 }
             }
         }
+
         val deletedMessage = stringResource(Res.string.snackbar_conversation_deleted)
         val undoLabel = stringResource(Res.string.snackbar_undo)
 
@@ -132,23 +128,27 @@ internal fun ChatHistorySheet(
                 actionLabel = undoLabel,
                 duration = SnackbarDuration.Short,
             )
-            if (result == SnackbarResult.ActionPerformed) {
-                actions.undoDeleteConversation()
-            }
+            if (result == SnackbarResult.ActionPerformed) actions.undoDeleteConversation()
         }
 
-        Box(modifier = Modifier.fillMaxSize()) {
-            Column(modifier = Modifier.fillMaxSize().padding(top = 12.dp)) {
+        Box(Modifier.fillMaxSize()) {
+            Column(Modifier.fillMaxSize()) {
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(start = 12.dp, end = 4.dp),
+                    modifier = Modifier.fillMaxWidth().padding(start = 18.dp, top = 18.dp, end = 10.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(
-                        text = stringResource(Res.string.chat_history_title),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        modifier = Modifier.weight(1f),
-                    )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Kairon",
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                        Text(
+                            text = "Chats",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                     IconButton(
                         onClick = {
                             actions.startNewChat()
@@ -156,140 +156,122 @@ internal fun ChatHistorySheet(
                         },
                     ) {
                         Icon(
-                            imageVector = vectorResource(Res.drawable.ic_add),
-                            contentDescription = stringResource(Res.string.new_chat_content_description),
-                            tint = MaterialTheme.colorScheme.onBackground,
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "New chat",
+                            tint = MaterialTheme.colorScheme.onSurface,
                         )
                     }
                 }
+
                 OutlinedTextField(
                     value = searchText,
                     onValueChange = { searchText = it },
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp),
                     singleLine = true,
                     placeholder = { Text("Search chats") },
-                    shape = RoundedCornerShape(12.dp),
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                    shape = RoundedCornerShape(14.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
                         unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                        focusedBorderColor = Color.Transparent,
+                        unfocusedBorderColor = Color.Transparent,
                     ),
                 )
-                Spacer(Modifier.height(8.dp))
 
                 if (matchingConversations.isEmpty()) {
                     Text(
                         text = if (searchText.isNotBlank()) "No matching chats" else stringResource(Res.string.chat_history_empty),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 24.dp),
+                        modifier = Modifier.padding(horizontal = 18.dp, vertical = 20.dp),
                     )
                 } else {
-                    val historyListState = rememberLazyListState()
+                    val listState = rememberLazyListState()
                     Box(modifier = Modifier.weight(1f)) {
                         LazyColumn(
                             modifier = Modifier.fillMaxSize(),
-                            state = historyListState,
-                            contentPadding = PaddingValues(horizontal = 8.dp),
+                            state = listState,
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
                             verticalArrangement = Arrangement.spacedBy(2.dp),
                         ) {
                             items(matchingConversations, key = { it.id }) { conversation ->
                                 val isActive = conversation.id == currentConversationId
-                                val animatedRowColor by animateColorAsState(
-                                    if (isActive) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.50f) else Color.Transparent,
-                                    label = "historySelection",
+                                val background by animateColorAsState(
+                                    if (isActive) {
+                                        MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.72f)
+                                    } else {
+                                        Color.Transparent
+                                    },
+                                    label = "conversationSelection",
                                 )
-                                val shape = RoundedCornerShape(12.dp)
-                                val borderModifier = Modifier
-                                    .clip(shape)
-                                    .background(animatedRowColor)
-                                    .then(
-                                        if (conversation.isInteractive) {
-                                            Modifier.border(
-                                                0.6.dp,
-                                                MaterialTheme.colorScheme.primary.copy(alpha = 0.55f),
-                                                shape,
-                                            )
-                                        } else {
-                                            Modifier
-                                        },
-                                    )
+
                                 Row(
-                                    modifier = borderModifier
+                                    modifier = Modifier
                                         .fillMaxWidth()
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(background)
                                         .handCursor()
                                         .clickable {
                                             onConversationSelected()
                                             actions.loadConversation(conversation.id)
                                             onDismiss()
                                         }
-                                        .padding(vertical = 8.dp, horizontal = 8.dp),
+                                        .padding(start = 12.dp, top = 10.dp, bottom = 10.dp, end = 2.dp),
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.SpaceBetween,
                                 ) {
                                     Column(modifier = Modifier.weight(1f)) {
-                                        if (conversation.isHeartbeat) {
-                                            Row(
-                                                modifier = Modifier
-                                                    .padding(bottom = 4.dp)
-                                                    .background(
-                                                        color = MaterialTheme.colorScheme.tertiaryContainer,
-                                                        shape = RoundedCornerShape(4.dp),
-                                                    )
-                                                    .padding(horizontal = 6.dp, vertical = 2.dp),
-                                                verticalAlignment = Alignment.CenterVertically,
-                                            ) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                        ) {
+                                            if (conversation.isPinned) {
                                                 Icon(
-                                                    imageVector = vectorResource(Res.drawable.ic_history),
+                                                    imageVector = Icons.Default.PushPin,
                                                     contentDescription = null,
-                                                    tint = MaterialTheme.colorScheme.onTertiaryContainer,
                                                     modifier = Modifier.size(12.dp),
-                                                )
-                                                Spacer(Modifier.width(4.dp))
-                                                Text(
-                                                    text = stringResource(Res.string.chat_history_heartbeat_label),
-                                                    style = MaterialTheme.typography.labelSmall,
-                                                    color = MaterialTheme.colorScheme.onTertiaryContainer,
+                                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                                 )
                                             }
-                                        }
-                                        if (conversation.title.isNotEmpty()) {
-                                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                                if (conversation.isPinned) {
-                                                    Icon(
-                                                        Icons.Default.PushPin,
-                                                        contentDescription = "Pinned",
-                                                        modifier = Modifier.size(12.dp),
-                                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            Text(
+                                                text = conversation.title.ifBlank { "New chat" },
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                color = MaterialTheme.colorScheme.onSurface,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis,
+                                                modifier = Modifier.weight(1f, fill = false),
+                                            )
+                                            if (conversation.isHeartbeat) {
+                                                Surface(
+                                                    shape = RoundedCornerShape(999.dp),
+                                                    color = MaterialTheme.colorScheme.tertiaryContainer,
+                                                ) {
+                                                    Text(
+                                                        text = stringResource(Res.string.chat_history_heartbeat_label),
+                                                        style = MaterialTheme.typography.labelSmall,
+                                                        color = MaterialTheme.colorScheme.onTertiaryContainer,
+                                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                                                     )
                                                 }
-                                                Text(
-                                                    text = conversation.title,
-                                                    style = MaterialTheme.typography.bodyLarge,
-                                                    color = if (isActive) {
-                                                        MaterialTheme.colorScheme.primary
-                                                    } else {
-                                                        MaterialTheme.colorScheme.onBackground
-                                                    },
-                                                    maxLines = 1,
-                                                    overflow = TextOverflow.Ellipsis,
-                                                )
                                             }
                                         }
                                         Text(
                                             text = formatDate(conversation.updatedAt),
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f),
                                         )
                                     }
+
                                     var menuExpanded by remember { mutableStateOf(false) }
                                     Box {
                                         IconButton(
-                                            modifier = Modifier.handCursor(),
+                                            modifier = Modifier.size(38.dp),
                                             onClick = { menuExpanded = true },
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Default.MoreVert,
                                                 contentDescription = stringResource(Res.string.kairon_conversation_options),
+                                                modifier = Modifier.size(18.dp),
                                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                             )
                                         }
@@ -299,17 +281,14 @@ internal fun ChatHistorySheet(
                                         ) {
                                             if (!conversation.isHeartbeat) {
                                                 DropdownMenuItem(
-                                                    text = { Text(if (conversation.isPinned) "Unpin chat" else "Pin chat") },
-                                                    leadingIcon = { Icon(Icons.Default.PushPin, contentDescription = null) },
+                                                    text = { Text(if (conversation.isPinned) "Unpin" else "Pin") },
                                                     onClick = {
                                                         menuExpanded = false
                                                         actions.setConversationPinned(conversation.id, !conversation.isPinned)
                                                     },
                                                 )
-                                            }
-                                            if (!conversation.isHeartbeat) {
                                                 DropdownMenuItem(
-                                                    text = { Text("Rename chat") },
+                                                    text = { Text("Rename") },
                                                     onClick = {
                                                         menuExpanded = false
                                                         renamingId = conversation.id
@@ -328,32 +307,45 @@ internal fun ChatHistorySheet(
                                     }
                                 }
                             }
-                            item {
-                                Spacer(Modifier.height(64.dp))
-                            }
+                            item { Spacer(Modifier.height(10.dp)) }
                         }
                         VerticalScrollbarForList(
-                            listState = historyListState,
+                            listState = listState,
                             modifier = Modifier.align(CenterEnd).fillMaxHeight(),
+                        )
+                    }
+                }
+
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.38f),
+                )
+                Surface(
+                    onClick = {
+                        onDismiss()
+                        onNavigateToSettings()
+                    },
+                    color = Color.Transparent,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Text(
+                            text = "Settings",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
                     }
                 }
             }
 
-            // Pinned bottom-right; it stays visible even when the history list scrolls.
-            IconButton(
-                modifier = Modifier.align(Alignment.BottomEnd).padding(end = 12.dp, bottom = 4.dp),
-                onClick = {
-                    onDismiss()
-                    onNavigateToSettings()
-                },
-            ) {
-                Icon(
-                    Icons.Default.Settings,
-                    contentDescription = "Settings",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
             if (renamingId != null) {
                 AlertDialog(
                     onDismissRequest = { renamingId = null },
