@@ -1,0 +1,93 @@
+name: Kairon Remote Coding Agent
+
+on:
+  workflow_dispatch:
+    inputs:
+      task:
+        description: 'Coding instruction (max 4000 characters)'
+        required: true
+        type: string
+      model:
+        description: 'Kilo model ID (anonymous models must end in :free)'
+        required: false
+        default: 'minimax/minimax-m2.1:free'
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kairon-agent-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  code:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      AGENT_TASK: ${{ inputs.task }}
+      KILO_MODEL: ${{ inputs.model }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run bounded coding agent
+        env:
+          KILO_API_KEY: ${{ secrets.KILO_API_KEY }}
+        run: python .github/scripts/remote_agent.py
+      - name: Check restricted changes
+        shell: bash
+        run: |
+          if git status --porcelain | grep -E '(^| )((\.github|\.git|\.dart_tool|build|node_modules)/|\.env)' ; then
+            echo "::error::Agent attempted restricted repository changes"
+            exit 1
+          fi
+          if git diff --name-only | grep -E '(^\.github/|^\.dart_tool/|^build/|(^|/)\.env)' ; then
+            echo "::error::Restricted changes detected"
+            exit 1
+          fi
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Resolve Flutter dependencies
+        run: flutter pub get
+      - name: Check Dart formatting
+        shell: bash
+        run: |
+          targets=()
+          [ -d lib ] && targets+=(lib)
+          [ -d test ] && targets+=(test)
+          [ -d integration_test ] && targets+=(integration_test)
+          if [ ${#targets[@]} -gt 0 ]; then
+            dart format --output=none --set-exit-if-changed "${targets[@]}"
+          fi
+      - name: Analyze Flutter project
+        run: flutter analyze
+      - name: Run Flutter tests
+        run: flutter test
+      - name: Verify Android APK
+        run: flutter build apk --debug
+      - name: Publish isolated branch and pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "No source changes generated."
+            exit 0
+          fi
+          git config user.name "Kairon Remote Agent"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          branch="agent/run-${GITHUB_RUN_ID}"
+          git checkout -b "$branch"
+          git add --all
+          git commit -m "Agent: proposed remote coding changes"
+          git -c http.extraheader="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)" push "https://github.com/${GITHUB_REPOSITORY}.git" "HEAD:refs/heads/$branch"
+          gh pr create --head "$branch" --base "${GITHUB_REF_NAME}" --title "Agent proposal #${GITHUB_RUN_ID}" --body "Automated coding proposal. Review the diff before merging. Task and verification logs are available in the associated workflow run."
