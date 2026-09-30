@@ -75,6 +75,8 @@ import androidx.compose.ui.unit.dp
 import com.inspiredandroid.kai.Platform
 import com.inspiredandroid.kai.currentPlatform
 import com.inspiredandroid.kai.decodeToImageBitmap
+import com.inspiredandroid.kai.data.ChatAppearance
+import com.inspiredandroid.kai.data.ChatSurfaceStyle
 import com.inspiredandroid.kai.data.ReasoningEffort
 import com.inspiredandroid.kai.data.ServiceEntry
 import com.inspiredandroid.kai.data.imageExtensions
@@ -118,6 +120,7 @@ fun QuestionInput(
     modifier: Modifier = Modifier,
     reasoningEffort: ReasoningEffort = ReasoningEffort.AUTO,
     onSelectReasoningEffort: (ReasoningEffort) -> Unit = {},
+    appearance: ChatAppearance = ChatAppearance(),
 ) {
     Column(modifier = modifier) {
         // Slash autocomplete: shown when the user is typing the first token and it starts
@@ -186,13 +189,26 @@ fun QuestionInput(
 
         // The entire composer is one floating surface, not a TextField with actions
         // squeezed into its trailing slot. Provider selection sits immediately by +.
+        val composerShape = RoundedCornerShape(appearance.composerRadiusDp.dp)
+        val composerAlpha = if (appearance.surfaceStyle == ChatSurfaceStyle.SOLID) 1f else appearance.bubbleOpacity
+        val composerVerticalPadding = if (appearance.compactSpacing) 4.dp else 8.dp
         Column(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = composerVerticalPadding)
                 .fillMaxWidth()
-                .shadow(elevation = 3.dp, shape = RoundedCornerShape(23.dp))
-                .clip(RoundedCornerShape(23.dp))
-                .background(MaterialTheme.colorScheme.surfaceContainerLow)
-                .border(0.6.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.60f), RoundedCornerShape(23.dp))
+                .shadow(elevation = 2.dp, shape = composerShape)
+                .clip(composerShape)
+                .background(MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = composerAlpha))
+                .then(
+                    if (appearance.borderWidthDp > 0f) {
+                        Modifier.border(
+                            appearance.borderWidthDp.dp,
+                            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.60f),
+                            composerShape,
+                        )
+                    } else {
+                        Modifier
+                    },
+                )
                 .animateContentSize(animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing)),
         ) {
         if (files.isNotEmpty()) {
@@ -368,11 +384,13 @@ fun QuestionInput(
                     )
                 }
                 Spacer(Modifier.weight(1f))
-                ReasoningEffortSelector(
-                    levels = effortLevels,
-                    selected = reasoningEffort,
-                    onSelect = onSelectReasoningEffort,
-                )
+                if (effortLevels.size >= 2) {
+                    ReasoningEffortSelector(
+                        levels = effortLevels,
+                        selected = reasoningEffort,
+                        onSelect = onSelectReasoningEffort,
+                    )
+                }
                 if (isLoading) {
                     TrailingIcon(icon = Res.drawable.ic_stop, onClick = cancel, isPulsing = true)
                 } else if (textState.text.isNotBlank()) {
