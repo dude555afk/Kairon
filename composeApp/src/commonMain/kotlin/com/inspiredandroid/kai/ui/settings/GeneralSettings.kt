@@ -50,37 +50,12 @@ import kotlin.math.roundToInt
 
 @Composable
 internal fun GeneralContent(uiState: SettingsUiState, actions: SettingsActions) {
-    // Related preferences form one calm settings group instead of stacked giant cards.
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        SettingsSectionLabel("Appearance")
         SettingsCard(innerPadding = false) {
-            if (uiState.showDaemonToggle) {
-                Box(Modifier.fillMaxWidth().padding(16.dp)) {
-                    DaemonModeToggle(
-                        isDaemonEnabled = uiState.isDaemonEnabled,
-                        onToggleDaemon = actions.onToggleDaemon,
-                    )
-                }
-                GeneralDivider()
-            }
-            Box(Modifier.fillMaxWidth().padding(16.dp)) {
-                DynamicUiToggle(
-                    isDynamicUiEnabled = uiState.isDynamicUiEnabled,
-                    onToggleDynamicUi = actions.onToggleDynamicUi,
-                )
-            }
-            GeneralDivider()
-            Box(Modifier.fillMaxWidth().padding(16.dp)) {
-                ToggleableHeadline(
-                    title = "Show Thinking header",
-                    description = "Show or hide the reasoning disclosure in chat. This only changes its appearance.",
-                    checked = uiState.isThinkingHeaderVisible,
-                    onCheckedChange = actions.onToggleThinkingHeader,
-                )
-            }
-            GeneralDivider()
             Box(Modifier.fillMaxWidth().padding(16.dp)) {
                 ThemeModePicker(
                     themeMode = uiState.themeMode,
@@ -90,10 +65,10 @@ internal fun GeneralContent(uiState: SettingsUiState, actions: SettingsActions) 
             GeneralDivider()
             Box(Modifier.fillMaxWidth().padding(16.dp)) {
                 Column {
-                    Text("Accent", style = MaterialTheme.typography.titleMedium)
+                    Text("Accent", style = MaterialTheme.typography.bodyLarge)
                     Text(
-                        "Lightweight colour presets. No wallpapers or extra assets.",
-                        style = MaterialTheme.typography.bodyMedium,
+                        "Choose the accent used across controls and surfaces.",
+                        style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     var expanded by remember { mutableStateOf(false) }
@@ -129,31 +104,44 @@ internal fun GeneralContent(uiState: SettingsUiState, actions: SettingsActions) 
                 }
             }
         }
+
+        SettingsSectionLabel("Chat")
         SettingsCard {
             ChatAppearanceSection(
                 appearance = uiState.chatAppearance,
                 onChange = actions.onChangeChatAppearance,
             )
         }
-        SettingsCard {
-            val uriHandler = LocalUriHandler.current
-            Column(Modifier.fillMaxWidth().padding(16.dp)) {
-                Text("Experimental online voices (Android)", style = MaterialTheme.typography.titleMedium)
-                Text(
-                    "Kairon uses your phone's selected Android TTS engine. For keyless Edge Neural voices, install the third-party Edge TTS Android engine, select it in Android Settings > Text-to-speech output, then reopen Kairon. Online requests go to Microsoft's service, which can see your IP; availability and unlimited use are not guaranteed.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Text(
-                    "Open Edge TTS engine project ↗",
-                    modifier = Modifier.padding(top = 8.dp).clickable {
-                        uriHandler.openUri("https://github.com/Initsnow/edge-tts-android")
-                    },
-                    color = MaterialTheme.colorScheme.primary,
-                    style = MaterialTheme.typography.labelLarge,
+
+        SettingsSectionLabel("Behavior")
+        SettingsCard(innerPadding = false) {
+            Box(Modifier.fillMaxWidth().padding(16.dp)) {
+                DynamicUiToggle(
+                    isDynamicUiEnabled = uiState.isDynamicUiEnabled,
+                    onToggleDynamicUi = actions.onToggleDynamicUi,
                 )
             }
+            GeneralDivider()
+            Box(Modifier.fillMaxWidth().padding(16.dp)) {
+                ToggleableHeadline(
+                    title = "Show reasoning",
+                    description = "Show or hide the reasoning disclosure inside chat.",
+                    checked = uiState.isThinkingHeaderVisible,
+                    onCheckedChange = actions.onToggleThinkingHeader,
+                )
+            }
+            if (uiState.showDaemonToggle) {
+                GeneralDivider()
+                Box(Modifier.fillMaxWidth().padding(16.dp)) {
+                    DaemonModeToggle(
+                        isDaemonEnabled = uiState.isDaemonEnabled,
+                        onToggleDaemon = actions.onToggleDaemon,
+                    )
+                }
+            }
         }
+
+        SettingsSectionLabel("Data")
         SettingsCard {
             ExportImportSection(
                 onExportSettings = actions.onExportSettings,
@@ -162,6 +150,16 @@ internal fun GeneralContent(uiState: SettingsUiState, actions: SettingsActions) 
             )
         }
     }
+}
+
+@Composable
+private fun SettingsSectionLabel(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(start = 4.dp, top = 2.dp),
+    )
 }
 
 @Composable
