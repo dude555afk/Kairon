@@ -88,7 +88,7 @@ internal fun UserMessage(
                                         modifier = Modifier.size(16.dp),
                                         painter = painterResource(Res.drawable.ic_file),
                                         contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onBackground,
+                                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                     )
                                 },
                                 label = { Text(truncateFileName(att.fileName ?: att.mimeType)) },
@@ -102,7 +102,7 @@ internal fun UserMessage(
                 if (message.isNotEmpty()) {
                     Text(
                         text = message,
-                        color = MaterialTheme.colorScheme.onBackground,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
                     )
                 }
             }
