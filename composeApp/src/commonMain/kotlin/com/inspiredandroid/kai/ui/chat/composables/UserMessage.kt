@@ -1,10 +1,9 @@
+// UI-only adaptation: LastChat user bubble; Kairon attachments and image-viewer behavior retained.
 package com.inspiredandroid.kai.ui.chat.composables
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
@@ -30,6 +29,9 @@ import com.inspiredandroid.kai.data.Attachment
 import com.inspiredandroid.kai.decodeToImageBitmap
 import com.inspiredandroid.kai.ui.components.LocalShowFullScreenImage
 import com.inspiredandroid.kai.ui.handCursor
+import com.inspiredandroid.kai.ui.lastchat.BubblePosition
+import com.inspiredandroid.kai.ui.lastchat.BubbleRole
+import com.inspiredandroid.kai.ui.lastchat.GroupedMessageBubble
 import kai.composeapp.generated.resources.Res
 import kai.composeapp.generated.resources.ic_file
 import kotlinx.collections.immutable.ImmutableList
@@ -48,15 +50,7 @@ internal fun UserMessage(
     SelectionContainer {
         Row(Modifier.padding(16.dp)) {
             Spacer(Modifier.weight(1f))
-            Column(
-                modifier = Modifier
-                    .background(
-                        MaterialTheme.colorScheme.onBackground.copy(alpha = 0.15f),
-                        RoundedCornerShape(8.dp),
-                    )
-                    .padding(16.dp),
-                horizontalAlignment = Alignment.End,
-            ) {
+            GroupedMessageBubble(position = BubblePosition.SINGLE, role = BubbleRole.USER, modifier = Modifier.widthIn(max = 320.dp)) {
                 val images = attachments.filter { it.mimeType.startsWith("image/") }
                 val others = attachments.filter { !it.mimeType.startsWith("image/") }
                 for (att in images) {

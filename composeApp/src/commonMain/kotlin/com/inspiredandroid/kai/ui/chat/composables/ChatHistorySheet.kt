@@ -1,3 +1,4 @@
+// UI-only adaptation: LastChat selected/pressed row surface; Kairon navigation, delete and undo behavior retained.
 @file:OptIn(ExperimentalMaterial3Api::class)
 
 package com.inspiredandroid.kai.ui.chat.composables
@@ -45,6 +46,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.inspiredandroid.kai.ui.chat.ChatActions
+import com.inspiredandroid.kai.ui.lastchat.ConversationRowSurface
 import com.inspiredandroid.kai.ui.chat.ConversationSummary
 import com.inspiredandroid.kai.ui.components.VerticalScrollbarForList
 import com.inspiredandroid.kai.ui.components.animatedGradientBorder
@@ -144,19 +146,16 @@ internal fun ChatHistorySheet(
                                             RoundedCornerShape(12.dp),
                                         )
                                 }
-                                Row(
-                                    modifier = borderModifier
-                                        .fillMaxWidth()
-                                        .handCursor()
-                                        .clickable {
-                                            onConversationSelected()
-                                            actions.loadConversation(conversation.id)
-                                            onDismiss()
-                                        }
-                                        .padding(vertical = 8.dp, horizontal = 8.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                ConversationRowSurface(
+                                    selected = isActive,
+                                    onClick = {
+                                        onConversationSelected()
+                                        actions.loadConversation(conversation.id)
+                                        onDismiss()
+                                    },
+                                    modifier = borderModifier.fillMaxWidth().handCursor(),
                                 ) {
+                                    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp, horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                                     Column(modifier = Modifier.weight(1f)) {
                                         if (conversation.isHeartbeat) {
                                             Row(

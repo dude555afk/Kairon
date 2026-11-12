@@ -23,3 +23,15 @@ The full GPL-2.0 license text is available at: https://www.gnu.org/licenses/old-
 talloc is a hierarchical memory allocator used as a dependency of PRoot. It is dynamically linked.
 
 The full LGPL-3.0 license text is available at: https://www.gnu.org/licenses/lgpl-3.0.html
+
+
+## LastChat UI source
+
+- Source: https://github.com/Cocolalilal/LastChat
+- Upstream branch: `LastChat`
+- License: GNU Affero General Public License v3.0 (AGPL-3.0)
+- Adapted UI files: design tokens, composer shell, grouped message bubble, conversation row surface, modal drawer sheet, drawer action and menu button.
+- Package paths were adapted for Kairon. Existing providers, chat state, persistence, tools, permissions, attachment handling, Markdown parsing, speech and callbacks remain Kairon implementations.
+- Adapted files contain attribution and modification notices.
+
+The previous Apache-2.0 license text for applicable pre-existing Kairon components is retained in `LICENSE-APACHE-2.0.txt`. The combined Kairon distribution is offered under AGPL-3.0; individual third-party components retain their applicable notices and licenses.

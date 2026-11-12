@@ -1,6 +1,10 @@
+// UI-only adaptation: LastChat shapes and typography; Kairon's palette retained.
 @file:Suppress("DEPRECATION")
 
 package com.inspiredandroid.kai.ui
+
+import com.inspiredandroid.kai.ui.lastchat.LastChatShapes
+import com.inspiredandroid.kai.ui.lastchat.buildLastChatTypography
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -183,6 +187,8 @@ fun Theme(
 ) {
     MaterialTheme(
         colorScheme = colorScheme,
+        shapes = LastChatShapes,
+        typography = buildLastChatTypography(),
     ) {
         content()
     }
