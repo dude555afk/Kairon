@@ -42,37 +42,52 @@ fun GroupedMessageBubble(
     val isLeftAligned = role != BubbleRole.USER
     val shape = when (position) {
         BubblePosition.SINGLE -> RoundedCornerShape(largeRadius)
+
         BubblePosition.FIRST -> if (isLeftAligned) {
             RoundedCornerShape(
-                topStart = largeRadius, topEnd = largeRadius,
-                bottomEnd = largeRadius, bottomStart = smallRadius,
+                topStart = largeRadius,
+                topEnd = largeRadius,
+                bottomEnd = largeRadius,
+                bottomStart = smallRadius,
             )
         } else {
             RoundedCornerShape(
-                topStart = largeRadius, topEnd = largeRadius,
-                bottomEnd = smallRadius, bottomStart = largeRadius,
+                topStart = largeRadius,
+                topEnd = largeRadius,
+                bottomEnd = smallRadius,
+                bottomStart = largeRadius,
             )
         }
+
         BubblePosition.MIDDLE -> if (isLeftAligned) {
             RoundedCornerShape(
-                topStart = smallRadius, topEnd = largeRadius,
-                bottomEnd = largeRadius, bottomStart = smallRadius,
+                topStart = smallRadius,
+                topEnd = largeRadius,
+                bottomEnd = largeRadius,
+                bottomStart = smallRadius,
             )
         } else {
             RoundedCornerShape(
-                topStart = largeRadius, topEnd = smallRadius,
-                bottomEnd = smallRadius, bottomStart = largeRadius,
+                topStart = largeRadius,
+                topEnd = smallRadius,
+                bottomEnd = smallRadius,
+                bottomStart = largeRadius,
             )
         }
+
         BubblePosition.LAST -> if (isLeftAligned) {
             RoundedCornerShape(
-                topStart = smallRadius, topEnd = largeRadius,
-                bottomEnd = largeRadius, bottomStart = largeRadius,
+                topStart = smallRadius,
+                topEnd = largeRadius,
+                bottomEnd = largeRadius,
+                bottomStart = largeRadius,
             )
         } else {
             RoundedCornerShape(
-                topStart = largeRadius, topEnd = smallRadius,
-                bottomEnd = largeRadius, bottomStart = largeRadius,
+                topStart = largeRadius,
+                topEnd = smallRadius,
+                bottomEnd = largeRadius,
+                bottomStart = largeRadius,
             )
         }
     }

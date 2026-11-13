@@ -3,9 +3,6 @@
 
 package com.inspiredandroid.kai.ui
 
-import com.inspiredandroid.kai.ui.lastchat.LastChatShapes
-import com.inspiredandroid.kai.ui.lastchat.buildLastChatTypography
-
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -38,6 +35,8 @@ import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import com.inspiredandroid.kai.ui.lastchat.LastChatShapes
+import com.inspiredandroid.kai.ui.lastchat.buildLastChatTypography
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 val darkPurple = Color(0xFF6200EE)

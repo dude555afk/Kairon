@@ -41,12 +41,12 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.inspiredandroid.kai.getBackgroundDispatcher
-import com.inspiredandroid.kai.ui.lastchat.BubblePosition
-import com.inspiredandroid.kai.ui.lastchat.BubbleRole
-import com.inspiredandroid.kai.ui.lastchat.GroupedMessageBubble
 import com.inspiredandroid.kai.ui.dynamicui.FrozenSubmission
 import com.inspiredandroid.kai.ui.dynamicui.toSpeakableText
 import com.inspiredandroid.kai.ui.handCursor
+import com.inspiredandroid.kai.ui.lastchat.BubblePosition
+import com.inspiredandroid.kai.ui.lastchat.BubbleRole
+import com.inspiredandroid.kai.ui.lastchat.GroupedMessageBubble
 import com.inspiredandroid.kai.ui.markdown.MarkdownContent
 import com.inspiredandroid.kai.ui.markdown.parseMarkdown
 import com.inspiredandroid.kai.ui.rememberCopyToClipboard

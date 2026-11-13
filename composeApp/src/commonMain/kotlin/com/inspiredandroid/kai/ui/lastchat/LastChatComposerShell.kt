@@ -8,10 +8,10 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.combinedClickable
@@ -25,8 +25,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -149,25 +149,41 @@ fun LastChatComposerActionButton(
                     val initialRank = initialState.depthRank()
                     val targetRank = targetState.depthRank()
                     if (targetState == LastChatComposerAction.QuestionnaireNext) {
-                        (slideInHorizontally(tween(250)) { -it / 2 } + fadeIn(inFadeSpec) +
-                            scaleIn(tween(250), initialScale = depthScale)) togetherWith
-                            (slideOutHorizontally(tween(250)) { it / 2 } + fadeOut(outFadeSpec) +
-                                scaleOut(tween(250), targetScale = depthScale))
+                        (
+                            slideInHorizontally(tween(250)) { -it / 2 } + fadeIn(inFadeSpec) +
+                                scaleIn(tween(250), initialScale = depthScale)
+                            ) togetherWith
+                            (
+                                slideOutHorizontally(tween(250)) { it / 2 } + fadeOut(outFadeSpec) +
+                                    scaleOut(tween(250), targetScale = depthScale)
+                                )
                     } else if (initialState == LastChatComposerAction.QuestionnaireNext) {
-                        (slideInHorizontally(tween(250)) { it / 2 } + fadeIn(inFadeSpec) +
-                            scaleIn(tween(250), initialScale = depthScale)) togetherWith
-                            (slideOutHorizontally(tween(250)) { -it / 2 } + fadeOut(outFadeSpec) +
-                                scaleOut(tween(250), targetScale = depthScale))
+                        (
+                            slideInHorizontally(tween(250)) { it / 2 } + fadeIn(inFadeSpec) +
+                                scaleIn(tween(250), initialScale = depthScale)
+                            ) togetherWith
+                            (
+                                slideOutHorizontally(tween(250)) { -it / 2 } + fadeOut(outFadeSpec) +
+                                    scaleOut(tween(250), targetScale = depthScale)
+                                )
                     } else if (targetRank > initialRank) {
-                        (slideInVertically(tween(250)) { it / 2 } + fadeIn(inFadeSpec) +
-                            scaleIn(tween(250), initialScale = depthScale)) togetherWith
-                            (slideOutVertically(tween(250)) { -it / 2 } + fadeOut(outFadeSpec) +
-                                scaleOut(tween(250), targetScale = depthScale))
+                        (
+                            slideInVertically(tween(250)) { it / 2 } + fadeIn(inFadeSpec) +
+                                scaleIn(tween(250), initialScale = depthScale)
+                            ) togetherWith
+                            (
+                                slideOutVertically(tween(250)) { -it / 2 } + fadeOut(outFadeSpec) +
+                                    scaleOut(tween(250), targetScale = depthScale)
+                                )
                     } else if (targetRank < initialRank) {
-                        (slideInVertically(tween(250)) { -it / 2 } + fadeIn(inFadeSpec) +
-                            scaleIn(tween(250), initialScale = depthScale)) togetherWith
-                            (slideOutVertically(tween(250)) { it / 2 } + fadeOut(outFadeSpec) +
-                                scaleOut(tween(250), targetScale = depthScale))
+                        (
+                            slideInVertically(tween(250)) { -it / 2 } + fadeIn(inFadeSpec) +
+                                scaleIn(tween(250), initialScale = depthScale)
+                            ) togetherWith
+                            (
+                                slideOutVertically(tween(250)) { it / 2 } + fadeOut(outFadeSpec) +
+                                    scaleOut(tween(250), targetScale = depthScale)
+                                )
                     } else {
                         (fadeIn(inFadeSpec) + scaleIn(tween(250), initialScale = depthScale)) togetherWith
                             (fadeOut(outFadeSpec) + scaleOut(tween(250), targetScale = depthScale))
@@ -187,19 +203,23 @@ fun LastChatComposerDefaultActionContent(
 ) {
     when (action) {
         LastChatComposerAction.Picker -> pickerContent()
+
         LastChatComposerAction.Send,
-        LastChatComposerAction.QuestionnaireSubmit -> Icon(
+        LastChatComposerAction.QuestionnaireSubmit,
+        -> Icon(
             RoundedArrowUpwardIcon,
             contentDescription = null,
             modifier = Modifier.size(18.dp),
             tint = MaterialTheme.colorScheme.onPrimary,
         )
+
         LastChatComposerAction.Loading -> Icon(
             RoundedStopIcon,
             contentDescription = null,
             modifier = Modifier.size(18.dp),
             tint = MaterialTheme.colorScheme.onErrorContainer,
         )
+
         else -> Unit
     }
 }
@@ -207,26 +227,36 @@ fun LastChatComposerDefaultActionContent(
 @Composable
 private fun LastChatComposerAction.defaultContainerColor(): Color = when (this) {
     LastChatComposerAction.Loading,
-    LastChatComposerAction.ToolApprovalDeny -> MaterialTheme.colorScheme.errorContainer
+    LastChatComposerAction.ToolApprovalDeny,
+    -> MaterialTheme.colorScheme.errorContainer
+
     LastChatComposerAction.Send,
     LastChatComposerAction.QuestionnaireNext,
     LastChatComposerAction.QuestionnaireSubmit,
-    LastChatComposerAction.SttRecording -> MaterialTheme.colorScheme.primary
+    LastChatComposerAction.SttRecording,
+    -> MaterialTheme.colorScheme.primary
+
     LastChatComposerAction.Picker,
     LastChatComposerAction.Stt,
-    LastChatComposerAction.SttFinalizing -> Color.Transparent
+    LastChatComposerAction.SttFinalizing,
+    -> Color.Transparent
 }
 
 private fun LastChatComposerAction.depthRank(): Int = when (this) {
     LastChatComposerAction.Picker,
     LastChatComposerAction.Stt,
     LastChatComposerAction.SttRecording,
-    LastChatComposerAction.SttFinalizing -> 0
+    LastChatComposerAction.SttFinalizing,
+    -> 0
+
     LastChatComposerAction.Send,
     LastChatComposerAction.QuestionnaireNext,
-    LastChatComposerAction.QuestionnaireSubmit -> 1
+    LastChatComposerAction.QuestionnaireSubmit,
+    -> 1
+
     LastChatComposerAction.Loading,
-    LastChatComposerAction.ToolApprovalDeny -> 2
+    LastChatComposerAction.ToolApprovalDeny,
+    -> 2
 }
 
 @Composable
