@@ -72,7 +72,6 @@ private val RoundedMenuIcon by lazy {
     }.build()
 }
 
-
 /** LastChat-style rounded toolbar surface that keeps the caller's existing action. */
 @Composable
 fun LastChatToolbarButton(
