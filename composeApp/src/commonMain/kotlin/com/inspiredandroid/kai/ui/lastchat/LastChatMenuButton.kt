@@ -3,6 +3,7 @@ package com.inspiredandroid.kai.ui.lastchat
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -69,4 +70,33 @@ private val RoundedMenuIcon by lazy {
             fill = SolidColor(Color.Black),
         )
     }.build()
+}
+
+
+/** LastChat-style rounded toolbar surface that keeps the caller's existing action. */
+@Composable
+fun LastChatToolbarButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    content: @Composable () -> Unit,
+) {
+    Surface(
+        onClick = onClick,
+        enabled = enabled,
+        shape = AppShapes.ButtonPill,
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        border = BorderStroke(
+            AppSurface.SoftEdgeWidth,
+            AppSurface.softEdgeColor(MaterialTheme.colorScheme),
+        ),
+        modifier = modifier.size(AppSize.ChromePill),
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center,
+        ) {
+            content()
+        }
+    }
 }
