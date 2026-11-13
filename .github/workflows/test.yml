@@ -31,7 +31,14 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v4
         with:
-          packages: 'platform-tools platforms;android-37 ndk;29.0.14206865'
+          packages: platform-tools
+
+      - name: Install Android 37 platform and NDK
+        run: |
+          sdkmanager --channel=3 --install "platforms;android-37.0" "ndk;29.0.14206865"
+          if [ -d "$ANDROID_HOME/platforms/android-37.0" ] && [ ! -e "$ANDROID_HOME/platforms/android-37" ]; then
+            ln -s android-37.0 "$ANDROID_HOME/platforms/android-37"
+          fi
 
       - name: Cache Gradle dependencies
         uses: actions/cache@v4
