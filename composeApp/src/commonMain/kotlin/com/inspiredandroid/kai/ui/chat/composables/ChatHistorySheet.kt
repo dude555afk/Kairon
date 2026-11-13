@@ -212,6 +212,8 @@ internal fun ChatHistorySheet(
                                         )
                                     }
                                 }
+                                    }
+                                }
                             }
                             item {
                                 Spacer(Modifier.height(16.dp))
