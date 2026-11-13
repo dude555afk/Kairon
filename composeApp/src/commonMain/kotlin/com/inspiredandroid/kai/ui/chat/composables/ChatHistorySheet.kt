@@ -155,63 +155,66 @@ internal fun ChatHistorySheet(
                                     },
                                     modifier = borderModifier.fillMaxWidth().handCursor(),
                                 ) {
-                                    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp, horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        if (conversation.isHeartbeat) {
-                                            Row(
-                                                modifier = Modifier
-                                                    .padding(bottom = 4.dp)
-                                                    .background(
-                                                        color = MaterialTheme.colorScheme.tertiaryContainer,
-                                                        shape = RoundedCornerShape(4.dp),
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp, horizontal = 8.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                    ) {
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            if (conversation.isHeartbeat) {
+                                                Row(
+                                                    modifier = Modifier
+                                                        .padding(bottom = 4.dp)
+                                                        .background(
+                                                            color = MaterialTheme.colorScheme.tertiaryContainer,
+                                                            shape = RoundedCornerShape(4.dp),
+                                                        )
+                                                        .padding(horizontal = 6.dp, vertical = 2.dp),
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                ) {
+                                                    Icon(
+                                                        imageVector = vectorResource(Res.drawable.ic_history),
+                                                        contentDescription = null,
+                                                        tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                                                        modifier = Modifier.size(12.dp),
                                                     )
-                                                    .padding(horizontal = 6.dp, vertical = 2.dp),
-                                                verticalAlignment = Alignment.CenterVertically,
-                                            ) {
-                                                Icon(
-                                                    imageVector = vectorResource(Res.drawable.ic_history),
-                                                    contentDescription = null,
-                                                    tint = MaterialTheme.colorScheme.onTertiaryContainer,
-                                                    modifier = Modifier.size(12.dp),
-                                                )
-                                                Spacer(Modifier.width(4.dp))
+                                                    Spacer(Modifier.width(4.dp))
+                                                    Text(
+                                                        text = stringResource(Res.string.chat_history_heartbeat_label),
+                                                        style = MaterialTheme.typography.labelSmall,
+                                                        color = MaterialTheme.colorScheme.onTertiaryContainer,
+                                                    )
+                                                }
+                                            }
+                                            if (conversation.title.isNotEmpty()) {
                                                 Text(
-                                                    text = stringResource(Res.string.chat_history_heartbeat_label),
-                                                    style = MaterialTheme.typography.labelSmall,
-                                                    color = MaterialTheme.colorScheme.onTertiaryContainer,
+                                                    text = conversation.title,
+                                                    style = MaterialTheme.typography.bodyLarge,
+                                                    color = if (isActive) {
+                                                        MaterialTheme.colorScheme.primary
+                                                    } else {
+                                                        MaterialTheme.colorScheme.onBackground
+                                                    },
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis,
                                                 )
                                             }
-                                        }
-                                        if (conversation.title.isNotEmpty()) {
                                             Text(
-                                                text = conversation.title,
-                                                style = MaterialTheme.typography.bodyLarge,
-                                                color = if (isActive) {
-                                                    MaterialTheme.colorScheme.primary
-                                                } else {
-                                                    MaterialTheme.colorScheme.onBackground
-                                                },
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis,
+                                                text = formatDate(conversation.updatedAt),
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             )
                                         }
-                                        Text(
-                                            text = formatDate(conversation.updatedAt),
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        )
-                                    }
-                                    IconButton(
-                                        modifier = Modifier.handCursor(),
-                                        onClick = { actions.deleteConversation(conversation.id) },
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Delete,
-                                            contentDescription = stringResource(Res.string.chat_history_delete_content_description),
-                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        )
-                                    }
-                                }
+                                        IconButton(
+                                            modifier = Modifier.handCursor(),
+                                            onClick = { actions.deleteConversation(conversation.id) },
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Delete,
+                                                contentDescription = stringResource(Res.string.chat_history_delete_content_description),
+                                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            )
+                                        }
                                     }
                                 }
                             }
