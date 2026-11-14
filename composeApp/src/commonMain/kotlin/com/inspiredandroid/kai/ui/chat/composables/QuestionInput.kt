@@ -1,3 +1,4 @@
+// UI-only adaptation: LastChat composer style; Kairon input, attachments, skills and send behavior retained.
 package com.inspiredandroid.kai.ui.chat.composables
 
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -32,6 +33,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -63,7 +65,11 @@ import com.inspiredandroid.kai.data.imageExtensions
 import com.inspiredandroid.kai.skills.SkillManifest
 import com.inspiredandroid.kai.ui.gradientBrush
 import com.inspiredandroid.kai.ui.handCursor
-import com.inspiredandroid.kai.ui.outlineTextFieldColors
+import com.inspiredandroid.kai.ui.lastchat.LastChatComposerAddButton
+import com.inspiredandroid.kai.ui.lastchat.LastChatComposerAddIcon
+import com.inspiredandroid.kai.ui.lastchat.LastChatComposerCapsule
+import com.inspiredandroid.kai.ui.lastchat.LastChatComposerInputShape
+import com.inspiredandroid.kai.ui.lastchat.LastChatComposerRow
 import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.dialogs.FileKitType
 import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
@@ -191,93 +197,84 @@ fun QuestionInput(
         // grow with the font scale — otherwise the composer shows a single line of
         // what the user is typing at the largest accessibility font size.
         val maxComposerHeight = 120.dp * LocalDensity.current.fontScale
-        TextField(
-            value = textState,
-            onValueChange = onTextStateChange,
-            modifier = Modifier
-                .focusRequester(focusRequester)
-                .padding(16.dp)
-                .heightIn(max = maxComposerHeight)
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(28.dp))
-                .background(MaterialTheme.colorScheme.background)
-                .border(
-                    BorderStroke(width = 2.dp, brush = gradientBrush),
-                    shape = RoundedCornerShape(28.dp),
-                )
-                .onPreviewKeyEvent { event ->
-                    // Only handle hardware keyboard on desktop/web platforms
-                    if (currentPlatform !is Platform.Mobile && event.key.keyCode == Key.Enter.keyCode && event.type == KeyEventType.KeyDown) {
-                        if (event.isShiftPressed) {
-                            // Shift+Enter -> manually insert newline
-                            val currentText = textState.text
-                            val selection = textState.selection
-                            val start = minOf(selection.start, selection.end).coerceIn(0, currentText.length)
-                            val end = maxOf(selection.start, selection.end).coerceIn(0, currentText.length)
+        LastChatComposerRow(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+            if (filePickerLauncher != null) {
+                LastChatComposerAddButton(onClick = { filePickerLauncher.launch() }, onLongClick = {}) {
+                    LastChatComposerAddIcon(contentDescription = "Add attachment")
+                }
+            }
+            LastChatComposerCapsule {
+                TextField(
+                    value = textState,
+                    onValueChange = onTextStateChange,
+                    modifier = Modifier
+                        .focusRequester(focusRequester)
+                        .heightIn(max = maxComposerHeight)
+                        .fillMaxWidth()
+                        .onPreviewKeyEvent { event ->
+                            // Only handle hardware keyboard on desktop/web platforms
+                            if (currentPlatform !is Platform.Mobile && event.key.keyCode == Key.Enter.keyCode && event.type == KeyEventType.KeyDown) {
+                                if (event.isShiftPressed) {
+                                    // Shift+Enter -> manually insert newline
+                                    val currentText = textState.text
+                                    val selection = textState.selection
+                                    val start = minOf(selection.start, selection.end).coerceIn(0, currentText.length)
+                                    val end = maxOf(selection.start, selection.end).coerceIn(0, currentText.length)
 
-                            val newText = currentText.replaceRange(start, end, "\n")
-                            onTextStateChange(
-                                TextFieldValue(
-                                    text = newText,
-                                    selection = TextRange(start + 1),
-                                ),
-                            )
-                            return@onPreviewKeyEvent true
-                        } else {
-                            // Enter without Shift -> send message and consume event
-                            submitQuestion()
-                            return@onPreviewKeyEvent true
-                        }
-                    }
-                    return@onPreviewKeyEvent false
-                },
-            colors = outlineTextFieldColors(),
-            placeholder = {
-                Text(
-                    stringResource(Res.string.prompt_ask_question),
-                    color = MaterialTheme.colorScheme.onBackground,
-                )
-            },
-            trailingIcon = {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(end = 7.dp),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    if (availableServices.size > 1) {
-                        ServiceSelector(
-                            services = availableServices,
-                            onSelectService = onSelectService,
+                                    val newText = currentText.replaceRange(start, end, "\n")
+                                    onTextStateChange(
+                                        TextFieldValue(
+                                            text = newText,
+                                            selection = TextRange(start + 1),
+                                        ),
+                                    )
+                                    return@onPreviewKeyEvent true
+                                } else {
+                                    // Enter without Shift -> send message and consume event
+                                    submitQuestion()
+                                    return@onPreviewKeyEvent true
+                                }
+                            }
+                            return@onPreviewKeyEvent false
+                        },
+                    colors = TextFieldDefaults.colors(focusedContainerColor = Color.Transparent, unfocusedContainerColor = Color.Transparent, disabledContainerColor = Color.Transparent, focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent, disabledIndicatorColor = Color.Transparent),
+                    shape = LastChatComposerInputShape,
+                    placeholder = {
+                        Text(
+                            stringResource(Res.string.prompt_ask_question),
+                            color = MaterialTheme.colorScheme.onBackground,
                         )
-                    }
-                    if (isLoading) {
-                        TrailingIcon(icon = Res.drawable.ic_stop, onClick = cancel, isPulsing = true)
-                    } else if (textState.text.isNotBlank()) {
-                        TrailingIcon(icon = Res.drawable.ic_up, onClick = { submitQuestion() })
-                    }
-                }
-            },
-            keyboardActions = if (currentPlatform !is Platform.Mobile) {
-                KeyboardActions(onSend = { submitQuestion() })
-            } else {
-                KeyboardActions() // No keyboard send action on mobile
-            },
-            leadingIcon = if (filePickerLauncher != null) {
-                {
-                    CircleIconButton(
-                        icon = vectorResource(Res.drawable.ic_attach),
-                        onClick = { filePickerLauncher.launch() },
-                        modifier = Modifier.padding(start = 7.dp),
-                        tint = MaterialTheme.colorScheme.onBackground,
-                    )
-                }
-            } else {
-                null
-            },
-            keyboardOptions = KeyboardOptions(
-                imeAction = if (currentPlatform is Platform.Mobile) ImeAction.Default else ImeAction.Send,
-            ),
-        )
+                    },
+                    trailingIcon = {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(end = 7.dp),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            if (availableServices.size > 1) {
+                                ServiceSelector(
+                                    services = availableServices,
+                                    onSelectService = onSelectService,
+                                )
+                            }
+                            if (isLoading) {
+                                TrailingIcon(icon = Res.drawable.ic_stop, onClick = cancel, isPulsing = true)
+                            } else if (textState.text.isNotBlank()) {
+                                TrailingIcon(icon = Res.drawable.ic_up, onClick = { submitQuestion() })
+                            }
+                        }
+                    },
+                    keyboardActions = if (currentPlatform !is Platform.Mobile) {
+                        KeyboardActions(onSend = { submitQuestion() })
+                    } else {
+                        KeyboardActions() // No keyboard send action on mobile
+                    },
+                    keyboardOptions = KeyboardOptions(
+                        imeAction = if (currentPlatform is Platform.Mobile) ImeAction.Default else ImeAction.Send,
+                    ),
+                )
+            }
+        }
         val inInspection = LocalInspectionMode.current
         LaunchedEffect(Unit) {
             if (!inInspection) focusRequester.requestFocus()

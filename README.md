@@ -231,3 +231,8 @@ This project is open-source and maintained by a single developer. If you find th
 ## Credits
 
 - Mistral: https://mistral.ai/
+
+
+## License
+
+The combined Kairon distribution is licensed under **AGPL-3.0**. The previous Apache-2.0 license text for applicable pre-existing components is retained in `LICENSE-APACHE-2.0.txt`. Adapted third-party source and attribution are documented in [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).

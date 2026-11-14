@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Dns
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.MaterialTheme
@@ -23,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.inspiredandroid.kai.ui.chat.ChatActions
 import com.inspiredandroid.kai.ui.handCursor
+import com.inspiredandroid.kai.ui.lastchat.LastChatToolbarButton
 import kai.composeapp.generated.resources.Res
 import kai.composeapp.generated.resources.chat_history_content_description
 import kai.composeapp.generated.resources.ic_add
@@ -77,7 +77,7 @@ internal fun TopBar(
             if (textToSpeech != null) {
                 SpeechToggleButton(textToSpeech, isSpeechOutputEnabled, isSpeaking, actions)
             }
-            IconButton(
+            LastChatToolbarButton(
                 modifier = Modifier.handCursor(),
                 onClick = onNavigateToSettings,
             ) {
@@ -106,7 +106,7 @@ private fun LeadingButtons(
     onToggleSandbox: () -> Unit,
 ) {
     if (hasSavedConversations) {
-        IconButton(
+        LastChatToolbarButton(
             modifier = Modifier.handCursor(),
             onClick = onShowHistory,
         ) {
@@ -118,7 +118,7 @@ private fun LeadingButtons(
         }
     }
     if (!isChatHistoryEmpty) {
-        IconButton(
+        LastChatToolbarButton(
             modifier = Modifier.handCursor(),
             onClick = {
                 if (isSpeechOutputEnabled && isSpeaking) {
@@ -179,7 +179,7 @@ private fun SpeechToggleButton(
     isSpeaking: Boolean,
     actions: ChatActions,
 ) {
-    IconButton(
+    LastChatToolbarButton(
         modifier = Modifier.handCursor(),
         onClick = {
             if (isSpeechOutputEnabled && isSpeaking) {

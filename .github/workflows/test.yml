@@ -1,51 +1,44 @@
-name: Unit Tests
+name: Android Build and Tests
 
 on:
   push:
     branches:
       - main
+      - 'feature/**'
   pull_request:
     branches:
       - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
-  test:
-    name: Run Unit Tests
+  android:
+    name: Validate Android app
     runs-on: ubuntu-latest
-    if: |
-      !contains(github.event.head_commit.message, '[skip ci]') &&
-      github.actor != 'github-actions[bot]'
-
-    permissions:
-      contents: write
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: ${{ github.head_ref || github.ref }}
 
-      - name: Check if fork PR
-        id: fork-check
-        if: github.event_name == 'pull_request'
-        run: |
-          if [ "${{ github.event.pull_request.head.repo.full_name }}" != "${{ github.repository }}" ]; then
-            echo "is_fork=true" >> $GITHUB_OUTPUT
-          else
-            echo "is_fork=false" >> $GITHUB_OUTPUT
-          fi
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v4
         with:
           packages: platform-tools
 
-      - name: Set up Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '21'
+      - name: Install Android 37 platform and NDK
+        run: |
+          sdkmanager --channel=3 --install "platforms;android-37.0" "ndk;29.0.14206865"
+          if [ -d "$ANDROID_HOME/platforms/android-37.0" ] && [ ! -e "$ANDROID_HOME/platforms/android-37" ]; then
+            ln -s android-37.0 "$ANDROID_HOME/platforms/android-37"
+          fi
 
       - name: Cache Gradle dependencies
         uses: actions/cache@v4
@@ -57,57 +50,28 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
-      - name: Set execution flag for gradlew
+      - name: Make Gradle wrapper executable
         run: chmod +x gradlew
 
       - name: Verify Java version
-        run: |
-          echo "JAVA_HOME: $JAVA_HOME"
-          java -version
+        run: java -version
 
-      - name: Run spotlessApply
-        run: ./gradlew spotlessApply --no-daemon --stacktrace
+      - name: Check formatting
+        run: ./gradlew spotlessCheck --no-daemon --stacktrace
 
-      - name: Run updateScreenshots
-        run: ./gradlew :screenshotTests:updateScreenshots --no-daemon --stacktrace
+      - name: Run Android host unit tests
+        run: ./gradlew :composeApp:testAndroidHostTest --no-daemon --stacktrace
 
-      - name: Install cwebp
-        run: sudo apt-get update && sudo apt-get install -y webp
+      - name: Run Android screenshot tests
+        run: ./gradlew :screenshotTests:testDebugUnitTest --no-daemon --stacktrace
 
-      - name: Convert site images to WebP
-        run: ./scripts/convert-site-images-to-webp.sh
+      - name: Build FOSS debug APK
+        run: ./gradlew :androidApp:assembleFossDebug --no-daemon --stacktrace
 
-      - name: Run desktop tests
-        run: ./gradlew :composeApp:desktopTest --no-daemon --stacktrace
-
-      - name: Check for changes
-        id: changes
-        run: |
-          if [ -n "$(git status --porcelain)" ]; then
-            echo "has_changes=true" >> $GITHUB_OUTPUT
-          else
-            echo "has_changes=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Fail if fork PR has changes
-        if: |
-          steps.changes.outputs.has_changes == 'true' &&
-          steps.fork-check.outputs.is_fork == 'true'
-        run: |
-          echo "::error::This PR from a fork requires formatting or screenshot updates."
-          echo "Please run the following commands locally and push the changes:"
-          echo "  ./gradlew spotlessApply"
-          echo "  ./gradlew :screenshotTests:updateScreenshots"
-          echo "  ./scripts/convert-site-images-to-webp.sh"
-          exit 1
-
-      - name: Commit and push changes
-        if: |
-          steps.changes.outputs.has_changes == 'true' &&
-          (github.event_name == 'push' || steps.fork-check.outputs.is_fork == 'false')
-        run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          git add -A
-          git commit -m "Auto-fix: spotlessApply and updateScreenshots [skip ci]"
-          git push
+      - name: Upload FOSS debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: kairon-foss-debug-apk
+          path: androidApp/build/outputs/apk/foss/debug/*.apk
+          if-no-files-found: error
+          retention-days: 14

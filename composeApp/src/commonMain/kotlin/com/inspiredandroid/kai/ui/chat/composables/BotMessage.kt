@@ -1,3 +1,4 @@
+// UI-only adaptation: LastChat assistant bubble; Kairon Markdown, dynamic UI, TTS and actions retained.
 package com.inspiredandroid.kai.ui.chat.composables
 
 import androidx.compose.animation.AnimatedVisibility
@@ -43,6 +44,9 @@ import com.inspiredandroid.kai.getBackgroundDispatcher
 import com.inspiredandroid.kai.ui.dynamicui.FrozenSubmission
 import com.inspiredandroid.kai.ui.dynamicui.toSpeakableText
 import com.inspiredandroid.kai.ui.handCursor
+import com.inspiredandroid.kai.ui.lastchat.BubblePosition
+import com.inspiredandroid.kai.ui.lastchat.BubbleRole
+import com.inspiredandroid.kai.ui.lastchat.GroupedMessageBubble
 import com.inspiredandroid.kai.ui.markdown.MarkdownContent
 import com.inspiredandroid.kai.ui.markdown.parseMarkdown
 import com.inspiredandroid.kai.ui.rememberCopyToClipboard
@@ -107,18 +111,16 @@ internal fun BotMessage(
                 )
             }
             if (message.isNotEmpty()) {
-                // When reasoning is shown above, the Thinking row already provides
-                // the visual gap to the answer — drop the duplicated top inset.
-                val answerTopPadding = if (nonBlankSegments.isNotEmpty()) 6.dp else 16.dp
-                SelectionContainer {
-                    MarkdownContent(
-                        document = document,
-                        isInteractive = effectiveInteractive,
-                        onUiCallback = kaiUiCallback,
-                        frozen = effectiveFrozen,
-                        modifier = Modifier.fillMaxWidth()
-                            .padding(start = 16.dp, top = answerTopPadding, end = 16.dp, bottom = 8.dp),
-                    )
+                GroupedMessageBubble(position = BubblePosition.SINGLE, role = BubbleRole.ASSISTANT, modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp)) {
+                    SelectionContainer {
+                        MarkdownContent(
+                            document = document,
+                            isInteractive = effectiveInteractive,
+                            onUiCallback = kaiUiCallback,
+                            frozen = effectiveFrozen,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
                 }
             }
         }
