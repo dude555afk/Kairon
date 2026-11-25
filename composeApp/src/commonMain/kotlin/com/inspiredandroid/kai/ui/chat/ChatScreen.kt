@@ -2,6 +2,7 @@
     ExperimentalFoundationApi::class,
 )
 
+
 package com.inspiredandroid.kai.ui.chat
 
 
@@ -32,6 +33,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -74,6 +76,7 @@ import androidx.compose.ui.Alignment.Companion.CenterHorizontally
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -200,524 +203,238 @@ fun ChatScreenContent(
                     onNavigateToSettings = onNavigateToSettings,
                     isSandboxAvailable = isSandboxAvailable,
                     isKaiBuildAvailable = isKaiBuildAvailable,
-                    onOpenKaiBuild = { isKaiBuildOpen = true }.takeIf { isKaiBuildAvailable },
-                )
-            },
-            drawerState = drawerState,
-        ) {
-            ChatModeScreen(
-                uiState = uiState,
-                textToSpeech = textToSpeech,
-                onNavigateToSettings = onNavigateToSettings,
-                isSandboxAvailable = isSandboxAvailable,
-                onOpenKaiBuild = { isKaiBuildOpen = true }.takeIf { isKaiBuildAvailable },
-                navigationTabBar = navigationTabBar,
-                initialSandboxOpen = initialSandboxOpen,
-                previewSandboxState = previewSandboxState,
-                previewSandboxLines = previewSandboxLines,
-            )
-        }
-    }
-
-    if (showHistorySheet) {
-        ChatHistorySheet(
-            conversations = filteredConversations,
-            currentConversationId = uiState.currentConversationId,
-            pendingConversationDeletion = uiState.pendingConversationDeletion,
-            actions = uiState.actions,
-            onDismiss = { showHistorySheet = false },
-            onConversationSelected = { isSandboxOpen = false },
-        )
-    }
-}
-
-
-/** ModalNavigationDrawer wrapper. The drawer covers the full screen height
- *  (82% width) with a pinned footer containing Chat / Settings / Voice. */
-@Composable
-private fun KaiDrawerLayout(
-    drawerOpen: Boolean,
-    toggleDrawer: () -> Unit,
-    drawerContent: @Composable () -> Unit,
-    drawerState: DrawerState,
-    content: @Composable () -> Unit,
-) {
-    val scope = rememberCoroutineScope()
-    ModalNavigationDrawer(
-        drawerState = drawerState,
-        modifier = Modifier.fillMaxSize(),
-        drawerContent = drawerContent,
-        content = {
-            Box(Modifier.fillMaxSize()) {
-                content()
-                // Pinned footer bar (64.dp) — Chat pill, Settings avatar, Voice
-                KaiDrawerFooter(
-                    onChatTap = { scope.launch { drawerState.close() } },
-                    onSettingsTap = { scope.launch { drawerState.close() } },
-                    onVoiceTap = { scope.launch { drawerState.close() } },
                 )
             }
-        },
-    )
-}
-
-
-@Composable
-private fun KaiDrawerContent(
-    onNavigateToSettings: () -> Unit,
-    isSandboxAvailable: Boolean,
-    isKaiBuildAvailable: Boolean,
-    onOpenKaiBuild: (() -> Unit)?,
-) {
-    Column(Modifier.fillMaxSize()) {
-        // Drawer header
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(80.dp)
-                .padding(start = 16.dp, top = 24.dp, end = 16.dp),
-            contentAlignment = Alignment.CenterStart,
         ) {
-            Column {
-                Text(
-                    text = "Kai 9000",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onBackground,
-                )
-                Text(
-                    text = "Personal AI Assistant",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-        Divider()
-
-        Column(modifier = Modifier.weight(1f)) {
-            // Nav rows
-            DrawerRow(
-                icon = Icons.Default.Chat,
-                label = "New Chat",
-                onClick = { /* handled by footer pill */ },
-            )
-            DrawerRow(
-                icon = Icons.Default.History,
-                label = "History",
-                onClick = { /* open history sheet */ },
-            )
-            DrawerRow(
-                icon = Icons.Default.Settings,
-                label = "Settings",
-                onClick = onNavigateToSettings,
-            )
-            if (isSandboxAvailable) {
-                DrawerRow(
-                    icon = Icons.Default.Terminal,
-                    label = "Sandbox",
-                    onClick = { /* open sandbox */ },
-                )
-            }
-            if (isKaiBuildAvailable && onOpenKaiBuild != null) {
-                DrawerRow(
-                    icon = Icons.Default.Build,
-                    label = "Kai Build",
-                    onClick = onOpenKaiBuild,
-                )
-            }
-        }
-
-        // Pinned section at bottom of drawer
-        Column(
-            modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth(),
-        ) {
-            Text(
-                text = "Version 1.0.0",
-                style = MaterialTheme.typography.caption,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
-}
-
-
-@Composable
-private fun KaiDrawerFooter(
-    onChatTap: () -> Unit,
-    onSettingsTap: () -> Unit,
-    onVoiceTap: () -> Unit,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(64.dp)
-            .padding(horizontal = 12.dp, vertical = 8.dp)
-            .background(MaterialTheme.colorScheme.surface),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        // Chat pill — primary action
-        Box(
-            modifier = Modifier
-                .weight(1f)
-                .height(40.dp)
-                .background(voiceAccent(MaterialTheme.colorScheme), RoundedCornerShape(20.dp))
-                .clickable { onChatTap() }
-                .handCursor(),
-            contentAlignment = Alignment.Center,
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Chat,
-                    contentDescription = "New chat",
-                    tint = Color.White,
-                    modifier = Modifier.size(18.dp),
-                )
-                Text(
-                    text = "Chat",
-                    style = MaterialTheme.typography.labelLarge.copy(
-                        color = Color.White,
-                        fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
-                    ),
-                )
-            }
-        }
-
-        // Settings avatar (small circle)
-        Box(
-            modifier = Modifier
-                .size(40.dp)
-                .background(if (MaterialTheme.colorScheme.isDark) Color(0xFF212121) else Color(0xFFE5E7EB), CircleShape)
-                .clickable { onSettingsTap() }
-                .handCursor(),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                imageVector = Icons.Default.Settings,
-                contentDescription = "Settings",
-                tint = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.size(20.dp),
-            )
-        }
-
-        // Voice button (morphing mic/send)
-        Box(
-            modifier = Modifier
-                .size(40.dp)
-                .background(voiceAccent(MaterialTheme.colorScheme), CircleShape)
-                .clickable { onVoiceTap() }
-                .handCursor(),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                imageVector = Icons.Default.Mic,
-                contentDescription = "Voice input",
-                tint = Color.White,
-                modifier = Modifier.size(20.dp),
-            )
-        }
-    }
-}
-
-
-private fun voiceAccent(scheme: androidx.compose.material3.ColorScheme): androidx.compose.ui.graphics.Color =
-    if (scheme.isDark) Color(0xFF2563EB) else Color(0xFF1D63FF)
-
-
-@Composable
-private fun Divider() {
-    androidx.compose.foundation.Divider(
-        modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.outlineVariant,
-    )
-}
-
-
-@Composable
-private fun DrawerRow(
-    icon: androidx.compose.material.icons.Icons.Default,
-    label: String,
-    onClick: () -> Unit,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() }
-            .handCursor()
-            .padding(horizontal = 16.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(20.dp),
-        )
-        Spacer(modifier = Modifier.width(12.dp))
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onBackground,
-        )
-    }
-}
-
-
-/** ChatModeScreen — the main conversation surface, now wrapped in KaiDrawerLayout. */
-@Composable
-private fun ChatModeScreen(
-    uiState: ChatUiState,
-    textToSpeech: TextToSpeechInstance?,
-    onNavigateToSettings: () -> Unit,
-    isSandboxAvailable: Boolean,
-    onOpenKaiBuild: (() -> Unit)?,
-    navigationTabBar: (@Composable () -> Unit)? = null,
-    initialSandboxOpen: Boolean = false,
-    previewSandboxState: SandboxUiState? = null,
-    previewSandboxLines: ImmutableList<TerminalLine> = persistentListOf(),
-) {
-    val snackbarHostState = remember { SnackbarHostState() }
-    val componentScope = rememberCoroutineScope()
-    var questionInputText by remember { mutableStateOf("") }
-    var isSandboxOpen by rememberSaveable { mutableStateOf(initialSandboxOpen) }
-    var showHistorySheet by remember { mutableStateOf(false) }
-    val listState = rememberLazyListState()
-    val showScrollToBottom by remember {
-        derivedStateOf {
-            val visibleItems = listState.visibleItemsInfo
-            visibleItems.isEmpty() ||
-                visibleItems.lastOrNull()?.index != listState.layoutInfo.totalItemsCount - 1
-        }
-    }
-
-    // History + UI-state derived values (unchanged from original)
-    val allConversations = remember(uiState.conversations) {
-        uiState.conversations.toImmutableList()
-    }
-    val filteredConversations = remember(allConversations, uiState.currentConversationId) {
-        allConversations.filter { it.id != uiState.currentConversationId }
-    }
-
-    val reasoningSegmentsByAssistantId = remember(uiState.history) {
-        uiState.history
-            .filter { it.role == History.Role.THINKING }
-            .groupBy { it.id }
-            .mapValues { (_, segments) ->
-                segments.map { it.content }.toImmutableList()
-            }
-    }
-    val suppressedThinkingIds = remember(uiState.history) {
-        uiState.history
-            .filter { it.role == History.Role.ASSISTANT && it.content.isNotEmpty() }
-            .map { it.id }
-            .toSet()
-    }
-    val fallbackStatusText = remember(uiState.fallbackServiceName) {
-        if (uiState.fallbackServiceName != null) {
-            stringResource(Res.string.fallback_answered_by, uiState.fallbackServiceName)
-        } else null
-    }
-    val executingToolsState = rememberExecutingTools(uiState.history)
-    val frozenByAssistantId = remember(uiState.frozenSubmissions) {
-        uiState.frozenSubmissions.associateBy { it.assistantId }
-    }
-
-    LaunchedEffect(uiState.isRestoring) {
-        if (!uiState.isRestoring) {
-            componentScope.launch {
-                listState.scrollToItem(0)
-            }
-        }
-    }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .imePadding()
-            .navigationBarsPadding()
-            .statusBarsPadding(),
-    ) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.TopStart,
-        ) {
-            HeartbeatBanner(
-                visible = uiState.showHeartbeatBanner,
-                onDismiss = { /* dismiss handled in VM */ },
-            )
-        }
-
-        TopBar(
-            actions = uiState.actions,
-            availableServices = uiState.availableServices,
-            onSelectService = uiState.actions.selectService,
-            onNewChat = { /* new chat */ },
-            onOpenDrawer = { /* toggle drawer — handled by KaiDrawerLayout */ },
-        )
-
-        LazyColumn(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth(),
-            state = listState,
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            item(key = "empty") {
-                if (uiState.history.isEmpty() && !uiState.isLoading) {
-                    EmptyState(
-                        onNewChat = { /* new chat */ },
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
-                    )
-                }
-            }
-
-            items(
-                items = uiState.history,
-                key = { it.id },
-            ) { history ->
-                when (history.role) {
-                    History.Role.USER -> {
-                        UserMessage(
-                            message = history.content,
-                            attachments = history.attachments,
-                        )
-                    }
-                    History.Role.ASSISTANT -> {
-                        val frozen = frozenByAssistantId[history.id]
-                        val isLastAssistant = history.id == uiState.history.lastOrNull()?.id
-                        BotMessage(
-                            message = history.content,
-                            textToSpeech = textToSpeech,
-                            isSpeaking = uiState.isSpeaking,
-                            setIsSpeaking = { uiState.actions.setSpeaking(it) },
-                            onRegenerate = if (isLastAssistant && !uiState.isLoading && frozen == null) {
-                                uiState.actions.regenerate
-                            } else null,
-                            isInteractive = isLastAssistant && !uiState.isLoading && frozen == null,
-                            onUiCallback = { event, data ->
-                                uiState.actions.submitUiCallback(event, data)
-                            },
-                            frozen = frozen,
-                            onResubmit = if (pairedUserId != null && !uiState.isLoading) {
-                                { event, data -> uiState.actions.resubmit(pairedUserId, event, data) }
-                            } else {
-                                null
-                            },
-                            reasoningSegments = reasoningSegmentsByAssistantId[history.id] ?: persistentListOf(),
-                        )
-                        if (history.fallbackServiceName != null) {
-                            androidx.compose.material3.Text(
-                                text = stringResource(Res.string.fallback_answered_by, history.fallbackServiceName),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(start = 16.dp, bottom = 8.dp),
-                            )
-                        }
-                    } else if (history.isThinking &&
-                        history.content.isNotEmpty() &&
-                        history.id !in suppressedThinkingIds
-                    ) {
-                        // Thinking-only turn still in flight — render as a standalone
-                        // reasoning bubble. The precomputation above has already gathered
-                        // every earlier thinking segment in this cycle under this id.
-                        BotMessage(
-                            message = "",
-                            textToSpeech = null,
-                            isSpeaking = false,
-                            setIsSpeaking = {},
-                            reasoningSegments = reasoningSegmentsByAssistantId[history.id]
-                                ?: persistentListOf(history.content),
-                        )
-                    }
-                    History.Role.TOOL_EXECUTING -> {
-                        // Rendered in WaitingResponseRow below
-                    }
-                    History.Role.TOOL -> {
-                        // Don't show completed tool results in UI
-                    }
-                }
-            }
-
-            // Skip the generic "thinking" row during a pending kai-ui submission — the
-            // pressed button's pulse already signals work in flight. Keep it for tool
-            // activity so tool feedback isn't lost.
-            val showWaitingRow = uiState.isLoading &&
-                (frozenByAssistantId.values.none { it.isPending } || executingToolsState.tools.isNotEmpty())
-            if (showWaitingRow) {
-                item(key = "loading") {
-                    WaitingResponseRow(
-                        executingTools = executingToolsState.tools,
-                        isStatusOnly = executingToolsState.isStatusOnly,
-                        statusText = fallbackStatusText,
-                    )
-                }
-            }
-            uiState.error?.let { error ->
-                item(key = "error") {
-                    if (uiState.showFreeProviderSuggestions) {
-                        FreeProviderSuggestionsPanel(
-                            error = error,
-                            retry = uiState.actions.retry,
-                        )
-                    } else {
-                        ErrorMessage(error = error, retry = uiState.actions.retry)
-                    }
-                }
-            }
-        }
-
-        VerticalScrollbarForList(
-            listState = listState,
-            modifier = Modifier.align(CenterEnd).fillMaxHeight(),
-        )
-
-        androidx.compose.animation.AnimatedVisibility(
-            visible = showScrollToBottom,
-            modifier = Modifier.align(BottomCenter).padding(bottom = 8.dp),
-            enter = fadeIn() + scaleIn(),
-            exit = fadeOut() + scaleOut(),
-        ) {
-            SmallFloatingActionButton(
+            Box(
                 modifier = Modifier
-                    .handCursor(),
-                onClick = {
-                    componentScope.launch {
-                        val totalItems = listState.layoutInfo.totalItemsCount
-                        if (totalItems > 0) {
-                            listState.animateScrollToItem(totalItems - 1)
+                    .fillMaxSize()
+                    .imePadding()
+                    .navigationBarsPadding()
+                    .statusBarsPadding(),
+            ) {
+                Column(modifier = Modifier.fillMaxSize()) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.TopStart,
+                    ) {
+                        HeartbeatBanner(
+                            visible = uiState.showHeartbeatBanner,
+                            onDismiss = { /* dismiss handled in VM */ },
+                        )
+                    }
+
+                    TopBar(
+                        actions = uiState.actions,
+                        availableServices = uiState.availableServices,
+                        onSelectService = uiState.actions.selectService,
+                        onNewChat = { /* new chat */ },
+                        onOpenDrawer = { /* toggle drawer — handled by KaiDrawerLayout */ },
+                    )
+
+                    LazyColumn(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
+                        state = listState,
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        item(key = "empty") {
+                            if (uiState.history.isEmpty() && !uiState.isLoading) {
+                                EmptyState(
+                                    onNewChat = { /* new chat */ },
+                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
+                                )
+                            }
+                        }
+
+                        items(
+                            items = uiState.history,
+                            key = { it.id },
+                        ) { history ->
+                            when (history.role) {
+                                History.Role.USER -> {
+                                    UserMessage(
+                                        message = history.content,
+                                        attachments = history.attachments,
+                                    )
+                                }
+                                History.Role.ASSISTANT -> {
+                                    val frozen = frozenByAssistantId[history.id]
+                                    val isLastAssistant = history.id == uiState.history.lastOrNull()?.id
+                                    BotMessage(
+                                        message = history.content,
+                                        textToSpeech = textToSpeech,
+                                        isSpeaking = uiState.isSpeaking,
+                                        setIsSpeaking = { uiState.actions.setSpeaking(it) },
+                                        onRegenerate = if (isLastAssistant && !uiState.isLoading && frozen == null) {
+                                            uiState.actions.regenerate
+                                        } else null,
+                                        isInteractive = isLastAssistant && !uiState.isLoading && frozen == null,
+                                        onUiCallback = { event, data ->
+                                            uiState.actions.submitUiCallback(event, data)
+                                        },
+                                        frozen = frozen,
+                                        onResubmit = if (pairedUserId != null && !uiState.isLoading) {
+                                            { event, data -> uiState.actions.resubmit(pairedUserId, event, data) }
+                                        } else {
+                                            null
+                                        },
+                                        reasoningSegments = reasoningSegmentsByAssistantId[history.id] ?: persistentListOf(),
+                                    )
+                                    if (history.fallbackServiceName != null) {
+                                        androidx.compose.material3.Text(
+                                            text = stringResource(Res.string.fallback_answered_by, history.fallbackServiceName),
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.padding(start = 16.dp, bottom = 8.dp),
+                                        )
+                                    }
+                                } else if (history.isThinking &&
+                                    history.content.isNotEmpty() &&
+                                    history.id !in suppressedThinkingIds
+                                ) {
+                                    BotMessage(
+                                        message = "",
+                                        textToSpeech = null,
+                                        isSpeaking = false,
+                                        setIsSpeaking = {},
+                                        reasoningSegments = reasoningSegmentsByAssistantId[history.id]
+                                            ?: persistentListOf(history.content),
+                                    )
+                                }
+                                History.Role.TOOL_EXECUTING -> {
+                                    // Rendered in WaitingResponseRow below
+                                }
+                                History.Role.TOOL -> {
+                                    // Don't show completed tool results in UI
+                                }
+                            }
+                        }
+
+                        val showWaitingRow = uiState.isLoading &&
+                            (frozenByAssistantId.values.none { it.isPending } || executingToolsState.tools.isNotEmpty())
+                        if (showWaitingRow) {
+                            item(key = "loading") {
+                                WaitingResponseRow(
+                                    executingTools = executingToolsState.tools,
+                                    isStatusOnly = executingToolsState.isStatusOnly,
+                                    statusText = fallbackStatusText,
+                                )
+                            }
+                        }
+                        uiState.error?.let { error ->
+                            item(key = "error") {
+                                if (uiState.showFreeProviderSuggestions) {
+                                    FreeProviderSuggestionsPanel(
+                                        error = error,
+                                        retry = uiState.actions.retry,
+                                    )
+                                } else {
+                                    ErrorMessage(error = error, retry = uiState.actions.retry)
+                                }
+                            }
                         }
                     }
-                },
-            ) {
-                Icon(Icons.Default.KeyboardArrowDown, contentDescription = stringResource(Res.string.scroll_to_bottom_content_description))
-            }
-        }
 
-        if (!isSandboxOpen) {
-            QuestionInput(
-                files = uiState.files,
-                addFile = uiState.actions.addFile,
-                removeFile = uiState.actions.removeFile,
-                ask = uiState.actions.ask,
-                supportedFileExtensions = uiState.supportedFileExtensions,
-                textState = questionInputText,
-                onTextStateChange = { questionInputText = it },
-                isLoading = uiState.isLoading,
-                cancel = uiState.actions.cancel,
-                availableServices = uiState.availableServices,
-                onSelectService = uiState.actions.selectService,
-                installedSkills = uiState.installedSkills,
-            )
-        }
-        SnackbarHost(
-            hostState = snackbarHostState,
-            modifier = Modifier.align(BottomCenter).padding(bottom = 80.dp),
-        ) { data ->
-            Snackbar(snackbarData = data)
+                    VerticalScrollbarForList(
+                        listState = listState,
+                        modifier = Modifier.align(CenterEnd).fillMaxHeight(),
+                    )
+
+                    androidx.compose.animation.AnimatedVisibility(
+                        visible = showScrollToBottom,
+                        modifier = Modifier.align(BottomCenter).padding(bottom = 8.dp),
+                        enter = fadeIn() + scaleIn(),
+                        exit = fadeOut() + scaleOut(),
+                    ) {
+                        SmallFloatingActionButton(
+                            modifier = Modifier
+                                .handCursor(),
+                            onClick = {
+                                componentScope.launch {
+                                    val totalItems = listState.layoutInfo.totalItemsCount
+                                    if (totalItems > 0) {
+                                        listState.animateScrollToItem(totalItems - 1)
+                                    }
+                                }
+                            },
+                        ) {
+                            Icon(Icons.Default.KeyboardArrowDown, contentDescription = stringResource(Res.string.scroll_to_bottom_content_description))
+                        }
+                    }
+
+                    if (!isSandboxOpen) {
+                        QuestionInput(
+                            files = uiState.files,
+                            addFile = uiState.actions.addFile,
+                            removeFile = uiState.actions.removeFile,
+                            ask = uiState.actions.ask,
+                            supportedFileExtensions = uiState.supportedFileExtensions,
+                            textState = questionInputText,
+                            onTextStateChange = { questionInputText = it },
+                            isLoading = uiState.isLoading,
+                            cancel = uiState.actions.cancel,
+                            availableServices = uiState.availableServices,
+                            onSelectService = uiState.actions.selectService,
+                            installedSkills = uiState.installedSkills,
+                        )
+                    }
+                    SnackbarHost(
+                        hostState = snackbarHostState,
+                        modifier = Modifier.align(BottomCenter).padding(bottom = 80.dp),
+                    ) { data ->
+                        Snackbar(snackbarData = data)
+                    }
+                }
+
+                // Pinned 64dp footer — Chat pill + Settings + Voice
+                Box(
+                    modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 32.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .height(64.dp)
+                            .background(Color(0xFF1D63FF), CircleShape)
+                            .padding(horizontal = 12.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier.size(40.dp).background(Color.White, CircleShape)
+                            ) {
+                                Icon(Icons.Default.Chat, contentDescription = "Chat", tint = Color(0xFF1D63FF))
+                            }
+                            Text(
+                                text = stringResource(Res.string.ask_anything),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color.White
+                            )
+                            Spacer(modifier = Modifier.weight(1f))
+                            IconButton(onClick = onNavigateToSettings) {
+                                Icon(
+                                    Icons.Default.Settings,
+                                    contentDescription = "Settings",
+                                    tint = Color.White
+                                )
+                            }
+                            Box(
+                                modifier = Modifier.size(40.dp).background(Color.White, CircleShape)
+                            ) {
+                                Icon(
+                                    Icons.Default.Mic,
+                                    contentDescription = "Voice",
+                                    tint = Color(0xFF1D63FF)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
