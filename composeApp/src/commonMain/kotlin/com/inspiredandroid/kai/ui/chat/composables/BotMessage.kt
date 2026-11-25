@@ -1,9 +1,17 @@
 package com.inspiredandroid.kai.ui.chat.composables
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -29,6 +37,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.inspiredandroid.kai.getBackgroundDispatcher
 import com.inspiredandroid.kai.ui.dynamicui.FrozenSubmission
@@ -58,7 +67,6 @@ import kotlinx.coroutines.launch
 import nl.marc_apps.tts.TextToSpeechInstance
 import nl.marc_apps.tts.errors.TextToSpeechSynthesisInterruptedError
 import org.jetbrains.compose.resources.stringResource
-
 
 @Composable
 internal fun BotMessage(
@@ -99,6 +107,8 @@ internal fun BotMessage(
                 )
             }
             if (message.isNotEmpty()) {
+                // When reasoning is shown above, the Thinking row already provides
+                // the visual gap to the answer — drop the duplicated top inset.
                 val answerTopPadding = if (nonBlankSegments.isNotEmpty()) 6.dp else 16.dp
                 SelectionContainer {
                     MarkdownContent(
@@ -136,32 +146,7 @@ internal fun BotMessage(
         }
     }
     if (message.isEmpty()) return
-
-    // Flat message — rendered on background, no bubble fill. 16.dp side margins.
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-    ) {
-        SelectionContainer {
-            MarkdownContent(
-                document = document,
-                isInteractive = effectiveInteractive,
-                onUiCallback = kaiUiCallback,
-                frozen = effectiveFrozen,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-    }
-
-    // 40.dp monochrome action bar below
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, bottom = 8.dp)
-            .height(40.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
+    Row(Modifier.padding(horizontal = 8.dp)) {
         if (textToSpeech != null) {
             val componentScope = rememberCoroutineScope()
             SmallIconButton(
@@ -177,7 +162,9 @@ internal fun BotMessage(
                             try {
                                 textToSpeech.say(text = message.toSpeakableText())
                             } catch (ignore: TextToSpeechSynthesisInterruptedError) {
+                                // Expected interruption - no action needed
                             } catch (e: Exception) {
+                                // Handle TTS errors gracefully (service failure, audio issues, etc.)
                             }
                             setIsSpeaking(false)
                         }
@@ -208,10 +195,9 @@ internal fun BotMessage(
                 onClick = onRegenerate,
             )
         }
-        Spacer(modifier = Modifier.weight(1f))
+        Spacer(Modifier.weight(1f))
     }
 }
-
 
 @Composable
 private fun ReasoningBlockquote(
@@ -219,6 +205,8 @@ private fun ReasoningBlockquote(
     modifier: Modifier = Modifier,
 ) {
     var expanded by remember { mutableStateOf(false) }
+    // Preview always reflects the MOST RECENT thinking segment so the user gets a
+    // visual update each time a new reasoning phase starts, without expanding.
     val preview = remember(segments) {
         segments.lastOrNull()
             ?.lineSequence()
@@ -252,22 +240,22 @@ private fun ReasoningBlockquote(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f).padding(start = 4.dp),
                 )
             }
         }
-        androidx.compose.animation.AnimatedVisibility(
+        AnimatedVisibility(
             visible = expanded,
-            enter = androidx.compose.animation.expandVertically(),
-            exit = androidx.compose.animation.shrinkVertically(),
+            enter = expandVertically(),
+            exit = shrinkVertically(),
         ) {
             Column(
                 modifier = Modifier.padding(top = 6.dp),
-                verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 for (segment in segments) {
-                    Row(modifier = androidx.compose.foundation.layout.height(androidx.compose.foundation.layout.IntrinsicSize.Min)) {
+                    Row(modifier = Modifier.height(IntrinsicSize.Min)) {
                         VerticalDivider(
                             thickness = 2.dp,
                             color = MaterialTheme.colorScheme.outlineVariant,
@@ -284,29 +272,5 @@ private fun ReasoningBlockquote(
                 }
             }
         }
-    }
-}
-
-
-@Composable
-private fun SmallIconButton(
-    iconResource: kai.composeapp.generated.resources.DrawableResource,
-    contentDescription: String,
-    onClick: () -> Unit,
-) {
-    Box(
-        modifier = Modifier
-            .size(32.dp)
-            .clip(CircleShape)
-            .clickable { onClick() }
-            .handCursor(),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(
-            imageVector = org.jetbrains.compose.resources.vectorResource(iconResource),
-            contentDescription = contentDescription,
-            modifier = Modifier.size(20.dp),
-            tint = MaterialTheme.colorScheme.onBackground,
-        )
     }
 }
