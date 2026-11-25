@@ -1,95 +1,60 @@
 @file:Suppress("DEPRECATION")
 
-
 package com.inspiredandroid.kai.ui
 
-
 import androidx.compose.foundation.BorderStroke
-
 import androidx.compose.foundation.background
-
 import androidx.compose.foundation.border
-
 import androidx.compose.foundation.layout.fillMaxWidth
-
 import androidx.compose.foundation.shape.RoundedCornerShape
-
 import androidx.compose.material.icons.Icons
-
 import androidx.compose.material.icons.filled.Clear
-
 import androidx.compose.material3.CardColors
-
 import androidx.compose.material3.CardDefaults
-
 import androidx.compose.material3.ColorScheme
-
 import androidx.compose.material3.Icon
-
 import androidx.compose.material3.IconButton
-
 import androidx.compose.material3.MaterialTheme
-
 import androidx.compose.material3.OutlinedTextField
-
 import androidx.compose.material3.OutlinedTextFieldDefaults
-
 import androidx.compose.material3.darkColorScheme
-
 import androidx.compose.material3.lightColorScheme
-
 import androidx.compose.runtime.Composable
-
 import androidx.compose.runtime.getValue
-
 import androidx.compose.runtime.mutableStateOf
-
 import androidx.compose.runtime.remember
-
 import androidx.compose.runtime.setValue
-
 import androidx.compose.ui.Modifier
-
 import androidx.compose.ui.draw.alpha
-
 import androidx.compose.ui.draw.clip
-
 import androidx.compose.ui.focus.onFocusChanged
-
 import androidx.compose.ui.graphics.Color
-
 import androidx.compose.ui.graphics.Shape
-
 import androidx.compose.ui.input.pointer.PointerIcon
-
 import androidx.compose.ui.input.pointer.pointerHoverIcon
-
 import androidx.compose.ui.text.input.VisualTransformation
-
 import androidx.compose.ui.unit.dp
-
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
+val darkPurple = Color(0xFF6200EE)
+val lightPurple = Color(0xff8063C5)
+val gradientBrush = androidx.compose.ui.graphics.Brush.horizontalGradient(listOf(darkPurple, lightPurple))
 
-val voiceAccentLight = Color(0xFF1D63FF)
-val voiceAccentDark = Color(0xFF2563EB)
-
-val drawerScrim = Color(0xFF000000).copy(alpha = 0.32f)
+// Animated border gradient colors
+val gradientPurple = Color(0xFF9C27B0)
+val gradientViolet = Color(0xFF7C4DFF)
+val gradientMagenta = Color(0xFFE040FB)
 
 fun Modifier.handCursor() = pointerHoverIcon(PointerIcon.Hand, overrideDescendants = true)
 
-
 val DarkColorScheme = darkColorScheme(
-    primary = voiceAccentDark,
-    onPrimary = Color(0xFFFFFFFF),
-    surface = Color(0xFF171717),
-    background = Color(0xFF000000),
-    onBackground = Color(0xFFECECF1),
-    onSurface = Color(0xFFECECF1),
-    surfaceVariant = Color(0xFF2F2F2F),
-    outlineVariant = Color(0xFF2F2F2F),
+    primary = Color(0xFFBB86FC),
+    onPrimary = Color(0xFF000000),
+    surface = Color(0xFF1E1E1E),
+    background = Color(0xFF121212),
+    onBackground = Color(0xFFFFFFFF),
+    onSurface = Color(0xFFFFFFFF),
 )
-
 
 fun ColorScheme.withBlackBackground(): ColorScheme = copy(
     background = Color.Black,
@@ -97,12 +62,9 @@ fun ColorScheme.withBlackBackground(): ColorScheme = copy(
     surfaceContainerLowest = Color.Black,
 )
 
-
 val ColorScheme.isOledFlavor: Boolean get() = background == Color.Black
 
-
 @Composable
-
 fun kaiAdaptiveCardColors(): CardColors = CardDefaults.cardColors(
     containerColor = if (MaterialTheme.colorScheme.isOledFlavor) {
         Color.Transparent
@@ -111,21 +73,15 @@ fun kaiAdaptiveCardColors(): CardColors = CardDefaults.cardColors(
     },
 )
 
-
 @Composable
-
-fun kaiAdaptiveCardBorder(): BorderStroke? = if
-(MaterialTheme.colorScheme.isOledFlavor) {
+fun kaiAdaptiveCardBorder(): BorderStroke? = if (MaterialTheme.colorScheme.isOledFlavor) {
     BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
 } else {
     null
 }
 
-
 @Composable
-
-fun Modifier.kaiAdaptiveCardSurface(shape: Shape = CardDefaults.shape):
-Modifier = this
+fun Modifier.kaiAdaptiveCardSurface(shape: Shape = CardDefaults.shape): Modifier = this
     .clip(shape)
     .background(
         if (MaterialTheme.colorScheme.isOledFlavor) {
@@ -142,26 +98,19 @@ Modifier = this
         },
     )
 
-
 val LightColorScheme = lightColorScheme(
-    primary = voiceAccentLight,
+    primary = darkPurple,
     onPrimary = Color(0xFFFFFFFF),
-    surface = Color(0xFFF4F4F6),
+    surface = Color(0xFFF2F2F2),
     background = Color(0xFFFFFFFF),
-    onBackground = Color(0xFF0D0D0D),
-    onSurface = Color(0xFF0D0D0D),
-    surfaceVariant = Color(0xFFE5E7EB),
-    outlineVariant = Color(0xFFE5E7EB),
+    onBackground = Color(0xFF000000),
+    onSurface = Color(0xFF000000),
 )
 
-
 @Composable
-
 fun outlineTextFieldColors() = OutlinedTextFieldDefaults.colors()
 
-
 @Composable
-
 fun KaiOutlinedTextField(
     value: String,
     onValueChange: (String) -> Unit,
@@ -194,9 +143,7 @@ fun KaiOutlinedTextField(
     )
 }
 
-
 @Composable
-
 fun KaiClearableTextField(
     value: String,
     onValueChange: (String) -> Unit,
@@ -228,11 +175,8 @@ fun KaiClearableTextField(
     )
 }
 
-
 @Composable
-
 @Preview
-
 fun Theme(
     colorScheme: ColorScheme,
     content: @Composable () -> Unit,
