@@ -1,79 +1,45 @@
 package com.inspiredandroid.kai.ui.chat.composables
 
-
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-
 import androidx.compose.foundation.clickable
-
 import androidx.compose.foundation.layout.Arrangement
-
 import androidx.compose.foundation.layout.Column
-
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
-
 import androidx.compose.foundation.layout.Spacer
-
 import androidx.compose.foundation.layout.height
-
 import androidx.compose.foundation.layout.padding
-
 import androidx.compose.foundation.layout.size
-
-import androidx.compose.foundation.layout.width
-
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
-
 import androidx.compose.foundation.text.selection.SelectionContainer
-
 import androidx.compose.material3.Icon
-
 import androidx.compose.material3.MaterialTheme
-
 import androidx.compose.material3.SuggestionChip
-
 import androidx.compose.material3.Text
-
 import androidx.compose.runtime.Composable
-
 import androidx.compose.runtime.remember
-
 import androidx.compose.ui.Alignment
-
 import androidx.compose.ui.Modifier
-
 import androidx.compose.ui.draw.clip
-
 import androidx.compose.ui.layout.ContentScale
-
 import androidx.compose.ui.unit.dp
-
 import com.inspiredandroid.kai.data.Attachment
-
 import com.inspiredandroid.kai.decodeToImageBitmap
-
 import com.inspiredandroid.kai.ui.components.LocalShowFullScreenImage
-
 import com.inspiredandroid.kai.ui.handCursor
-
 import kai.composeapp.generated.resources.Res
-
 import kai.composeapp.generated.resources.ic_file
-
 import kotlinx.collections.immutable.ImmutableList
-
 import kotlinx.collections.immutable.persistentListOf
-
 import org.jetbrains.compose.resources.painterResource
-
 import kotlin.io.encoding.Base64
-
 import kotlin.io.encoding.ExperimentalEncodingApi
 
-
-@OptIn(ExperimentalEncodingApi::class)
-
+@OptIn(ExperimentalEncodingApi::class, ExperimentalLayoutApi::class)
 @Composable
-
 internal fun UserMessage(
     message: String,
     attachments: ImmutableList<Attachment> = persistentListOf(),
@@ -84,10 +50,9 @@ internal fun UserMessage(
             Spacer(Modifier.weight(1f))
             Column(
                 modifier = Modifier
-                    .widthIn(max = 412.dp * 0.78f)
                     .background(
-                        MaterialTheme.colorScheme.surfaceContainerHigh,
-                        RoundedCornerShape(18.dp),
+                        MaterialTheme.colorScheme.onBackground.copy(alpha = 0.15f),
+                        RoundedCornerShape(8.dp),
                     )
                     .padding(16.dp),
                 horizontalAlignment = Alignment.End,
@@ -126,10 +91,10 @@ internal fun UserMessage(
                                 onClick = {},
                                 icon = {
                                     Icon(
-                                        modifier = androidx.compose.ui.Modifier.size(16.dp),
+                                        modifier = Modifier.size(16.dp),
                                         painter = painterResource(Res.drawable.ic_file),
                                         contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onSurface,
+                                        tint = MaterialTheme.colorScheme.onBackground,
                                     )
                                 },
                                 label = { Text(truncateFileName(att.fileName ?: att.mimeType)) },
@@ -143,26 +108,10 @@ internal fun UserMessage(
                 if (message.isNotEmpty()) {
                     Text(
                         text = message,
-                        color = MaterialTheme.colorScheme.onSurface,
+                        color = MaterialTheme.colorScheme.onBackground,
                     )
                 }
             }
         }
-    }
-}
-
-
-@Composable
-
-internal fun truncateFileName(name: String, maxChars: Int = 16): String {
-    if (name.length <= maxChars) return name
-    val dotIndex = name.lastIndexOf('.')
-    return if (dotIndex > 0 && dotIndex < name.length - 1) {
-        val base = name.substring(0, dotIndex)
-        val ext = name.substring(dotIndex)
-        val keep = (maxChars - ext.length - 1).coerceAtLeast(1)
-        "${base.take(keep)}…$ext"
-    } else {
-        "${name.take(maxChars - 1)}…"
     }
 }
