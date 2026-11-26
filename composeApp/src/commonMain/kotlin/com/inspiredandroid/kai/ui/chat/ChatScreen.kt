@@ -1,5 +1,6 @@
 @file:OptIn(
     ExperimentalFoundationApi::class,
+    ExperimentalMaterial3Api::class,
 )
 
 package com.inspiredandroid.kai.ui.chat
@@ -46,6 +47,7 @@ import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.Icon
 import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalDrawerSheet
@@ -120,6 +122,13 @@ import com.inspiredandroid.kai.ui.sandbox.SandboxTabsContent
 import com.inspiredandroid.kai.ui.settings.SandboxUiState
 import com.inspiredandroid.kai.ui.settings.SandboxViewModel
 import kai.composeapp.generated.resources.Res
+import kai.composeapp.generated.resources.chat_history_empty
+import kai.composeapp.generated.resources.chat_history_title
+import kai.composeapp.generated.resources.ic_add
+import kai.composeapp.generated.resources.ic_settings
+import kai.composeapp.generated.resources.new_chat_content_description
+import kai.composeapp.generated.resources.sandbox_content_description
+import kai.composeapp.generated.resources.settings_content_description
 import kai.composeapp.generated.resources.fallback_answered_by
 import kai.composeapp.generated.resources.fallback_service_failed
 import kai.composeapp.generated.resources.fallback_trying_next
