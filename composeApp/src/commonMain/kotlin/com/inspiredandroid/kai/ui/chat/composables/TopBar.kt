@@ -26,6 +26,7 @@ import com.inspiredandroid.kai.ui.chat.ChatActions
 import com.inspiredandroid.kai.ui.handCursor
 import kai.composeapp.generated.resources.Res
 import kai.composeapp.generated.resources.chat_history_content_description
+import kai.composeapp.generated.resources.chat_history_title
 import kai.composeapp.generated.resources.ic_add
 import kai.composeapp.generated.resources.ic_history
 import kai.composeapp.generated.resources.ic_settings
