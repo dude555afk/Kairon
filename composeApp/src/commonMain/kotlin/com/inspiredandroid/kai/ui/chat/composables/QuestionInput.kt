@@ -319,10 +319,12 @@ fun QuestionInput(
                             icon = Res.drawable.ic_stop,
                             onClick = cancel,
                             isPulsing = true,
+                            containerColor = Color(0xFF1D63FF),
                         )
                         "send" -> TrailingIcon(
                             icon = Res.drawable.ic_up,
                             onClick = { submitQuestion() },
+                            containerColor = Color(0xFF1D63FF),
                         )
                         else -> Box(
                             modifier = Modifier
@@ -391,6 +393,7 @@ internal fun TrailingIcon(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     isPulsing: Boolean = false,
+    containerColor: Color? = null,
 ) {
     val pulseModifier = if (isPulsing) {
         val infiniteTransition = rememberInfiniteTransition()
@@ -418,11 +421,16 @@ internal fun TrailingIcon(
     } else {
         Modifier
     }
+    val containerModifier = if (containerColor == null) {
+        Modifier.background(brush = gradientBrush, shape = CircleShape)
+    } else {
+        Modifier.background(containerColor, CircleShape)
+    }
     Box(
         modifier = modifier
             .size(42.dp)
             .clip(CircleShape)
-            .background(brush = gradientBrush, CircleShape)
+            .then(containerModifier)
             .handCursor()
             .clickable {
                 onClick()
