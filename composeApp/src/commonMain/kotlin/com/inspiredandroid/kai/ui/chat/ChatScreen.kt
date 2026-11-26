@@ -675,7 +675,7 @@ private fun ChatModeScreen(
                         )
                         DrawerFooterItem(
                             modifier = Modifier.weight(1f),
-                            label = stringResource(Res.string.interactive_title),
+                            label = "Voice",
                             icon = Icons.Default.Mic,
                             onClick = {
                                 drawerScope.launch { drawerState.close() }
@@ -684,7 +684,7 @@ private fun ChatModeScreen(
                         )
                         DrawerFooterItem(
                             modifier = Modifier.weight(1f),
-                            label = stringResource(Res.string.sandbox_content_description),
+                            label = "Sandbox",
                             icon = Icons.Default.Dns,
                             enabled = isSandboxAvailable,
                             onClick = {
