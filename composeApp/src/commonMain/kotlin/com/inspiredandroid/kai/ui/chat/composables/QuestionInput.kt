@@ -1,5 +1,11 @@
 package com.inspiredandroid.kai.ui.chat.composables
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -27,11 +33,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.DisableSelection
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -98,6 +107,7 @@ fun QuestionInput(
     onSelectService: (String) -> Unit = {},
     installedSkills: ImmutableList<SkillManifest> = persistentListOf(),
     modifier: Modifier = Modifier,
+    onVoice: () -> Unit = {},
 ) {
     Column(modifier = modifier) {
         // Slash autocomplete: shown when the user is typing the first token and it starts
@@ -191,93 +201,151 @@ fun QuestionInput(
         // grow with the font scale — otherwise the composer shows a single line of
         // what the user is typing at the largest accessibility font size.
         val maxComposerHeight = 120.dp * LocalDensity.current.fontScale
-        TextField(
-            value = textState,
-            onValueChange = onTextStateChange,
+        Column(
             modifier = Modifier
-                .focusRequester(focusRequester)
-                .padding(16.dp)
-                .heightIn(max = maxComposerHeight)
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(28.dp))
-                .background(MaterialTheme.colorScheme.background)
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .clip(RoundedCornerShape(24.dp))
+                .background(MaterialTheme.colorScheme.surfaceContainerLow)
                 .border(
-                    BorderStroke(width = 2.dp, brush = gradientBrush),
-                    shape = RoundedCornerShape(28.dp),
+                    BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                    RoundedCornerShape(24.dp),
                 )
-                .onPreviewKeyEvent { event ->
-                    // Only handle hardware keyboard on desktop/web platforms
-                    if (currentPlatform !is Platform.Mobile && event.key.keyCode == Key.Enter.keyCode && event.type == KeyEventType.KeyDown) {
-                        if (event.isShiftPressed) {
-                            // Shift+Enter -> manually insert newline
-                            val currentText = textState.text
-                            val selection = textState.selection
-                            val start = minOf(selection.start, selection.end).coerceIn(0, currentText.length)
-                            val end = maxOf(selection.start, selection.end).coerceIn(0, currentText.length)
+                .padding(6.dp),
+        ) {
+            TextField(
+                value = textState,
+                onValueChange = onTextStateChange,
+                modifier = Modifier
+                    .focusRequester(focusRequester)
+                    .fillMaxWidth()
+                    .heightIn(max = maxComposerHeight)
+                    .onPreviewKeyEvent { event ->
+                        // Only handle hardware keyboard on desktop/web platforms
+                        if (currentPlatform !is Platform.Mobile && event.key.keyCode == Key.Enter.keyCode && event.type == KeyEventType.KeyDown) {
+                            if (event.isShiftPressed) {
+                                // Shift+Enter -> manually insert newline
+                                val currentText = textState.text
+                                val selection = textState.selection
+                                val start = minOf(selection.start, selection.end).coerceIn(0, currentText.length)
+                                val end = maxOf(selection.start, selection.end).coerceIn(0, currentText.length)
 
-                            val newText = currentText.replaceRange(start, end, "\n")
-                            onTextStateChange(
-                                TextFieldValue(
-                                    text = newText,
-                                    selection = TextRange(start + 1),
-                                ),
-                            )
-                            return@onPreviewKeyEvent true
-                        } else {
-                            // Enter without Shift -> send message and consume event
-                            submitQuestion()
-                            return@onPreviewKeyEvent true
+                                val newText = currentText.replaceRange(start, end, "\n")
+                                onTextStateChange(
+                                    TextFieldValue(
+                                        text = newText,
+                                        selection = TextRange(start + 1),
+                                    ),
+                                )
+                                return@onPreviewKeyEvent true
+                            } else {
+                                // Enter without Shift -> send message and consume event
+                                submitQuestion()
+                                return@onPreviewKeyEvent true
+                            }
                         }
-                    }
-                    return@onPreviewKeyEvent false
+                        return@onPreviewKeyEvent false
+                    },
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                    disabledContainerColor = Color.Transparent,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    cursorColor = MaterialTheme.colorScheme.primary,
+                ),
+                placeholder = {
+                    Text(
+                        stringResource(Res.string.prompt_ask_question),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 },
-            colors = outlineTextFieldColors(),
-            placeholder = {
-                Text(
-                    stringResource(Res.string.prompt_ask_question),
-                    color = MaterialTheme.colorScheme.onBackground,
-                )
-            },
-            trailingIcon = {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(end = 7.dp),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    if (availableServices.size > 1) {
-                        ServiceSelector(
-                            services = availableServices,
-                            onSelectService = onSelectService,
-                        )
-                    }
-                    if (isLoading) {
-                        TrailingIcon(icon = Res.drawable.ic_stop, onClick = cancel, isPulsing = true)
-                    } else if (textState.text.isNotBlank()) {
-                        TrailingIcon(icon = Res.drawable.ic_up, onClick = { submitQuestion() })
-                    }
-                }
-            },
-            keyboardActions = if (currentPlatform !is Platform.Mobile) {
-                KeyboardActions(onSend = { submitQuestion() })
-            } else {
-                KeyboardActions() // No keyboard send action on mobile
-            },
-            leadingIcon = if (filePickerLauncher != null) {
-                {
+                keyboardActions = if (currentPlatform !is Platform.Mobile) {
+                    KeyboardActions(onSend = { submitQuestion() })
+                } else {
+                    KeyboardActions()
+                },
+                keyboardOptions = KeyboardOptions(
+                    imeAction = if (currentPlatform is Platform.Mobile) ImeAction.Default else ImeAction.Send,
+                ),
+            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 4.dp, end = 4.dp, bottom = 2.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                if (filePickerLauncher != null) {
                     CircleIconButton(
                         icon = vectorResource(Res.drawable.ic_attach),
                         onClick = { filePickerLauncher.launch() },
-                        modifier = Modifier.padding(start = 7.dp),
-                        tint = MaterialTheme.colorScheme.onBackground,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                } else {
+                    Spacer(Modifier.size(42.dp))
                 }
-            } else {
-                null
-            },
-            keyboardOptions = KeyboardOptions(
-                imeAction = if (currentPlatform is Platform.Mobile) ImeAction.Default else ImeAction.Send,
-            ),
-        )
+                Box(
+                    modifier = Modifier.weight(1f),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    if (availableServices.size > 1) {
+                        Box(
+                            modifier = Modifier.graphicsLayer {
+                                scaleX = 34f / 42f
+                                scaleY = 34f / 42f
+                            },
+                        ) {
+                            ServiceSelector(
+                                services = availableServices,
+                                onSelectService = onSelectService,
+                            )
+                        }
+                    }
+                }
+                val actionState = when {
+                    isLoading -> "stop"
+                    textState.text.isNotBlank() -> "send"
+                    else -> "voice"
+                }
+                AnimatedContent(
+                    targetState = actionState,
+                    transitionSpec = {
+                        (fadeIn() + scaleIn(initialScale = 0.86f)) togetherWith
+                            (fadeOut() + scaleOut(targetScale = 0.86f))
+                    },
+                    label = "composer-action",
+                ) { state ->
+                    when (state) {
+                        "stop" -> TrailingIcon(
+                            icon = Res.drawable.ic_stop,
+                            onClick = cancel,
+                            isPulsing = true,
+                        )
+                        "send" -> TrailingIcon(
+                            icon = Res.drawable.ic_up,
+                            onClick = { submitQuestion() },
+                        )
+                        else -> Box(
+                            modifier = Modifier
+                                .size(42.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFF1D63FF))
+                                .clickable(onClick = onVoice)
+                                .handCursor(),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Mic,
+                                contentDescription = "Start voice mode",
+                                tint = Color.White,
+                                modifier = Modifier.size(22.dp),
+                            )
+                        }
+                    }
+                }
+            }
+        }
         val inInspection = LocalInspectionMode.current
         LaunchedEffect(Unit) {
             if (!inInspection) focusRequester.requestFocus()
