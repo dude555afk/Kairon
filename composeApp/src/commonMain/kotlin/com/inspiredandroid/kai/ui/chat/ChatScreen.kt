@@ -127,7 +127,6 @@ import kai.composeapp.generated.resources.chat_history_title
 import kai.composeapp.generated.resources.ic_add
 import kai.composeapp.generated.resources.ic_settings
 import kai.composeapp.generated.resources.new_chat_content_description
-import kai.composeapp.generated.resources.sandbox_content_description
 import kai.composeapp.generated.resources.settings_content_description
 import kai.composeapp.generated.resources.fallback_answered_by
 import kai.composeapp.generated.resources.fallback_service_failed
