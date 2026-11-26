@@ -8,8 +8,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Dns
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -25,6 +27,7 @@ import com.inspiredandroid.kai.ui.chat.ChatActions
 import com.inspiredandroid.kai.ui.handCursor
 import kai.composeapp.generated.resources.Res
 import kai.composeapp.generated.resources.chat_history_content_description
+import kai.composeapp.generated.resources.chat_history_title
 import kai.composeapp.generated.resources.ic_add
 import kai.composeapp.generated.resources.ic_history
 import kai.composeapp.generated.resources.ic_settings
@@ -53,12 +56,20 @@ internal fun TopBar(
     onToggleSandbox: () -> Unit,
     onShowHistory: () -> Unit,
     navigationTabBar: (@Composable () -> Unit)? = null,
+    onOpenDrawer: () -> Unit = {},
 ) {
     if (navigationTabBar != null) {
         Box(
-            modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 64.dp),
+            modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 56.dp).padding(horizontal = 16.dp),
         ) {
             Row(modifier = Modifier.align(Alignment.CenterStart)) {
+                IconButton(modifier = Modifier.handCursor(), onClick = onOpenDrawer) {
+                    Icon(
+                        imageVector = Icons.Default.Menu,
+                        contentDescription = stringResource(Res.string.chat_history_title),
+                        tint = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
                 LeadingButtons(textToSpeech, isSpeechOutputEnabled, isSpeaking, actions, isChatHistoryEmpty, hasSavedConversations, onShowHistory, isSandboxAvailable, isSandboxOpen, isShellExecuting, onToggleSandbox)
             }
             Box(modifier = Modifier.align(Alignment.Center)) {
@@ -72,6 +83,13 @@ internal fun TopBar(
         }
     } else {
         Row {
+            IconButton(modifier = Modifier.handCursor(), onClick = onOpenDrawer) {
+                Icon(
+                    imageVector = Icons.Default.Menu,
+                    contentDescription = stringResource(Res.string.chat_history_title),
+                    tint = MaterialTheme.colorScheme.onSurface,
+                )
+            }
             LeadingButtons(textToSpeech, isSpeechOutputEnabled, isSpeaking, actions, isChatHistoryEmpty, hasSavedConversations, onShowHistory, isSandboxAvailable, isSandboxOpen, isShellExecuting, onToggleSandbox)
             Spacer(Modifier.weight(1f))
             if (textToSpeech != null) {
