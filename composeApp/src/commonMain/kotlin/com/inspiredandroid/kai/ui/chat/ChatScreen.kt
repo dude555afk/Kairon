@@ -586,6 +586,10 @@ private fun ChatModeScreen(
                             .fillMaxWidth()
                             .clickable {
                                 drawerScope.launch { drawerState.close() }
+                                if (uiState.isSpeechOutputEnabled && uiState.isSpeaking) {
+                                    uiState.actions.setIsSpeaking(false, "")
+                                    textToSpeech?.stop()
+                                }
                                 uiState.actions.startNewChat()
                             }
                             .padding(horizontal = 20.dp, vertical = 18.dp),
