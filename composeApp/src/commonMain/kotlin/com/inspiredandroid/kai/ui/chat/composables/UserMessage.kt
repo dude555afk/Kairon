@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
@@ -52,7 +53,7 @@ internal fun UserMessage(
                 Spacer(Modifier.weight(1f))
                 Column(
                     modifier = Modifier
-                        .widthIn(max = maxWidth * 0.78f)
+                        .widthIn(max = this@BoxWithConstraints.maxWidth * 0.78f)
                         .background(
                             MaterialTheme.colorScheme.surfaceContainerHigh,
                             RoundedCornerShape(18.dp),
