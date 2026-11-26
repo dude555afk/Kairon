@@ -139,6 +139,7 @@ import nl.marc_apps.tts.TextToSpeechInstance
 import nl.marc_apps.tts.errors.TextToSpeechSynthesisInterruptedError
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.resources.vectorResource
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -623,8 +624,9 @@ private fun ChatModeScreen(
                         ) {
                             items(filteredConversations, key = { it.id }) { conversation ->
                                 val selected = conversation.id == uiState.currentConversationId
+                                val conversationTitle = conversation.title
                                 Text(
-                                    text = conversation.title.ifBlank { stringResource(Res.string.chat_history_title) },
+                                    text = if (conversationTitle.isBlank()) stringResource(Res.string.chat_history_title) else conversationTitle,
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                                     maxLines = 1,
