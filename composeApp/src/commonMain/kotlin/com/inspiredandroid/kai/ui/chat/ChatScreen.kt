@@ -589,135 +589,135 @@ private fun ChatModeScreen(
                     modifier = Modifier.width((maxWidth * 0.82f).coerceAtMost(340.dp)),
                     drawerShape = RoundedCornerShape(0.dp),
                 ) {
-                Column(Modifier.fillMaxHeight()) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                drawerScope.launch { drawerState.close() }
-                                if (uiState.isSpeechOutputEnabled && uiState.isSpeaking) {
-                                    uiState.actions.setIsSpeaking(false, "")
-                                    textToSpeech?.stop()
+                    Column(Modifier.fillMaxHeight()) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    drawerScope.launch { drawerState.close() }
+                                    if (uiState.isSpeechOutputEnabled && uiState.isSpeaking) {
+                                        uiState.actions.setIsSpeaking(false, "")
+                                        textToSpeech?.stop()
+                                    }
+                                    uiState.actions.startNewChat()
                                 }
-                                uiState.actions.startNewChat()
-                            }
-                            .padding(horizontal = 20.dp, vertical = 18.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(
-                            imageVector = vectorResource(Res.drawable.ic_add),
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurface,
-                        )
-                        Text(
-                            text = stringResource(Res.string.new_chat_content_description),
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.padding(start = 16.dp),
-                        )
-                    }
-                    Text(
-                        text = stringResource(Res.string.chat_history_title),
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
-                    )
-                    if (filteredConversations.isEmpty()) {
-                        Box(
-                            modifier = Modifier.weight(1f).fillMaxWidth(),
-                            contentAlignment = Alignment.TopStart,
+                                .padding(horizontal = 20.dp, vertical = 18.dp),
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
+                            Icon(
+                                imageVector = vectorResource(Res.drawable.ic_add),
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurface,
+                            )
                             Text(
-                                text = stringResource(Res.string.chat_history_empty),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
+                                text = stringResource(Res.string.new_chat_content_description),
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.padding(start = 16.dp),
                             )
                         }
-                    } else {
-                        LazyColumn(
-                            modifier = Modifier.weight(1f).fillMaxWidth(),
-                            contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                                horizontal = 12.dp,
-                                vertical = 4.dp,
-                            ),
-                            verticalArrangement = Arrangement.spacedBy(4.dp),
-                        ) {
-                            items(filteredConversations, key = { it.id }) { conversation ->
-                                val selected = conversation.id == uiState.currentConversationId
-                                val conversationTitle = conversation.title
+                        Text(
+                            text = stringResource(Res.string.chat_history_title),
+                            style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+                        )
+                        if (filteredConversations.isEmpty()) {
+                            Box(
+                                modifier = Modifier.weight(1f).fillMaxWidth(),
+                                contentAlignment = Alignment.TopStart,
+                            ) {
                                 Text(
-                                    text = if (conversationTitle.isBlank()) stringResource(Res.string.chat_history_title) else conversationTitle,
+                                    text = stringResource(Res.string.chat_history_empty),
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clip(RoundedCornerShape(12.dp))
-                                        .background(
-                                            if (selected) {
-                                                MaterialTheme.colorScheme.primaryContainer
-                                            } else {
-                                                Color.Transparent
-                                            },
-                                        )
-                                        .clickable {
-                                            drawerScope.launch { drawerState.close() }
-                                            uiState.actions.loadConversation(conversation.id)
-                                            isSandboxOpen = false
-                                        }
-                                        .padding(horizontal = 12.dp, vertical = 12.dp),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
                                 )
                             }
+                        } else {
+                            LazyColumn(
+                                modifier = Modifier.weight(1f).fillMaxWidth(),
+                                contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                                    horizontal = 12.dp,
+                                    vertical = 4.dp,
+                                ),
+                                verticalArrangement = Arrangement.spacedBy(4.dp),
+                            ) {
+                                items(filteredConversations, key = { it.id }) { conversation ->
+                                    val selected = conversation.id == uiState.currentConversationId
+                                    val conversationTitle = conversation.title
+                                    Text(
+                                        text = if (conversationTitle.isBlank()) stringResource(Res.string.chat_history_title) else conversationTitle,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .background(
+                                                if (selected) {
+                                                    MaterialTheme.colorScheme.primaryContainer
+                                                } else {
+                                                    Color.Transparent
+                                                },
+                                            )
+                                            .clickable {
+                                                drawerScope.launch { drawerState.close() }
+                                                uiState.actions.loadConversation(conversation.id)
+                                                isSandboxOpen = false
+                                            }
+                                            .padding(horizontal = 12.dp, vertical = 12.dp),
+                                    )
+                                }
+                            }
+                        }
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(64.dp)
+                                .padding(horizontal = 8.dp, vertical = 4.dp),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            DrawerFooterItem(
+                                modifier = Modifier.weight(1f),
+                                label = "Chat",
+                                icon = Icons.Default.ChatBubbleOutline,
+                                selected = true,
+                                onClick = { drawerScope.launch { drawerState.close() } },
+                            )
+                            DrawerFooterItem(
+                                modifier = Modifier.weight(1f),
+                                label = stringResource(Res.string.settings_content_description),
+                                icon = vectorResource(Res.drawable.ic_settings),
+                                onClick = {
+                                    drawerScope.launch { drawerState.close() }
+                                    onNavigateToSettings()
+                                },
+                            )
+                            DrawerFooterItem(
+                                modifier = Modifier.weight(1f),
+                                label = "Voice",
+                                icon = Icons.Default.Mic,
+                                onClick = {
+                                    drawerScope.launch { drawerState.close() }
+                                    uiState.actions.enterInteractiveMode()
+                                },
+                            )
+                            DrawerFooterItem(
+                                modifier = Modifier.weight(1f),
+                                label = "Sandbox",
+                                icon = Icons.Default.Dns,
+                                enabled = isSandboxAvailable,
+                                onClick = {
+                                    drawerScope.launch { drawerState.close() }
+                                    isSandboxOpen = !isSandboxOpen
+                                },
+                            )
                         }
                     }
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(64.dp)
-                            .padding(horizontal = 8.dp, vertical = 4.dp),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        DrawerFooterItem(
-                            modifier = Modifier.weight(1f),
-                            label = "Chat",
-                            icon = Icons.Default.ChatBubbleOutline,
-                            selected = true,
-                            onClick = { drawerScope.launch { drawerState.close() } },
-                        )
-                        DrawerFooterItem(
-                            modifier = Modifier.weight(1f),
-                            label = stringResource(Res.string.settings_content_description),
-                            icon = vectorResource(Res.drawable.ic_settings),
-                            onClick = {
-                                drawerScope.launch { drawerState.close() }
-                                onNavigateToSettings()
-                            },
-                        )
-                        DrawerFooterItem(
-                            modifier = Modifier.weight(1f),
-                            label = "Voice",
-                            icon = Icons.Default.Mic,
-                            onClick = {
-                                drawerScope.launch { drawerState.close() }
-                                uiState.actions.enterInteractiveMode()
-                            },
-                        )
-                        DrawerFooterItem(
-                            modifier = Modifier.weight(1f),
-                            label = "Sandbox",
-                            icon = Icons.Default.Dns,
-                            enabled = isSandboxAvailable,
-                            onClick = {
-                                drawerScope.launch { drawerState.close() }
-                                isSandboxOpen = !isSandboxOpen
-                            },
-                        )
-                    }
-                }
                 }
             }
         },
