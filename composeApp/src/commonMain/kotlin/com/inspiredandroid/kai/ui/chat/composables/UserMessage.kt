@@ -46,15 +46,21 @@ internal fun UserMessage(
 ) {
     val showFullScreen = LocalShowFullScreenImage.current
     SelectionContainer {
-        Row(Modifier.padding(16.dp)) {
+        Row(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
             Spacer(Modifier.weight(1f))
             Column(
                 modifier = Modifier
+                    .widthIn(max = 320.dp)
                     .background(
-                        MaterialTheme.colorScheme.onBackground.copy(alpha = 0.15f),
-                        RoundedCornerShape(8.dp),
+                        MaterialTheme.colorScheme.surfaceContainerHigh,
+                        RoundedCornerShape(
+                            topStart = 22.dp,
+                            topEnd = 22.dp,
+                            bottomStart = 22.dp,
+                            bottomEnd = 6.dp,
+                        ),
                     )
-                    .padding(16.dp),
+                    .padding(horizontal = 14.dp, vertical = 12.dp),
                 horizontalAlignment = Alignment.End,
             ) {
                 val images = attachments.filter { it.mimeType.startsWith("image/") }
@@ -94,7 +100,7 @@ internal fun UserMessage(
                                         modifier = Modifier.size(16.dp),
                                         painter = painterResource(Res.drawable.ic_file),
                                         contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onBackground,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
                                 },
                                 label = { Text(truncateFileName(att.fileName ?: att.mimeType)) },
@@ -108,7 +114,8 @@ internal fun UserMessage(
                 if (message.isNotEmpty()) {
                     Text(
                         text = message,
-                        color = MaterialTheme.colorScheme.onBackground,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        style = MaterialTheme.typography.bodyLarge,
                     )
                 }
             }
