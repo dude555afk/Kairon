@@ -13,6 +13,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.border
 import androidx.compose.foundation.draganddrop.dragAndDropTarget
 import androidx.compose.foundation.layout.Arrangement
@@ -39,15 +40,23 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.ChatBubbleOutline
+import androidx.compose.material.icons.filled.Dns
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.Icon
+import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -63,6 +72,8 @@ import androidx.compose.ui.Alignment.Companion.BottomCenter
 import androidx.compose.ui.Alignment.Companion.CenterEnd
 import androidx.compose.ui.Alignment.Companion.CenterHorizontally
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.draganddrop.DragAndDropEvent
 import androidx.compose.ui.draganddrop.DragAndDropTarget
 import androidx.compose.ui.draw.blur
@@ -71,6 +82,7 @@ import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.inspiredandroid.kai.BackIcon
@@ -546,6 +558,8 @@ private fun ChatModeScreen(
         if (pendingId != null) uiState.savedConversations.filter { it.id != pendingId }.toImmutableList() else uiState.savedConversations
     }
 
+    val drawerState = rememberDrawerState(DrawerValue.Closed)
+    val drawerScope = rememberCoroutineScope()
     val historyState = rememberUpdatedState(uiState.history)
     val isShellExecuting by remember {
         derivedStateOf {
@@ -553,7 +567,135 @@ private fun ChatModeScreen(
         }
     }
 
-    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).navigationBarsPadding().statusBarsPadding().imePadding()) {
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            ModalDrawerSheet {
+                Column(Modifier.fillMaxHeight()) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                drawerScope.launch { drawerState.close() }
+                                uiState.actions.startNewChat()
+                            }
+                            .padding(horizontal = 20.dp, vertical = 18.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(
+                            imageVector = vectorResource(Res.drawable.ic_add),
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurface,
+                        )
+                        Text(
+                            text = stringResource(Res.string.new_chat_content_description),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(start = 16.dp),
+                        )
+                    }
+                    Text(
+                        text = stringResource(Res.string.chat_history_title),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+                    )
+                    if (filteredConversations.isEmpty()) {
+                        Box(
+                            modifier = Modifier.weight(1f).fillMaxWidth(),
+                            contentAlignment = Alignment.TopStart,
+                        ) {
+                            Text(
+                                text = stringResource(Res.string.chat_history_empty),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
+                            )
+                        }
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.weight(1f).fillMaxWidth(),
+                            contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                                horizontal = 12.dp,
+                                vertical = 4.dp,
+                            ),
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            items(filteredConversations, key = { it.id }) { conversation ->
+                                val selected = conversation.id == uiState.currentConversationId
+                                Text(
+                                    text = conversation.title.ifBlank { stringResource(Res.string.chat_history_title) },
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(
+                                            if (selected) MaterialTheme.colorScheme.primaryContainer
+                                            else Color.Transparent,
+                                        )
+                                        .clickable {
+                                            drawerScope.launch { drawerState.close() }
+                                            uiState.actions.loadConversation(conversation.id)
+                                            isSandboxOpen = false
+                                        }
+                                        .padding(horizontal = 12.dp, vertical = 12.dp),
+                                )
+                            }
+                        }
+                    }
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(64.dp)
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        DrawerFooterItem(
+                            modifier = Modifier.weight(1f),
+                            label = "Chat",
+                            icon = Icons.Default.ChatBubbleOutline,
+                            selected = true,
+                            onClick = { drawerScope.launch { drawerState.close() } },
+                        )
+                        DrawerFooterItem(
+                            modifier = Modifier.weight(1f),
+                            label = stringResource(Res.string.settings_content_description),
+                            icon = vectorResource(Res.drawable.ic_settings),
+                            onClick = {
+                                drawerScope.launch { drawerState.close() }
+                                onNavigateToSettings()
+                            },
+                        )
+                        DrawerFooterItem(
+                            modifier = Modifier.weight(1f),
+                            label = stringResource(Res.string.interactive_title),
+                            icon = Icons.Default.Mic,
+                            onClick = {
+                                drawerScope.launch { drawerState.close() }
+                                uiState.actions.enterInteractiveMode()
+                            },
+                        )
+                        DrawerFooterItem(
+                            modifier = Modifier.weight(1f),
+                            label = stringResource(Res.string.sandbox_content_description),
+                            icon = Icons.Default.Dns,
+                            enabled = isSandboxAvailable,
+                            onClick = {
+                                drawerScope.launch { drawerState.close() }
+                                isSandboxOpen = !isSandboxOpen
+                            },
+                        )
+                    }
+                }
+            }
+        },
+    ) {
+        Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).navigationBarsPadding().statusBarsPadding().imePadding()) {
         Column(Modifier.fillMaxSize()) {
             TopBar(
                 textToSpeech = textToSpeech,
@@ -572,6 +714,7 @@ private fun ChatModeScreen(
                     showHistorySheet = true
                 },
                 navigationTabBar = navigationTabBar,
+                onOpenDrawer = { drawerScope.launch { drawerState.open() } },
             )
 
             HeartbeatBanner(
@@ -959,6 +1102,7 @@ private fun ChatModeScreen(
                     availableServices = uiState.availableServices,
                     onSelectService = uiState.actions.selectService,
                     installedSkills = uiState.installedSkills,
+                    onVoice = uiState.actions.enterInteractiveMode,
                 )
             }
         }
@@ -967,6 +1111,7 @@ private fun ChatModeScreen(
             modifier = Modifier.align(BottomCenter).padding(bottom = 80.dp),
         ) { data ->
             Snackbar(snackbarData = data)
+        }
         }
     }
 
@@ -978,6 +1123,44 @@ private fun ChatModeScreen(
             actions = uiState.actions,
             onDismiss = { showHistorySheet = false },
             onConversationSelected = { isSandboxOpen = false },
+        )
+    }
+}
+
+
+@Composable
+private fun DrawerFooterItem(
+    modifier: Modifier = Modifier,
+    label: String,
+    icon: ImageVector,
+    selected: Boolean = false,
+    enabled: Boolean = true,
+    onClick: () -> Unit,
+) {
+    val containerColor = if (selected) Color(0xFF1D63FF) else Color.Transparent
+    val contentColor = if (selected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+    Column(
+        modifier = modifier
+            .height(56.dp)
+            .clip(RoundedCornerShape(18.dp))
+            .background(containerColor)
+            .clickable(enabled = enabled, onClick = onClick)
+            .padding(horizontal = 2.dp, vertical = 4.dp),
+        horizontalAlignment = CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = label,
+            tint = if (enabled) contentColor else contentColor.copy(alpha = 0.38f),
+            modifier = Modifier.size(18.dp),
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = if (enabled) contentColor else contentColor.copy(alpha = 0.38f),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
     }
 }
