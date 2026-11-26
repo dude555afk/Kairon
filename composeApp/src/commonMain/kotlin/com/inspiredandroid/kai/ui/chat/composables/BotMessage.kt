@@ -146,7 +146,7 @@ internal fun BotMessage(
         }
     }
     if (message.isEmpty()) return
-    Row(Modifier.padding(horizontal = 8.dp)) {
+    Row(Modifier.padding(horizontal = 12.dp)) {
         if (textToSpeech != null) {
             val componentScope = rememberCoroutineScope()
             SmallIconButton(
