@@ -19,6 +19,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.draganddrop.dragAndDropTarget
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -31,6 +32,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -79,6 +81,7 @@ import androidx.compose.ui.draganddrop.DragAndDropTarget
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -576,10 +579,16 @@ private fun ChatModeScreen(
         }
     }
 
+    val isDarkTheme = MaterialTheme.colorScheme.background.luminance() < 0.5f
     ModalNavigationDrawer(
         drawerState = drawerState,
+        scrimColor = Color.Black.copy(alpha = if (isDarkTheme) 0.55f else 0.32f),
         drawerContent = {
-            ModalDrawerSheet {
+            BoxWithConstraints {
+                ModalDrawerSheet(
+                    modifier = Modifier.width((maxWidth * 0.82f).coerceAtMost(340.dp)),
+                    drawerShape = RoundedCornerShape(0.dp),
+                ) {
                 Column(Modifier.fillMaxHeight()) {
                     Row(
                         modifier = Modifier
@@ -708,6 +717,7 @@ private fun ChatModeScreen(
                             },
                         )
                     }
+                }
                 }
             }
         },

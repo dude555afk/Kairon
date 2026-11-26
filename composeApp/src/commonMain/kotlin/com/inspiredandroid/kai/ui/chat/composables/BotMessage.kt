@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
@@ -39,6 +40,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import org.jetbrains.compose.resources.painterResource
 import com.inspiredandroid.kai.getBackgroundDispatcher
 import com.inspiredandroid.kai.ui.dynamicui.FrozenSubmission
 import com.inspiredandroid.kai.ui.dynamicui.toSpeakableText
@@ -146,12 +148,20 @@ internal fun BotMessage(
         }
     }
     if (message.isEmpty()) return
-    Row(Modifier.padding(horizontal = 12.dp)) {
+    val componentScope = rememberCoroutineScope()
+    val copyToClipboard = rememberCopyToClipboard()
+    val uriHandler = LocalUriHandler.current
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(40.dp)
+            .padding(horizontal = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         if (textToSpeech != null) {
-            val componentScope = rememberCoroutineScope()
-            SmallIconButton(
-                iconResource = if (isSpeaking) Res.drawable.ic_stop else Res.drawable.ic_volume_up,
-                contentDescription = stringResource(Res.string.bot_message_speech_content_description),
+            IconButton(
+                modifier = Modifier.size(40.dp),
                 onClick = {
                     componentScope.launch(getBackgroundDispatcher()) {
                         textToSpeech.stop()
@@ -161,41 +171,59 @@ internal fun BotMessage(
                             setIsSpeaking(true)
                             try {
                                 textToSpeech.say(text = message.toSpeakableText())
-                            } catch (ignore: TextToSpeechSynthesisInterruptedError) {
+                            } catch (_: TextToSpeechSynthesisInterruptedError) {
                                 // Expected interruption - no action needed
-                            } catch (e: Exception) {
+                            } catch (_: Exception) {
                                 // Handle TTS errors gracefully (service failure, audio issues, etc.)
                             }
                             setIsSpeaking(false)
                         }
                     }
                 },
+            ) {
+                Icon(
+                    painter = painterResource(if (isSpeaking) Res.drawable.ic_stop else Res.drawable.ic_volume_up),
+                    contentDescription = stringResource(Res.string.bot_message_speech_content_description),
+                    modifier = Modifier.size(18.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        IconButton(
+            modifier = Modifier.size(40.dp),
+            onClick = { copyToClipboard(message) },
+        ) {
+            Icon(
+                painter = painterResource(Res.drawable.ic_copy),
+                contentDescription = stringResource(Res.string.bot_message_copy_content_description),
+                modifier = Modifier.size(18.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        val copyToClipboard = rememberCopyToClipboard()
-        SmallIconButton(
-            iconResource = Res.drawable.ic_copy,
-            contentDescription = stringResource(Res.string.bot_message_copy_content_description),
-            onClick = { copyToClipboard(message) },
-        )
-        run {
-            val uriHandler = LocalUriHandler.current
-            SmallIconButton(
-                iconResource = Res.drawable.ic_flag,
+        IconButton(
+            modifier = Modifier.size(40.dp),
+            onClick = { uriHandler.openUri("https://form.jotform.com/250014908169355") },
+        ) {
+            Icon(
+                painter = painterResource(Res.drawable.ic_flag),
                 contentDescription = stringResource(Res.string.bot_message_flag_content_description),
-                onClick = {
-                    uriHandler.openUri("https://form.jotform.com/250014908169355")
-                },
+                modifier = Modifier.size(18.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
         if (onRegenerate != null) {
-            SmallIconButton(
-                iconResource = Res.drawable.ic_refresh,
-                contentDescription = stringResource(Res.string.bot_message_regenerate_content_description),
+            IconButton(
+                modifier = Modifier.size(40.dp),
                 onClick = onRegenerate,
-            )
+            ) {
+                Icon(
+                    painter = painterResource(Res.drawable.ic_refresh),
+                    contentDescription = stringResource(Res.string.bot_message_regenerate_content_description),
+                    modifier = Modifier.size(18.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
-        Spacer(Modifier.weight(1f))
     }
 }
 

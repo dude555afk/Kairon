@@ -33,6 +33,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.DisableSelection
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -77,7 +78,6 @@ import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.extension
 import io.github.vinceglb.filekit.name
 import kai.composeapp.generated.resources.Res
-import kai.composeapp.generated.resources.ic_attach
 import kai.composeapp.generated.resources.ic_file
 import kai.composeapp.generated.resources.ic_image
 import kai.composeapp.generated.resources.ic_stop
@@ -276,7 +276,7 @@ fun QuestionInput(
             ) {
                 if (filePickerLauncher != null) {
                     CircleIconButton(
-                        icon = vectorResource(Res.drawable.ic_attach),
+                        icon = Icons.Rounded.Add,
                         onClick = { filePickerLauncher.launch() },
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -457,7 +457,7 @@ internal fun CircleIconButton(
 ) {
     Box(
         modifier = modifier
-            .size(42.dp)
+            .size(36.dp)
             .clip(CircleShape)
             .clickable { onClick() }
             .handCursor(),
@@ -465,7 +465,7 @@ internal fun CircleIconButton(
     ) {
         Icon(
             imageVector = icon,
-            modifier = Modifier.size(24.dp),
+            modifier = Modifier.size(22.dp),
             contentDescription = null,
             tint = tint,
         )

@@ -59,7 +59,7 @@ internal fun TopBar(
 ) {
     if (navigationTabBar != null) {
         Box(
-            modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 64.dp),
+            modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 56.dp).padding(horizontal = 16.dp),
         ) {
             Row(modifier = Modifier.align(Alignment.CenterStart)) {
                 IconButton(modifier = Modifier.handCursor(), onClick = onOpenDrawer) {

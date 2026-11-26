@@ -4,6 +4,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -46,23 +47,19 @@ internal fun UserMessage(
 ) {
     val showFullScreen = LocalShowFullScreenImage.current
     SelectionContainer {
-        Row(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-            Spacer(Modifier.weight(1f))
-            Column(
-                modifier = Modifier
-                    .widthIn(max = 320.dp)
-                    .background(
-                        MaterialTheme.colorScheme.surfaceContainerHigh,
-                        RoundedCornerShape(
-                            topStart = 22.dp,
-                            topEnd = 22.dp,
-                            bottomStart = 22.dp,
-                            bottomEnd = 6.dp,
-                        ),
-                    )
-                    .padding(horizontal = 14.dp, vertical = 12.dp),
-                horizontalAlignment = Alignment.End,
-            ) {
+        BoxWithConstraints(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
+            Row(Modifier.fillMaxWidth()) {
+                Spacer(Modifier.weight(1f))
+                Column(
+                    modifier = Modifier
+                        .widthIn(max = maxWidth * 0.78f)
+                        .background(
+                            MaterialTheme.colorScheme.surfaceContainerHigh,
+                            RoundedCornerShape(18.dp),
+                        )
+                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                    horizontalAlignment = Alignment.End,
+                ) {
                 val images = attachments.filter { it.mimeType.startsWith("image/") }
                 val others = attachments.filter { !it.mimeType.startsWith("image/") }
                 for (att in images) {
@@ -117,6 +114,7 @@ internal fun UserMessage(
                         color = MaterialTheme.colorScheme.onSurface,
                         style = MaterialTheme.typography.bodyLarge,
                     )
+                }
                 }
             }
         }
